@@ -214,14 +214,21 @@ jobs:
           uv run pytest --verbose --tb=short
           echo "✅ Tests completed"
           
-      - name: Verify artifact integrity
+      - name: Generate checksums for GitHub release
         run: |
-          echo "🔍 Verifying artifact integrity..."
+          echo "🔍 Generating checksums for GitHub release..."
           cd acf/dist
           
-          # Verify files are not corrupted (basic check)
-          file *.whl *.tar.gz
-          echo "✅ Artifact integrity verification passed"
+          # Generate SHA256 checksums for GitHub release
+          sha256sum *.whl > checksums.txt
+          sha256sum *.tar.gz >> checksums.txt
+          
+          echo "Generated checksums for GitHub release:"
+          cat checksums.txt
+          
+          # Verify checksums work correctly
+          sha256sum -c checksums.txt
+          echo "✅ Checksums generated and verified for GitHub release"
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -394,7 +401,8 @@ jobs:
             $PRERELEASE_FLAG \
             --verify-tag \
             dist/*.whl \
-            dist/*.tar.gz
+            dist/*.tar.gz \
+            dist/checksums.txt
           
           # Get release URL for summary
           RELEASE_URL=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
@@ -442,11 +450,21 @@ jobs:
           
           echo "✅ All artifact verification passed"
       
+      - name: Prepare artifacts for PyPI upload (exclude checksums.txt)
+        run: |
+          echo "📦 Preparing artifacts for PyPI upload (excluding checksums.txt)..."
+          # Create a clean directory with only Python packages for PyPI
+          mkdir -p dist-pypi
+          cp dist/*.whl dist-pypi/
+          cp dist/*.tar.gz dist-pypi/
+          echo "Files for PyPI upload:"
+          ls -la dist-pypi/
+      
       - name: Publish to PyPI via OIDC with Sigstore attestations
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: ${{ github.event_name == 'workflow_dispatch' && 'https://test.pypi.org/legacy/' || '' }}
-          packages-dir: dist/
+          packages-dir: dist-pypi/
           skip-existing: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}  # Allow re-uploads to TestPyPI
           verbose: true               # Debug output for troubleshooting
           verify-metadata: true        # Verify package metadata
