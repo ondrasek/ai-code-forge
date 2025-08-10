@@ -179,9 +179,11 @@ jobs:
           echo "=== Validating Package ==="
           cd acf
           
-          # Check if artifacts were created
+          # Check if artifacts were created using proper file checks
           if ls dist/*.whl >/dev/null 2>&1; then
             echo "✅ Wheel file created successfully"
+            WHEEL_FILE=$(ls dist/*.whl | head -1)
+            echo "Wheel: $WHEEL_FILE"
           else
             echo "❌ No wheel file found"
             exit 1
@@ -189,6 +191,8 @@ jobs:
           
           if ls dist/*.tar.gz >/dev/null 2>&1; then
             echo "✅ Source distribution created successfully"
+            TAR_FILE=$(ls dist/*.tar.gz | head -1) 
+            echo "Source dist: $TAR_FILE"
           else  
             echo "❌ No source distribution found"
             exit 1
@@ -433,10 +437,21 @@ jobs:
           echo "🔍 Pre-publish artifact verification..."
           ls -la dist/
           
-          # Verify expected files exist
-          [[ -f dist/*.whl ]] || { echo "❌ Wheel missing"; exit 1; }
-          [[ -f dist/*.tar.gz ]] || { echo "❌ Source dist missing"; exit 1; }
-          [[ -f dist/checksums.txt ]] || { echo "❌ Checksums missing"; exit 1; }
+          # Verify expected files exist using proper glob expansion
+          if ! ls dist/*.whl >/dev/null 2>&1; then
+            echo "❌ Wheel missing"
+            exit 1
+          fi
+          
+          if ! ls dist/*.tar.gz >/dev/null 2>&1; then
+            echo "❌ Source dist missing" 
+            exit 1
+          fi
+          
+          if [[ ! -f dist/checksums.txt ]]; then
+            echo "❌ Checksums missing"
+            exit 1
+          fi
           
           # Verify checksums
           cd dist
