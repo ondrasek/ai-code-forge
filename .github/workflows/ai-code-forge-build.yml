@@ -12,6 +12,8 @@ on:
       - 'CLAUDE.md'
       - 'README.md' 
       - 'CHANGELOG.md'
+    tags:
+      - 'v*'  # Semantic version tags (v0.2.0, v0.2.1, etc.)
   pull_request:
     paths:
       - '.claude/**'
@@ -33,16 +35,101 @@ on:
           - development
           - release
           - test
+      create_release:
+        description: 'Create GitHub release (only on main branch)'
+        required: false
+        default: false
+        type: boolean
+      version_override:
+        description: 'Version override (leave empty for pyproject.toml version)'
+        required: false
+        type: string
+      release_type:
+        description: 'Release type'
+        required: false
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - prerelease
+          - draft
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for creating releases and uploading assets
+      actions: read    # Required for workflow execution
+    env:
+      SHOULD_RELEASE: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Full history for proper version detection
+          
+      - name: Release validation and security checks
+        if: env.SHOULD_RELEASE == 'true'
+        run: |
+          echo "🔒 Running release validation and security checks..."
+          
+          # Branch protection validation
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref }}" != "refs/heads/main" ]]; then
+            echo "❌ ERROR: Manual releases must be created from main branch only"
+            echo "Current ref: ${{ github.ref }}"
+            exit 1
+          fi
+          
+          # Tag format validation
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" =~ ^refs/tags/v ]]; then
+            TAG_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+            echo "Validating tag version: $TAG_VERSION"
+            
+            # Semantic version validation
+            if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+              echo "❌ ERROR: Tag must follow semantic versioning (v1.2.3, v1.2.3-rc.1, etc.)"
+              echo "Invalid tag: $TAG_VERSION"
+              exit 1
+            fi
+            
+            # Version consistency validation
+            PYPROJECT_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
+            if [[ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]]; then
+              echo "❌ ERROR: Tag version ($TAG_VERSION) must match pyproject.toml version ($PYPROJECT_VERSION)"
+              exit 1
+            fi
+            
+            echo "✅ Version validation passed: $TAG_VERSION"
+          fi
+          
+          # Determine release type
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
+            if [[ -n "${{ inputs.version_override }}" ]]; then
+              RELEASE_VERSION="${{ inputs.version_override }}"
+            fi
+          else
+            RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+          fi
+          
+          # Prerelease detection
+          IS_PRERELEASE="false"
+          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev) ]]; then
+            IS_PRERELEASE="true"
+          fi
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.release_type }}" == "prerelease" ]]; then
+            IS_PRERELEASE="true"
+          fi
+          
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_ENV
+          
+          echo "📋 Release configuration:"
+          echo "  Version: $RELEASE_VERSION"
+          echo "  Prerelease: $IS_PRERELEASE"
+          echo "  Event: ${{ github.event_name }}"
           
       - name: Setup Python and uv  
         uses: astral-sh/setup-uv@v4
@@ -123,6 +210,97 @@ jobs:
           uv run pytest --verbose --tb=short
           echo "✅ Tests completed"
           
+      - name: Generate checksums for release artifacts
+        if: env.SHOULD_RELEASE == 'true'
+        run: |
+          echo "🔍 Generating artifact checksums..."
+          cd acf/dist
+          
+          # Generate SHA256 checksums
+          sha256sum *.whl > checksums.txt
+          sha256sum *.tar.gz >> checksums.txt
+          
+          echo "Generated checksums:"
+          cat checksums.txt
+          
+          # Verify checksums
+          sha256sum -c checksums.txt
+          echo "✅ Checksum validation passed"
+          
+      - name: Parse changelog and generate release notes
+        if: env.SHOULD_RELEASE == 'true'
+        run: |
+          echo "📄 Parsing changelog and generating release notes..."
+          
+          # Extract [Unreleased] section from CHANGELOG.md
+          CHANGELOG_FILE="CHANGELOG.md"
+          RELEASE_NOTES_FILE="release-notes.md"
+          
+          if [[ -f "$CHANGELOG_FILE" ]]; then
+            # Extract content between ## [Unreleased] and next ## heading
+            sed -n '/^## \[Unreleased\]/,/^## /p' "$CHANGELOG_FILE" | \
+              sed '$d' | \
+              tail -n +2 | \
+              sed '/^\s*$/d' > "$RELEASE_NOTES_FILE"
+              
+            # Check if we extracted meaningful content
+            if [[ -s "$RELEASE_NOTES_FILE" ]] && [[ $(wc -l < "$RELEASE_NOTES_FILE") -gt 0 ]]; then
+              echo "\ud83d\udcdd Extracted release notes from CHANGELOG.md:"
+              echo "---"
+              cat "$RELEASE_NOTES_FILE"
+              echo "---"
+            else
+              echo "\u26a0\ufe0f No meaningful content in [Unreleased] section, generating fallback release notes"
+              # Generate fallback release notes from recent commits
+              echo "## Release v$RELEASE_VERSION" > "$RELEASE_NOTES_FILE"
+              echo "" >> "$RELEASE_NOTES_FILE"
+              echo "### Changes" >> "$RELEASE_NOTES_FILE"
+              git log --oneline --since="30 days ago" --pretty="- %s" >> "$RELEASE_NOTES_FILE"
+              echo "" >> "$RELEASE_NOTES_FILE"
+            fi
+          else
+            echo "\u26a0\ufe0f CHANGELOG.md not found, generating basic release notes"
+            echo "## Release v$RELEASE_VERSION" > "$RELEASE_NOTES_FILE"
+            echo "" >> "$RELEASE_NOTES_FILE"
+            echo "### Changes" >> "$RELEASE_NOTES_FILE"
+            git log --oneline --since="30 days ago" --pretty="- %s" >> "$RELEASE_NOTES_FILE"
+          fi
+          
+          # Add installation instructions and metadata
+          cat >> "$RELEASE_NOTES_FILE" << EOF
+          
+          ## Installation
+          
+          ### Via pip
+          \`\`\`bash
+          pip install ai-code-forge==$RELEASE_VERSION
+          \`\`\`
+          
+          ### Via uv
+          \`\`\`bash
+          uv add ai-code-forge==$RELEASE_VERSION
+          \`\`\`
+          
+          ### Via uvx (recommended)
+          \`\`\`bash
+          uvx ai-code-forge@$RELEASE_VERSION install
+          \`\`\`
+          
+          ## Release Assets
+          
+          This release includes the following verified artifacts:
+          - **Python Wheel**: \`ai_code_forge-$RELEASE_VERSION-py3-none-any.whl\`
+          - **Source Distribution**: \`ai_code_forge-$RELEASE_VERSION.tar.gz\`
+          - **Checksums**: \`checksums.txt\` (SHA256 verification)
+          
+          All artifacts are cryptographically verified using SHA256 checksums.
+          EOF
+          
+          echo "🎨 Final release notes:"
+          echo "===================================="
+          cat "$RELEASE_NOTES_FILE"
+          echo "===================================="
+          
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -138,6 +316,55 @@ jobs:
           path: acf/.pytest_cache/
           retention-days: 7
           
+      - name: Create GitHub Release
+        if: env.SHOULD_RELEASE == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Creating GitHub release..."
+          
+          # Determine draft status
+          DRAFT_FLAG=""
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.release_type }}" == "draft" ]]; then
+            DRAFT_FLAG="--draft"
+          fi
+          
+          # Determine prerelease flag
+          PRERELEASE_FLAG=""
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          
+          # Create the release
+          RELEASE_TAG="v$RELEASE_VERSION"
+          
+          # For workflow_dispatch, create tag if it doesn't exist
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if ! git tag --list | grep -q "^$RELEASE_TAG$"; then
+              echo "Creating tag: $RELEASE_TAG"
+              git tag "$RELEASE_TAG"
+              git push origin "$RELEASE_TAG"
+            fi
+          fi
+          
+          # Create release with comprehensive validation
+          gh release create "$RELEASE_TAG" \
+            --title "AI Code Forge v$RELEASE_VERSION" \
+            --notes-file "release-notes.md" \
+            $DRAFT_FLAG \
+            $PRERELEASE_FLAG \
+            --verify-tag \
+            acf/dist/*.whl \
+            acf/dist/*.tar.gz \
+            acf/dist/checksums.txt
+          
+          # Get release URL for summary
+          RELEASE_URL=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
+          echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
+          
+          echo "✅ Release created successfully!"
+          echo "Release URL: $RELEASE_URL"
+          
       - name: Build summary
         run: |
           echo "🎉 ACF CLI Build Complete!"
@@ -148,4 +375,15 @@ jobs:
           echo "📊 Package sizes:"
           du -h acf/dist/*
           echo ""
-          echo "🔗 Download artifacts from the Actions tab"
+          
+          if [[ "$SHOULD_RELEASE" == "true" ]]; then
+            echo "🏪 GitHub Release Created!"
+            echo "Release URL: $RELEASE_URL"
+            echo ""
+            echo "💾 Installation Commands:"
+            echo "  pip install ai-code-forge==$RELEASE_VERSION"
+            echo "  uv add ai-code-forge==$RELEASE_VERSION"
+            echo "  uvx ai-code-forge@$RELEASE_VERSION install"
+          else
+            echo "🔗 Download artifacts from the Actions tab"
+          fi
