@@ -1,115 +1,167 @@
 ---
-description: Analyze completed TODOs and prepare version release with automatic CHANGELOG generation.
+description: Create semantic version tag from commit analysis with automatic version determination and tag creation (main branch only).
 argument-hint: Optional version type (auto|major|minor|patch) - defaults to auto.
-allowed-tools: Task(github-issues-workflow), Task(git-workflow), Read, Edit, Write, Bash(git status), Bash(git log), Bash(git tag)
+allowed-tools: Task(git-workflow), Read, Edit, Write, Bash(git status), Bash(git log), Bash(git tag), Bash(git push)
 ---
 
-# Version Release Preparation
+# Git Tag Creation Command
 
-Analyze completed TODOs and prepare version release with automatic CHANGELOG generation.
+Create semantic version tag from commit analysis with automatic version determination and tag creation. **MAIN BRANCH ONLY.**
 
 ## Instructions
 
-1. **Parse Arguments**: Determine version type from $ARGUMENTS
-   - `auto` (default): Automatically detect version bump based on completed GitHub Issues
-   - `major`: Force major version bump (x.0.0)
+1. **Branch Validation (CRITICAL)**:
+   ```bash
+   CURRENT_BRANCH=$(git branch --show-current)
+   if [[ "$CURRENT_BRANCH" != "main" ]]; then
+       echo "❌ ERROR: /git-tag command only works on main branch"
+       echo "Current branch: $CURRENT_BRANCH"
+       echo "Switch to main branch: git checkout main"
+       exit 1
+   fi
+   ```
+
+2. **Parse Arguments**: Determine version type from $ARGUMENTS
+   - `auto` (default): Automatically detect version bump from recent commits
+   - `major`: Force major version bump (x.0.0) 
    - `minor`: Force minor version bump (0.x.0)
    - `patch`: Force patch version bump (0.0.x)
 
-2. **Analyze Completed Issues**: 
-   ```
-   Task(github-issues-workflow): Analyze completed GitHub Issues since last release
-   - Categorize by type (feat/fix/break/docs/chore)
-   - Extract completion status and impact assessment
-   - Return clean summary for version determination
-   ```
-
-3. **Calculate Version Bump**: Based on issue analysis
-   - Any `break` or breaking change issues → MAJOR version
-   - Any `feat` or new feature issues → MINOR version  
-   - Only `fix`/`docs`/`perf`/`refactor`/`test`/`chore` → PATCH version
-
-4. **Execute Version Preparation**:
-   ```
-   Task(git-workflow): Prepare version release with parameters:
-   - Version type: [determined from analysis]
-   - CHANGELOG entries: [from completed issues]
-   - Tag preparation and release commit creation
+3. **Analyze Recent Commits**: Scan commits since last tag for version determination
+   ```bash
+   # Get last version tag
+   LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+   
+   # Analyze commit messages since last tag
+   COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --grep="feat:" --grep="fix:" --grep="break:" --grep="BREAKING")
+   
+   # Categorize commits:
+   # - feat: → MINOR version
+   # - fix: → PATCH version  
+   # - BREAKING/break: → MAJOR version
+   # - docs:/refactor:/test:/chore: → PATCH version
    ```
 
-## Error Handling
+4. **Version Bump Logic**:
+   ```
+   MAJOR (x.0.0): Any BREAKING changes or "break:" commits found
+   MINOR (0.x.0): Any "feat:" commits found (if no MAJOR)
+   PATCH (0.0.x): Only "fix:", "docs:", "refactor:", "test:", "chore:" commits
+   ```
 
-- **No completed issues**: Report no changes warrant version bump
-- **Invalid version argument**: Default to `auto` with warning
-- **Git repository issues**: Delegate to git-workflow agent for resolution
+5. **Calculate Next Version**:
+   ```bash
+   IFS='.' read MAJOR MINOR PATCH <<< "${LAST_TAG#v}"
+   case "$VERSION_TYPE" in
+     "major") NEXT_VERSION="v$((MAJOR + 1)).0.0" ;;
+     "minor") NEXT_VERSION="v$MAJOR.$((MINOR + 1)).0" ;;
+     "patch") NEXT_VERSION="v$MAJOR.$MINOR.$((PATCH + 1))" ;;
+   esac
+   ```
+
+6. **Generate Tag Message**:
+   ```bash
+   TAG_MESSAGE="Release $NEXT_VERSION
+
+   Previous Version: $LAST_TAG
+   
+   Changes in this release:
+   $(git log "$LAST_TAG"..HEAD --oneline --pretty="- %s")
+   
+   📋 Full changelog: https://github.com/ondrasek/ai-code-forge/compare/$LAST_TAG...$NEXT_VERSION"
+   ```
+
+7. **Create and Push Tag**:
+   ```bash
+   echo "🏷️ Creating tag: $NEXT_VERSION"
+   git tag -a "$NEXT_VERSION" -m "$TAG_MESSAGE"
+   
+   echo "📤 Pushing tag to origin..."
+   git push origin "$NEXT_VERSION"
+   
+   echo "✅ Tag created and pushed: $NEXT_VERSION"
+   echo "🚀 GitHub Actions workflow will now trigger for release"
+   ```
+
+## Security Validations
+
+**Pre-Tag Checks (MANDATORY)**:
+- ✅ Must be on main branch
+- ✅ Working directory must be clean (no uncommitted changes)
+- ✅ Must be up-to-date with origin/main
+- ✅ Tag name must not already exist
+- ✅ Must have commits since last tag
 
 ## Automatic Version Detection
 
-The system scans completed TODOs since the last release:
+Scans commit messages since last release:
 
 ```
-MAJOR (x.0.0): Any `break` type tasks found
-MINOR (0.x.0): Any `feat` type tasks found (if no MAJOR)
-PATCH (0.0.x): Only maintenance tasks found
+MAJOR (x.0.0): Any commits with:
+  - "break:" prefix
+  - "BREAKING CHANGE:" in message
+  - API removal or major architectural changes
+  
+MINOR (0.x.0): Any commits with:
+  - "feat:" prefix (new features)
+  - New commands, agents, or significant functionality
+  
+PATCH (0.0.x): Only commits with:
+  - "fix:" prefix (bug fixes)
+  - "docs:" prefix (documentation)
+  - "refactor:", "test:", "chore:" prefixes
 ```
 
-## CHANGELOG Generation
+## Integration with Release Workflow
 
-Completed TODOs are converted to CHANGELOG entries:
+This command triggers the complete release automation:
 
-### Task Type → CHANGELOG Section Mapping
-- `feat` → "### Added"
-- `fix` → "### Fixed"
-- `break` (removing features) → "### Removed"
-- `break` (changing behavior) → "### Changed"
-- `docs` → "### Changed" (if user-facing)
-- `perf` → "### Changed"
-- `refactor` → Usually excluded from user-facing changelog
-- `test`, `chore` → Usually excluded
+1. **Tag Creation**: `/git-tag` creates and pushes version tag
+2. **GitHub Actions**: Tag push triggers `ai-code-forge-release.yml` workflow
+3. **Automated Pipeline**: 
+   - Build and test packages
+   - Create GitHub release with assets
+   - Publish to PyPI via OIDC with Sigstore attestations
+   - Generate build summary
 
-### Entry Format
-```markdown
-## [1.2.3] - 2024-01-28
+## Error Handling
 
-### Added
-- New feature description from feat TODO
-  - Additional implementation details
-  - TODO reference: #task-1
+- **Not on main branch**: Command exits with error and instructions
+- **Uncommitted changes**: Must clean working directory first  
+- **No commits since last tag**: Reports no changes to release
+- **Tag already exists**: Prevents duplicate tag creation
+- **Network/push failures**: Provides manual commands for retry
 
-### Fixed  
-- Bug fix description from fix TODO
-  - TODO reference: #task-3
+## Example Usage
+
+```bash
+# Automatic version detection (recommended)
+/git-tag
+
+# Force specific version type
+/git-tag major
+/git-tag minor  
+/git-tag patch
 ```
-
-## Release Preparation Steps
-
-1. **Version Calculation**: Determine new version number
-2. **CHANGELOG Update**: Generate entries from completed TODOs
-3. **Archive Cleanup**: Move completed TODOs from archive to CHANGELOG
-4. **Version Commit**: Create commit with version bump
-5. **Tag Preparation**: Prepare annotated git tag command
-
-## Files Updated
-
-- `CHANGELOG.md`: Add new version section with entries
-- `TODO.md`: Clear completed tasks from archive section
-- Any version files (package.json, etc.) if present
-
-## Integration with Git Workflow
-
-Following trunk-based development and CLAUDE.md Rule 1 compliance:
-1. All changes committed to main branch via git-workflow agent
-2. Version tag created with proper annotation
-3. Automatic push to origin with tag
 
 ## Expected Outcomes
 
-- Accurate semantic version determination
-- Comprehensive CHANGELOG.md updates from completed issues
-- Proper git tag creation with release notes
-- Clean main context with complex processing isolated to specialist agents
+- **Semantic version tag** created based on commit analysis
+- **Tag pushed to origin** triggering GitHub Actions workflow
+- **Complete release pipeline** automatically executed
+- **PyPI package published** with Sigstore attestations
+- **GitHub release created** with assets and changelog
+
+## Security Features
+
+- **Main branch restriction**: Prevents accidental releases from feature branches
+- **Clean working directory**: Ensures no uncommitted changes in release
+- **Tag uniqueness**: Prevents duplicate version tags
+- **OIDC Publishing**: Secure PyPI publishing without API keys
+- **Sigstore Attestations**: Cryptographic package signing for supply chain security
 
 ## Related Commands
 
-- `/git` - Execute git workflow after version preparation
-- `/issue/cleanup` - Clean completed issues before version preparation
+- `/issue start` - Start GitHub issue implementation
+- `/issue pr` - Create pull request for completed work
+- Git workflow commands for commit management
