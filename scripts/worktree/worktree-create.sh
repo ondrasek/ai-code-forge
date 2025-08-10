@@ -96,23 +96,27 @@ print_info() { echo -e "${BLUE}INFO:${NC} $1"; }
 # Usage information
 show_usage() {
     cat << EOF
-Usage: $0 <branch-name> [issue-number] [--dry-run]
+Usage: $0 <branch-name-or-issue> [issue-number] [--dry-run]
        $0 --from-issue <issue-number> [--dry-run]
+       $0 --numeric-only <branch-name> [--dry-run]
 
 Creates a git worktree for parallel development workflow.
+When a numeric value is provided as branch-name-or-issue, automatically creates
+descriptive branch name from GitHub issue (equivalent to --from-issue).
 
 Arguments:
-  branch-name     Name of the branch to create worktree for
-  issue-number    Optional GitHub issue number for validation
-  --from-issue    Create worktree from GitHub issue (auto-detects or creates branch)
-  --dry-run       Show what commands would be executed without running them
+  branch-name-or-issue  Branch name OR issue number (auto-detected)
+  issue-number         Optional GitHub issue number for validation
+  --from-issue         Create worktree from GitHub issue (auto-detects or creates branch)
+  --numeric-only       Force numeric branch name (disables auto-detection)
+  --dry-run           Show what commands would be executed without running them
 
 Examples:
-  $0 feature/new-agent
-  $0 issue-105-worktree 105
-  $0 --from-issue 105
+  $0 132                    # Auto-detects issue, creates "issue-132-descriptive-name"
+  $0 feature/new-agent      # Uses literal branch name
+  $0 --from-issue 105       # Explicit issue mode
+  $0 --numeric-only 132     # Forces branch name "132" (no auto-detection)
   $0 --from-issue 105 --dry-run
-  $0 hotfix/critical-bug
 
 Location: Worktrees created in $WORKTREE_BASE/<repository>/<branch-name>
 EOF
@@ -252,20 +256,45 @@ create_issue_branch_name() {
         fi
     fi
 
-    # Create branch name
+    # Create branch name with smart truncation
     local branch_suffix=""
     local prefix="issue-$issue_num-"
-    local max_suffix_length=$((100 - ${#prefix}))
+    local max_total_length=35  # Keep total branch name short
+    local max_suffix_length=$((max_total_length - ${#prefix}))
 
     if [[ -n "$issue_title" ]]; then
         # Convert title to branch-friendly format
-        branch_suffix=$(echo "$issue_title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-*\|-*$//g')
-        # Ensure total branch name stays under 100 characters
-        if [[ ${#branch_suffix} -gt $max_suffix_length ]]; then
-            branch_suffix=$(echo "$branch_suffix" | cut -c1-$max_suffix_length)
+        local clean_title=$(echo "$issue_title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-*\|-*$//g')
+        
+        # Smart truncation: keep meaningful words, truncate at word boundaries
+        if [[ ${#clean_title} -gt $max_suffix_length ]]; then
+            # Extract first few meaningful words (skip common words)
+            local words=($(echo "$clean_title" | tr '-' '\n' | grep -vE '^(the|and|or|for|with|from|in|on|at|by|of|a|an|that|this|is|are|will|should|would|could|to)$' | head -4))
+            
+            branch_suffix=""
+            local current_length=0
+            for word in "${words[@]}"; do
+                local test_suffix="${branch_suffix}${branch_suffix:+-}${word}"
+                if [[ ${#test_suffix} -le $max_suffix_length ]]; then
+                    branch_suffix="$test_suffix"
+                    current_length=${#branch_suffix}
+                else
+                    break
+                fi
+            done
+            
+            # If no meaningful words found or result too short, use truncated original
+            if [[ ${#branch_suffix} -lt 4 ]]; then
+                branch_suffix=$(echo "$clean_title" | cut -c1-$((max_suffix_length-3)))
+                # Remove partial word at end
+                branch_suffix=$(echo "$branch_suffix" | sed 's/-[^-]*$//')
+                [[ -n "$branch_suffix" ]] || branch_suffix="work"
+            fi
+        else
+            branch_suffix="$clean_title"
         fi
     else
-        branch_suffix="implementation"
+        branch_suffix="work"
     fi
 
     echo "issue-$issue_num-$branch_suffix"
@@ -338,12 +367,30 @@ validate_issue_number() {
     return 0
 }
 
+# Create worktree directory name from branch
+create_worktree_directory_name() {
+    local branch="$1"
+    
+    # Extract issue number if this is an issue-based branch
+    if [[ "$branch" =~ ^issue-([0-9]+)- ]]; then
+        echo "issue-${BASH_REMATCH[1]}"
+        return 0
+    fi
+    
+    # For non-issue branches, use the branch name as-is
+    echo "$branch"
+}
+
 # Create worktree directory safely
 create_worktree_path() {
     local branch="$1"
     local repo_name
     repo_name=$(get_repo_name) || return 1
-    local worktree_path="$WORKTREE_BASE/$repo_name/$branch"
+    
+    # Get directory name (may differ from branch name)
+    local directory_name
+    directory_name=$(create_worktree_directory_name "$branch")
+    local worktree_path="$WORKTREE_BASE/$repo_name/$directory_name"
 
     # Ensure base directories exist - fix race condition by validating after creation
     if [[ ! -d "$WORKTREE_BASE" ]]; then
@@ -379,7 +426,14 @@ create_worktree_path() {
 
     # Check if worktree already exists and validate no symlinks
     if [[ -d "$worktree_path" ]]; then
-        print_error "Worktree already exists at path"
+        # Special handling for issue-based directories that might be reused
+        if [[ "$directory_name" =~ ^issue-[0-9]+$ ]]; then
+            print_error "Worktree directory '$directory_name' already exists"
+            print_info "This issue may already have a worktree. Use different branch name or remove existing worktree."
+            print_info "Existing worktree path: $worktree_path"
+        else
+            print_error "Worktree already exists at path: $worktree_path"
+        fi
         return 1
     fi
 
@@ -532,6 +586,7 @@ main() {
     local branch_name=""
     local issue_number=""
     local from_issue_mode=false
+    local numeric_only_mode=false
     local dry_run=false
 
     # Parse arguments
@@ -563,14 +618,31 @@ main() {
             from_issue_mode=true
             issue_number="${clean_args[1]}"
             ;;
+        "--numeric-only")
+            if [[ ${#clean_args[@]} -lt 2 ]]; then
+                print_error "--numeric-only requires a branch name"
+                show_usage
+                exit 1
+            fi
+            numeric_only_mode=true
+            branch_name="${clean_args[1]}"
+            issue_number="${clean_args[2]:-}"
+            ;;
         "")
             print_error "Missing required arguments"
             show_usage
             exit 1
             ;;
         *)
-            branch_name="${clean_args[0]}"
-            issue_number="${clean_args[1]:-}"
+            # Auto-detection logic: if first argument is purely numeric, treat as issue
+            if [[ "${clean_args[0]}" =~ ^[0-9]+$ ]] && [[ ! "$numeric_only_mode" == "true" ]]; then
+                print_info "Auto-detected issue number: ${clean_args[0]}"
+                from_issue_mode=true
+                issue_number="${clean_args[0]}"
+            else
+                branch_name="${clean_args[0]}"
+                issue_number="${clean_args[1]:-}"
+            fi
             ;;
     esac
 
@@ -595,7 +667,9 @@ main() {
     local worktree_path
     if [[ "$dry_run" == "true" ]]; then
         print_info "[DRY RUN] Would create worktree path for branch: $branch_name"
-        worktree_path="/workspace/worktrees/$(basename "$MAIN_REPO")/$branch_name"  # simulated path
+        local directory_name
+        directory_name=$(create_worktree_directory_name "$branch_name")
+        worktree_path="/workspace/worktrees/$(basename "$MAIN_REPO")/$directory_name"  # simulated path
         print_info "[DRY RUN] Simulated path: $worktree_path"
     else
         worktree_path=$(create_worktree_path "$branch_name") || exit 1
