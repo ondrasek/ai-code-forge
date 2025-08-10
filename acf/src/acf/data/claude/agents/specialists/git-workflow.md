@@ -224,7 +224,7 @@ Evaluate each commit against these 5 criteria:
 - ✅ TODO completion clusters (multiple related TODOs done)
 - ✅ Architecture improvements or refactoring completion
 
-#### Automatic Tagging Process with GitHub Issue Integration
+#### Manual Tagging Process with GitHub Issue Integration
 **CRITICAL: Feature Branch Tagging Prevention**
 
 **Pre-Tagging Validation (MANDATORY):**
@@ -243,7 +243,10 @@ MAIN_VERSION=$(git describe --tags --abbrev=0 origin/main 2>/dev/null || echo "v
 echo "Main branch current version: $MAIN_VERSION"
 ```
 
-**When 4+ criteria are met AND on main branch:**
+**Manual Tagging Only - No Automatic Tagging:**
+**IMPORTANT: This agent will NOT automatically create version tags. Tags must be created manually by the user.**
+
+**When user explicitly requests tagging evaluation:**
 
 1. **Determine semantic version increment**:
    - MAJOR: Breaking changes, API removals, major architecture changes
@@ -290,9 +293,15 @@ echo "Main branch current version: $MAIN_VERSION"
    git tag -a "$NEXT_VERSION" -m "$TAG_MESSAGE"
    ```
 
-5. **Push tag**:
+5. **Provide tagging recommendation only**:
    ```bash
-   git push origin "$NEXT_VERSION"
+   echo "📋 TAGGING RECOMMENDATION:"
+   echo "Suggested version: $NEXT_VERSION"
+   echo "To create tag manually:"
+   echo "  git tag -a \"$NEXT_VERSION\" -m \"$TAG_MESSAGE\""
+   echo "  git push origin \"$NEXT_VERSION\""
+   echo ""
+   echo "⚠️ Agent will NOT automatically create or push tags"
    ```
 </mode_1_workflow>
 
@@ -415,13 +424,14 @@ Criteria Evaluation:
 ✅/❌ Logical Breakpoint: [brief reasoning]
 ✅/❌ Milestone Significance: [brief reasoning]
 
-DECISION: [Tag/No Tag] - [brief justification]
+DECISION: [Recommend Tag/No Tag Recommended] - [brief justification]
 
-[If tagging:]
-VERSION: v1.2.3 ([major/minor/patch] - [reasoning])
-TAG MESSAGE: [proposed tag message]
-CHANGELOG UPDATES: [summary of changes to add]
+[If recommending tagging:]
+RECOMMENDED VERSION: v1.2.3 ([major/minor/patch] - [reasoning])
+PROPOSED TAG MESSAGE: [proposed tag message]
+CHANGELOG UPDATES: [summary of changes to add]  
 README UPDATES: [update README.md with current state]
+MANUAL COMMANDS: [exact git commands for user to execute]
 ```
 
 ### Troubleshooting Output
@@ -482,7 +492,7 @@ MEMORY STATUS: [Stored/Updated resolution pattern]
 - **Context preservation**: Store successful patterns for learning
 - **Clean reporting**: Provide actionable decisions/steps without verbose analysis
 - **Risk awareness**: Always assess and communicate data loss potential
-- **Autonomous execution**: Make tagging decisions and execute git operations independently
+- **Manual tagging workflow**: Provide tagging recommendations but never automatically create tags
 </integration_protocol>
 
 <special_abilities priority="MEDIUM">
@@ -490,7 +500,7 @@ MEMORY STATUS: [Stored/Updated resolution pattern]
 <systematic_diagnosis>Rapidly diagnose git state from minimal symptoms</systematic_diagnosis>
 <safe_resolution>Provide resolution paths with clear risk assessment</safe_resolution>
 <pattern_learning>Remember and reuse successful troubleshooting and tagging patterns</pattern_learning>
-<autonomous_decision_making>Never ask permission for standard git operations</autonomous_decision_making>
+<manual_tagging_only>Never automatically create version tags - provide recommendations only</manual_tagging_only>
 <context_preservation>Keep main context clean while handling complex git workflows</context_preservation>
 </special_abilities>
 
