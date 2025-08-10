@@ -186,8 +186,11 @@ display_worktree_info() {
     # Clean branch name (remove refs/heads/)
     local clean_branch=${branch#refs/heads/}
     
-    # Display worktree header with emoji
-    echo -e "📁 ${CYAN}$basename${NC} | ${BLUE}$issue_display${NC} | ${GREEN}$clean_branch${NC} | ${GRAY}$worktree_path${NC}"
+    # Display worktree header with emoji (portrait layout)
+    echo -e "📁 ${CYAN}$basename${NC}"
+    echo -e "   Issue: ${BLUE}$issue_display${NC}"
+    echo -e "   Branch: ${GREEN}$clean_branch${NC}"
+    echo -e "   Path: ${GRAY}$worktree_path${NC}"
     
     # Find and display associated processes
     local pids=$(find_worktree_processes "$worktree_path")
@@ -213,10 +216,12 @@ display_worktree_info() {
                 node) process_emoji="🟢" ;;
             esac
             
-            echo -e "  └─ $process_emoji PID ${YELLOW}$pid${NC} | $comm | CPU: $colored_cpu | Mem: $colored_mem | RSS: $colored_rss | CWD: ${GRAY}$cwd${NC}"
+            echo -e "   $process_emoji ${YELLOW}PID $pid${NC} ${GRAY}($comm)${NC}"
+            echo -e "      CPU: $colored_cpu | Mem: $colored_mem | RSS: $colored_rss"
+            echo -e "      CWD: ${GRAY}$cwd${NC}"
         done
     else
-        echo -e "  └─ ${GRAY}❌ No Claude processes found${NC}"
+        echo -e "   ${GRAY}❌ No Claude processes found${NC}"
     fi
     
     echo ""  # Blank line between worktrees
