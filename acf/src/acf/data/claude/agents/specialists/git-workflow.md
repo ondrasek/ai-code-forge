@@ -33,7 +33,11 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS
 **Intelligent content analysis and mandatory issue integration:**
 
 1. **File Analysis**: Check file size, detect secrets/credentials, validate gitignore compliance
-2. **Issue Detection**: Extract issue numbers from branch names (claude/issue-XX-*)
+2. **Issue Detection**: Extract issue numbers from branch names (multiple patterns supported)
+   - claude/issue-XX-* (original)
+   - Plain numeric branches (e.g., "130", "42")
+   - Numeric prefix branches (e.g., "130-feature")
+   - Other numeric patterns with validation
 3. **Security Validation**: Flag high-entropy strings, environment-specific configs, debug code
 4. **Change Scope Assessment**: Analyze change magnitude and context
 5. **Safety Checks**: Respect gitignore rules, validate binary file locations
@@ -42,6 +46,13 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS
 **Use conventional commit format with these templates:**
 
 **MANDATORY ISSUE INTEGRATION**: All commit messages MUST include GitHub issue references
+
+**Fallback for Missing Issue References:**
+When no GitHub issue is detected from branch name:
+1. Search for related open issues based on commit content
+2. Prompt user to specify issue number manually  
+3. Create placeholder issue if appropriate
+4. Use generic reference format: `(refs #XXX)` where XXX is determined issue
 
 **Feature additions:**
 - `feat: add [component/functionality description] (closes #XX)`
@@ -65,83 +76,213 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS
 
 **GitHub Issue Auto-Detection Protocol:**
 ```bash
-# 1. Extract issue number from branch name (claude/issue-XX-*)
+# 1. Enhanced issue number extraction from branch name (multiple patterns supported)
 BRANCH=$(git branch --show-current)
-ISSUE_NUM=$(echo "$BRANCH" | grep -oE 'issue-[0-9]+' | grep -oE '[0-9]+' || echo "")
+ISSUE_NUM=""
+DETECTION_METHOD=""
 
-# 2. Intelligent Issue Validation with Diagnostics
-if [ -n "$ISSUE_NUM" ]; then
-  gh issue view "$ISSUE_NUM" --repo ondrasek/ai-code-forge >/dev/null 2>&1
-  if [ $? -eq 0 ]; then
-    ISSUE_REF="(closes #$ISSUE_NUM)"
+# Pattern 1: claude/issue-XX-* format (highest priority)
+if [[ "$BRANCH" =~ issue-([0-9]+) ]]; then
+  ISSUE_NUM="${BASH_REMATCH[1]}"
+  DETECTION_METHOD="claude-issue-format"
+# Pattern 2: Plain numeric branch name (e.g., "130", "42")
+elif [[ "$BRANCH" =~ ^([0-9]+)$ ]]; then
+  ISSUE_NUM="${BASH_REMATCH[1]}"
+  DETECTION_METHOD="plain-numeric"
+# Pattern 3: Numeric prefix (e.g., "130-feature", "42-bugfix")
+elif [[ "$BRANCH" =~ ^([0-9]+)- ]]; then
+  ISSUE_NUM="${BASH_REMATCH[1]}"
+  DETECTION_METHOD="numeric-prefix"
+# Pattern 4: Numeric suffix (e.g., "feature-130", "bugfix-42")
+elif [[ "$BRANCH" =~ -([0-9]+)$ ]]; then
+  ISSUE_NUM="${BASH_REMATCH[1]}"
+  DETECTION_METHOD="numeric-suffix"
+# Pattern 5: Other numeric patterns in branch names (lowest priority)
+elif [[ "$BRANCH" =~ ([0-9]+) ]]; then
+  # Extract first number found, verify it's a valid issue
+  POTENTIAL_NUM="${BASH_REMATCH[1]}"
+  DETECTION_METHOD="pattern-search"
+  echo "🔍 Pattern search detected potential issue #$POTENTIAL_NUM in branch '$BRANCH'"
+  if gh issue view "$POTENTIAL_NUM" --repo ondrasek/ai-code-forge >/dev/null 2>&1; then
+    ISSUE_NUM="$POTENTIAL_NUM"
   else
-    echo "🔍 DIAGNOSTIC: Issue #$ISSUE_NUM not accessible. Running diagnostics..."
-
-    # Smart diagnostics instead of generic error
-    echo "Checking authentication status..."
-    EXECUTE: gh auth status
-
-    echo "Testing repository access..."
-    EXECUTE: gh repo view ondrasek/ai-code-forge --json name,owner
-
-    echo "Searching for similar issues..."
-    EXECUTE: gh issue list --repo ondrasek/ai-code-forge --search "$ISSUE_NUM" --limit 5
-
-    echo "📋 RESOLUTION OPTIONS:"
-    echo "1. Create missing issue: gh issue create --repo ondrasek/ai-code-forge --title '[Title]'"
-    echo "2. Use different issue number in branch name"
-    echo "3. Proceed with manual commit format (no issue reference)"
-    echo "4. Fix authentication if needed: gh auth login"
-
-    echo "❓ Would you like me to:"
-    echo "  a) Create issue #$ISSUE_NUM with title from branch context?"
-    echo "  b) Search for related existing issues?"
-    echo "  c) Proceed without issue reference?"
-    echo ""
-    echo "⚠️  SAFETY: I will ask for confirmation before creating any GitHub issues."
+    echo "⚠️  Issue #$POTENTIAL_NUM not found - continuing without issue reference"
   fi
 fi
 
-# 3. Smart Issue Detection Recovery
-if [ -z "$ISSUE_REF" ]; then
-  echo "🔍 DIAGNOSTIC: No GitHub issue reference detected from branch '$BRANCH'"
+echo "📋 Issue detection: Method=$DETECTION_METHOD, Issue=#$ISSUE_NUM"
 
-  # Intelligent branch analysis
-  echo "Analyzing branch name pattern..."
-  EXECUTE: echo "$BRANCH" | grep -E "(issue|fix|feat|bug)" || echo "No standard keywords found"
-
-  echo "📋 RESOLUTION OPTIONS based on current context:"
-
-  # Extract potential issue patterns
-  POTENTIAL_NUMS=$(echo "$BRANCH" | grep -oE '[0-9]+' | head -3)
-  if [ -n "$POTENTIAL_NUMS" ]; then
-    echo "Found potential issue numbers in branch name: $POTENTIAL_NUMS"
-    echo "Checking if any match existing issues..."
-    for NUM in $POTENTIAL_NUMS; do
-      EXECUTE: gh issue view "$NUM" --repo ondrasek/ai-code-forge --json number,title 2>/dev/null || echo "Issue #$NUM: Not found"
-    done
+# 2. Intelligent Issue Validation with Enhanced Diagnostics
+if [ -n "$ISSUE_NUM" ]; then
+  echo "🔍 Validating issue #$ISSUE_NUM with GitHub API..."
+  
+  # Test GitHub connectivity first
+  if ! gh auth status >/dev/null 2>&1; then
+    echo "❌ GitHub authentication failed. Issue reference will use manual format."
+    echo "💡 Run 'gh auth login' to enable automatic issue validation."
+    ISSUE_REF="(refs #$ISSUE_NUM)"  # Default to refs when auth fails
+  else
+    # Validate issue exists and get metadata
+    ISSUE_DATA=$(gh issue view "$ISSUE_NUM" --repo ondrasek/ai-code-forge --json number,title,state,labels 2>/dev/null)
+    if [ $? -eq 0 ] && [ -n "$ISSUE_DATA" ]; then
+      ISSUE_TITLE=$(echo "$ISSUE_DATA" | jq -r '.title' 2>/dev/null || echo "Unknown")
+      ISSUE_STATE=$(echo "$ISSUE_DATA" | jq -r '.state' 2>/dev/null || echo "unknown")
+      ISSUE_LABELS=$(echo "$ISSUE_DATA" | jq -r '.labels[].name' 2>/dev/null | tr '\n' ',' | sed 's/,$//' || echo "none")
+      
+      echo "✅ Issue #$ISSUE_NUM found: $ISSUE_TITLE (state: $ISSUE_STATE)"
+      echo "📋 Labels: $ISSUE_LABELS"
+      
+      # Intelligent reference type determination
+      # Analyze commit type and issue labels for smart reference selection
+      if echo "$COMMIT_TYPE" | grep -E "^(feat|fix):" >/dev/null; then
+        # Features and fixes typically close issues
+        if [ "$ISSUE_STATE" = "OPEN" ]; then
+          ISSUE_REF="(closes #$ISSUE_NUM)"
+          echo "💡 Using 'closes' reference for $COMMIT_TYPE commit on open issue"
+        else
+          ISSUE_REF="(refs #$ISSUE_NUM)"
+          echo "💡 Using 'refs' reference - issue already closed"
+        fi
+      else
+        # Docs, refactor, test, chore typically reference issues
+        ISSUE_REF="(refs #$ISSUE_NUM)"
+        echo "💡 Using 'refs' reference for $COMMIT_TYPE commit"
+      fi
+    else
+      echo "❌ Issue #$ISSUE_NUM not found or inaccessible. Running enhanced diagnostics..."
+      
+      # Enhanced diagnostic sequence
+      echo "🔍 DIAGNOSTIC SEQUENCE:"
+      echo "1. Authentication status check..."
+      EXECUTE: gh auth status
+      
+      echo "2. Repository access verification..."
+      EXECUTE: gh repo view ondrasek/ai-code-forge --json name,owner
+      
+      echo "3. Similar issue search..."
+      EXECUTE: gh issue list --repo ondrasek/ai-code-forge --search "$ISSUE_NUM" --limit 5
+      
+      echo "4. Recent issues analysis..."
+      EXECUTE: gh issue list --repo ondrasek/ai-code-forge --state all --limit 10 --json number,title
+      
+      echo ""
+      echo "📋 RESOLUTION OPTIONS (based on detection method: $DETECTION_METHOD):"
+      if [ "$DETECTION_METHOD" = "plain-numeric" ] || [ "$DETECTION_METHOD" = "numeric-prefix" ]; then
+        echo "🎯 High-confidence numeric match detected from branch pattern"
+        echo "1. RECOMMENDED: Create missing issue #$ISSUE_NUM with contextual title"
+        echo "2. Verify issue number: Check if $ISSUE_NUM should reference different issue"
+        echo "3. Branch rename: Update branch name to reference correct issue"
+      else
+        echo "⚠️  Pattern-based detection - lower confidence match"
+        echo "1. Manual verification: Confirm $ISSUE_NUM is correct issue number"
+        echo "2. Search alternatives: Look for related issues with different numbers"
+      fi
+      echo ""
+      echo "STANDARD OPTIONS:"
+      echo "4. Fix authentication: gh auth login (if auth failed)"
+      echo "5. MANDATORY fallback: Specify correct issue number for commit"
+      
+      echo ""
+      echo "❓ RECOMMENDED ACTIONS:"
+      echo "  a) Auto-create issue #$ISSUE_NUM with title derived from branch/changes?"
+      echo "  b) Search for related existing issues by keyword?"
+      echo "  c) Manual issue number specification (user input required)?"
+      echo "  d) Fix GitHub authentication if needed?"
+      echo ""
+      echo "⚠️  SAFETY: Confirmation required before creating GitHub issues."
+      
+      # Set fallback reference for commit message
+      ISSUE_REF="(refs #$ISSUE_NUM)"
+      echo "🔧 Using fallback reference format: $ISSUE_REF"
+    fi
   fi
+fi
 
-  echo "🛠️  AVAILABLE ACTIONS:"
-  echo "1. Rename branch to proper format: git branch -m claude/issue-XX-$(date +%Y%m%d-%H%M)"
-  echo "2. Create new issue for this work: gh issue create --repo ondrasek/ai-code-forge"
-  echo "3. Use manual commit format: 'type(scope): description (closes #XX)'"
-  echo "4. Proceed without issue reference (not recommended)"
+# 3. Enhanced Issue Detection Recovery for No References Found
+if [ -z "$ISSUE_REF" ]; then
+  echo ""
+  echo "🚨 CRITICAL: No GitHub issue reference could be established"
+  echo "🔍 COMPREHENSIVE DIAGNOSTIC for branch '$BRANCH':"
 
-  echo "💡 SMART SUGGESTIONS:"
-  echo "Based on recent changes, this might relate to existing issues:"
-  EXECUTE: gh issue list --repo ondrasek/ai-code-forge --state open --limit 5 --json number,title
-
-  echo "❓ Would you like me to help with any of these actions?"
-  echo "⚠️  SAFETY: I will ask for confirmation before any destructive git operations."
+  # Enhanced branch analysis with multiple detection attempts
+  echo ""
+  echo "1. Branch Pattern Analysis:"
+  BRANCH_KEYWORDS=$(echo "$BRANCH" | grep -E "(issue|fix|feat|bug|feature|hotfix|release)" || echo "❌ No standard keywords found")
+  echo "   Keywords detected: $BRANCH_KEYWORDS"
+  
+  echo ""
+  echo "2. Numeric Pattern Extraction:"
+  POTENTIAL_NUMS=$(echo "$BRANCH" | grep -oE '[0-9]+' | head -5)
+  if [ -n "$POTENTIAL_NUMS" ]; then
+    echo "   Numbers found in branch: $POTENTIAL_NUMS"
+    echo "   Testing each number against GitHub issues:"
+    CANDIDATE_ISSUES=""
+    for NUM in $POTENTIAL_NUMS; do
+      if gh issue view "$NUM" --repo ondrasek/ai-code-forge --json number,title >/dev/null 2>&1; then
+        ISSUE_TITLE=$(gh issue view "$NUM" --repo ondrasek/ai-code-forge --json title --jq '.title')
+        echo "   ✅ Issue #$NUM exists: $ISSUE_TITLE"
+        CANDIDATE_ISSUES="$CANDIDATE_ISSUES #$NUM"
+      else
+        echo "   ❌ Issue #$NUM: Not found"
+      fi
+    done
+  else
+    echo "   ❌ No numeric patterns found in branch name"
+  fi
+  
+  echo ""
+  echo "3. Current Repository Context:"
+  echo "   Recent commits analysis..."
+  RECENT_ISSUES=$(git log --oneline --grep="closes #" --grep="fixes #" --grep="refs #" -10 | grep -oE '#[0-9]+' | sort -u | tr '\n' ' ' || echo "None")
+  echo "   Recently referenced issues: $RECENT_ISSUES"
+  
+  echo ""
+  echo "📋 RESOLUTION STRATEGY (MANDATORY - one must be selected):"
+  echo ""
+  if [ -n "$CANDIDATE_ISSUES" ]; then
+    echo "🎯 RECOMMENDED: Use detected candidate issues:"
+    for CANDIDATE in $CANDIDATE_ISSUES; do
+      CAND_NUM=$(echo "$CANDIDATE" | tr -d '#')
+      CAND_TITLE=$(gh issue view "$CAND_NUM" --repo ondrasek/ai-code-forge --json title --jq '.title' 2>/dev/null || echo "Unknown")
+      echo "   Option A: Use $CANDIDATE - $CAND_TITLE"
+    done
+    echo ""
+  fi
+  
+  echo "🛠️  ALTERNATIVE APPROACHES:"
+  echo "   Option B: Create new issue for this work scope"
+  echo "   Option C: Rename branch to reference existing issue (git branch -m)"
+  echo "   Option D: MANDATORY fallback - User specifies issue number manually"
+  echo ""
+  echo "💡 INTELLIGENT SUGGESTIONS based on branch name '$BRANCH':"
+  if [[ "$BRANCH" =~ ^[0-9]+$ ]]; then
+    echo "   🔢 Pure numeric branch detected - likely corresponds to issue #$BRANCH"
+    if [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
+      echo "   💡 STRONG RECOMMENDATION: Use issue #$BRANCH (create if needed)"
+    fi
+  fi
+  echo "   📝 Consider using conventional branch naming: claude/issue-XXX-brief-description"
+  echo "   🔗 All commits MUST reference a GitHub issue for traceability"
+  
+  echo ""
+  echo "⚠️  COMMIT CANNOT PROCEED without issue reference - this is MANDATORY per repository policy"
+  echo "🎯 NEXT ACTION REQUIRED: Select resolution approach above"
 fi
 ```
 
-**Examples:**
-- `feat: add performance monitoring infrastructure for agent optimization (closes #47)`
-- `fix: resolve agent selection timeout in parallel execution (fixes #23)`
-- `docs: update README with new agent coordination protocol (refs #45)`
-- `refactor: simplify git workflow automation logic (refs #47)`
+**Enhanced Detection Examples:**
+- `feat: enhance git-workflow agent with advanced issue detection (closes #130)` ← Pure numeric branch "130"
+- `fix: resolve agent selection timeout in parallel execution (fixes #23)` ← claude/issue-23-timeout-fix
+- `docs: update README with new agent coordination protocol (refs #45)` ← 45-documentation-update
+- `refactor: simplify git workflow automation logic (refs #47)` ← feature-47-simplification
+
+**Critical Test Case:**
+Current branch "130" should auto-detect issue #130 using Pattern 2 (plain-numeric) and demonstrate:
+1. High-confidence numeric match detection
+2. Automatic GitHub API validation of issue #130
+3. Intelligent reference type selection based on commit type
+4. Enhanced diagnostics if issue #130 doesn't exist
+5. Strong recommendation to use/create issue #130 due to pure numeric branch pattern
 
 #### Documentation Update Validation with GitHub Issue Integration
 **CHANGELOG.md Updates - Only update when:**
