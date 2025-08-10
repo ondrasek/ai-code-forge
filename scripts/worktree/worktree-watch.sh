@@ -4,154 +4,155 @@
 # Part of the worktree management suite
 # Usage: ./worktree.sh watch [--test]
 
-# Basic output colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
-
-# Print section header
-print_header() {
-    echo -e "\n${CYAN}=== $1 ===${NC}"
-}
-
-# Print colored status
-print_status() {
-    local status="$1"
-    local message="$2"
-    case "$status" in
-        "OK") echo -e "${GREEN}✓${NC} $message" ;;
-        "ERROR") echo -e "${RED}✗${NC} $message" ;;
-        "INFO") echo -e "${BLUE}→${NC} $message" ;;
-        "WARN") echo -e "${YELLOW}⚠${NC} $message" ;;
-    esac
-}
-
-# Show worktrees and their branches
-show_worktrees() {
-    print_header "Worktrees & Branches"
+# Get process working directory
+get_process_cwd() {
+    local pid="$1"
+    local cwd=""
     
-    if ! command -v git &>/dev/null; then
-        print_status "ERROR" "Git not available"
-        return 1
+    # Try multiple methods to get working directory
+    if [[ -r "/proc/$pid/cwd" ]]; then
+        cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
+    elif command -v pwdx &>/dev/null; then
+        cwd=$(pwdx "$pid" 2>/dev/null | cut -d' ' -f2-)
+    elif command -v lsof &>/dev/null; then
+        cwd=$(lsof -p "$pid" -d cwd -Fn 2>/dev/null | grep '^n' | cut -c2-)
     fi
     
-    local worktrees
-    if worktrees=$(git worktree list --porcelain 2>/dev/null); then
-        local current_path=""
-        local current_branch=""
-        
-        while IFS= read -r line; do
-            if [[ $line =~ ^worktree\ (.+) ]]; then
-                current_path="${BASH_REMATCH[1]}"
-            elif [[ $line =~ ^branch\ (.+) ]]; then
-                current_branch="${BASH_REMATCH[1]}"
-            elif [[ $line =~ ^detached$ ]]; then
-                current_branch="(detached HEAD)"
-            elif [[ -z "$line" && -n "$current_path" ]]; then
-                # End of worktree entry
-                local basename=$(basename "$current_path")
-                local issue_hint=""
-                
-                # Simple issue number detection
-                if [[ $current_branch =~ ([0-9]+) ]]; then
-                    issue_hint=" [Issue #${BASH_REMATCH[1]}]"
-                fi
-                
-                print_status "INFO" "$basename → $current_branch$issue_hint"
-                current_path=""
-                current_branch=""
-            fi
-        done <<< "$worktrees"
-        
-        # Handle last entry if no trailing newline
-        if [[ -n "$current_path" ]]; then
-            local basename=$(basename "$current_path")
-            local issue_hint=""
-            if [[ $current_branch =~ ([0-9]+) ]]; then
-                issue_hint=" [Issue #${BASH_REMATCH[1]}]"
-            fi
-            print_status "INFO" "$basename → $current_branch$issue_hint"
-        fi
-    else
-        print_status "ERROR" "Failed to list worktrees"
-        return 1
-    fi
-    
-    return 0
+    echo "${cwd:-unknown}"
 }
 
-# Show Claude Code processes
-show_claude_processes() {
-    print_header "Claude Code Processes"
+# Get detailed process metrics
+get_process_metrics() {
+    local pid="$1"
+    local ps_output
+    ps_output=$(ps -p "$pid" -o pcpu,pmem,rss,vsz,comm --no-headers 2>/dev/null || echo "0.0 0.0 0 0 unknown")
     
-    if ! command -v pgrep &>/dev/null; then
-        print_status "WARN" "pgrep not available - cannot detect Claude processes"
-        return 1
+    read -r pcpu pmem rss vsz comm <<< "$ps_output"
+    
+    # Convert RSS from KB to MB for readability
+    local rss_mb=$((rss / 1024))
+    
+    echo "$pcpu $pmem $rss_mb $vsz $comm"
+}
+
+# Extract issue number from branch name
+extract_issue_number() {
+    local branch="$1"
+    local issue_num=""
+    
+    # Multiple patterns for issue number detection
+    if [[ $branch =~ ^refs/heads/([0-9]+)$ ]]; then
+        issue_num="${BASH_REMATCH[1]}"
+    elif [[ $branch =~ refs/heads/.*[_/-]([0-9]+)$ ]]; then
+        issue_num="${BASH_REMATCH[1]}"
+    elif [[ $branch =~ ([0-9]+) ]]; then
+        issue_num="${BASH_REMATCH[1]}"
     fi
     
-    local pids
-    if pids=$(pgrep -f "claude" 2>/dev/null); then
-        local count=0
+    echo "$issue_num"
+}
+
+# Find Claude processes associated with a worktree
+find_worktree_processes() {
+    local worktree_path="$1"
+    local associated_pids=""
+    
+    # Get all Claude processes
+    local claude_pids
+    if claude_pids=$(pgrep -f "claude" 2>/dev/null); then
         while IFS= read -r pid; do
-            if [[ -n "$pid" ]]; then
-                local cmd=""
-                local metrics=""
-                
-                # Get detailed process info
-                if command -v ps &>/dev/null; then
-                    cmd=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
-                    local ps_output
-                    ps_output=$(ps -p "$pid" -o pcpu,pmem,rss,vsz --no-headers 2>/dev/null || echo "0.0 0.0 0 0")
-                    
-                    # Parse the output
-                    read -r pcpu pmem rss vsz <<< "$ps_output"
-                    
-                    # Convert RSS from KB to MB for readability
-                    local rss_mb=$((rss / 1024))
-                    local vsz_gb=$((vsz / 1024 / 1024))
-                    
-                    # Format metrics with proper labels
-                    metrics="CPU: ${pcpu}%, Mem: ${pmem}%, RSS: ${rss_mb}MB, VSZ: ${vsz_gb}GB"
-                fi
-                
-                print_status "OK" "PID $pid: $cmd ($metrics)"
-                ((count++))
+            [[ -z "$pid" ]] && continue
+            
+            local cwd=$(get_process_cwd "$pid")
+            
+            # Check if process working directory is within this worktree
+            if [[ "$cwd" == "$worktree_path"* ]]; then
+                associated_pids="$associated_pids $pid"
             fi
-        done <<< "$pids"
-        
-        if [[ $count -eq 0 ]]; then
-            print_status "INFO" "No Claude processes detected"
-        else
-            print_status "OK" "Found $count Claude process(es)"
-        fi
-    else
-        print_status "INFO" "No Claude processes detected"
+        done <<< "$claude_pids"
     fi
     
-    return 0
+    echo "$associated_pids"
 }
 
-# Show GitHub status (simple)
-show_github_status() {
-    print_header "GitHub Integration"
-    
-    if command -v gh &>/dev/null; then
-        print_status "OK" "GitHub CLI available"
-        
-        # Try to get current repo status
-        if gh repo view --json name,owner 2>/dev/null >/dev/null; then
-            local repo_info
-            repo_info=$(gh repo view --json name,owner 2>/dev/null | jq -r '"\(.owner.login)/\(.name)"' 2>/dev/null || echo "unknown")
-            print_status "OK" "Connected to: $repo_info"
-        else
-            print_status "WARN" "Not in a GitHub repository or not authenticated"
-        fi
-    else
-        print_status "WARN" "GitHub CLI not available"
+# Main display function
+show_worktree_status() {
+    if ! command -v git &>/dev/null; then
+        echo "Error: Git not available"
+        return 1
     fi
+    
+    # Get worktrees
+    local worktrees
+    if ! worktrees=$(git worktree list --porcelain 2>/dev/null); then
+        echo "Error: Failed to list worktrees"
+        return 1
+    fi
+    
+    # Parse worktrees and display grouped information
+    local current_path=""
+    local current_branch=""
+    
+    while IFS= read -r line; do
+        if [[ $line =~ ^worktree\ (.+) ]]; then
+            current_path="${BASH_REMATCH[1]}"
+        elif [[ $line =~ ^branch\ (.+) ]]; then
+            current_branch="${BASH_REMATCH[1]}"
+        elif [[ $line =~ ^detached$ ]]; then
+            current_branch="(detached HEAD)"
+        elif [[ -z "$line" && -n "$current_path" ]]; then
+            # Process complete worktree entry
+            display_worktree_info "$current_path" "$current_branch"
+            current_path=""
+            current_branch=""
+        fi
+    done <<< "$worktrees"
+    
+    # Handle last entry if no trailing newline
+    if [[ -n "$current_path" ]]; then
+        display_worktree_info "$current_path" "$current_branch"
+    fi
+}
+
+# Display information for a single worktree
+display_worktree_info() {
+    local worktree_path="$1"
+    local branch="$2"
+    local basename=$(basename "$worktree_path")
+    
+    # Extract issue number
+    local issue_num=$(extract_issue_number "$branch")
+    local issue_display=""
+    if [[ -n "$issue_num" ]]; then
+        issue_display="#$issue_num"
+    else
+        issue_display="n/a"
+    fi
+    
+    # Clean branch name (remove refs/heads/)
+    local clean_branch=${branch#refs/heads/}
+    
+    # Display worktree header
+    echo "$basename | $issue_display | $clean_branch | $worktree_path"
+    
+    # Find and display associated processes
+    local pids=$(find_worktree_processes "$worktree_path")
+    
+    if [[ -n "$pids" ]]; then
+        for pid in $pids; do
+            [[ -z "$pid" ]] && continue
+            
+            local metrics=$(get_process_metrics "$pid")
+            read -r pcpu pmem rss_mb vsz comm <<< "$metrics"
+            local cwd=$(get_process_cwd "$pid")
+            
+            echo "  └─ PID $pid | $comm | CPU: ${pcpu}% | Mem: ${pmem}% | RSS: ${rss_mb}MB | CWD: $cwd"
+        done
+    else
+        echo "  └─ No Claude processes found"
+    fi
+    
+    echo ""  # Blank line between worktrees
 }
 
 # Main function
@@ -173,37 +174,24 @@ main() {
     
     if [[ "$test_mode" == true ]]; then
         # Test mode - run once
-        print_header "Worktree Watch - Test Mode"
-        echo "Monitoring Claude Code processes and worktrees..."
-        echo
-        
-        show_worktrees
-        show_claude_processes  
-        show_github_status
-        
-        echo
-        print_status "OK" "Test mode completed"
+        show_worktree_status
         exit 0
     else
         # Interactive mode
-        print_header "Worktree Watch - Interactive Mode"
-        echo "Press Ctrl+C to exit"
-        echo
+        echo "Worktree Watch - Press Ctrl+C to exit"
+        echo ""
         
         # Trap for cleanup
-        trap 'echo; print_status "INFO" "Exiting..."; exit 0' SIGINT SIGTERM
+        trap 'echo; echo "Exiting..."; exit 0' SIGINT SIGTERM
         
         while true; do
             clear
-            print_header "Worktree Watch - $(date '+%H:%M:%S')"
-            echo
+            echo "Worktree Watch - $(date '+%Y-%m-%d %H:%M:%S')"
+            echo ""
             
-            show_worktrees
-            show_claude_processes
-            show_github_status
+            show_worktree_status
             
-            echo
-            print_status "INFO" "Refreshing in 10 seconds... (Ctrl+C to exit)"
+            echo "Refreshing in 10 seconds..."
             sleep 10
         done
     fi
