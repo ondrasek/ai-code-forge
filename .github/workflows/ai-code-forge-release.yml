@@ -350,12 +350,29 @@ jobs:
           
           ## Release Assets
           
-          This release includes the following verified artifacts:
+          This release includes the following artifacts:
           - **Python Wheel**: \`ai_code_forge-$RELEASE_VERSION-py3-none-any.whl\`
           - **Source Distribution**: \`ai_code_forge-$RELEASE_VERSION.tar.gz\`
           - **Checksums**: \`checksums.txt\` (SHA256 verification)
           
-          All artifacts are cryptographically signed via Sigstore for supply chain security.
+          > ⚠️ **SECURITY NOTICE**: Files attached to this GitHub release are **UNSIGNED** and provided for convenience only.
+          > 
+          > **For cryptographically signed packages with Sigstore attestations, install from PyPI:**
+          > - \`pip install ai-code-forge==$RELEASE_VERSION\`
+          > - \`uv add ai-code-forge==$RELEASE_VERSION\`  
+          > - \`uvx ai-code-forge@$RELEASE_VERSION install\`
+          >
+          > PyPI packages include:
+          > - 🔐 Sigstore keyless signatures
+          > - 📋 SLSA build provenance  
+          > - 🆔 Repository identity verification
+          > - 📝 Transparency log entries
+          >
+          > **Verify PyPI package authenticity:**
+          > \`\`\`bash
+          > pip install sigstore
+          > sigstore verify ai_code_forge-$RELEASE_VERSION.tar.gz
+          > \`\`\`
           EOF
           
           echo "🎨 Final release notes:"
