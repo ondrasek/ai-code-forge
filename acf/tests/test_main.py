@@ -1,4 +1,7 @@
-"""Tests for ACF CLI main module."""
+"""Tests for ACF CLI main module.
+
+Test change to verify git-workflow manual tagging behavior.
+"""
 
 import pytest
 import tempfile
