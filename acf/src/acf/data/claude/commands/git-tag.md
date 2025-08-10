@@ -117,7 +117,7 @@ PATCH (0.0.x): Only commits with:
 This command triggers the complete release automation:
 
 1. **Tag Creation**: `/git-tag` creates and pushes version tag
-2. **GitHub Actions**: Tag push triggers `ai-code-forge-build.yml` workflow
+2. **GitHub Actions**: Tag push triggers `ai-code-forge-release.yml` workflow
 3. **Automated Pipeline**: 
    - Build and test packages
    - Create GitHub release with assets

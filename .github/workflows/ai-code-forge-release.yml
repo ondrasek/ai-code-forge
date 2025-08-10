@@ -1,4 +1,4 @@
-name: ai-code-forge cli build
+name: ai-code-forge release
 
 on:
   push:
