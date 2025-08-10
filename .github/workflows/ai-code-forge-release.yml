@@ -460,15 +460,23 @@ jobs:
           
           echo "✅ All artifact verification passed"
       
+      - name: Prepare artifacts for upload (exclude checksums.txt)
+        run: |
+          echo "📦 Preparing artifacts for PyPI upload..."
+          # Move checksums.txt temporarily to avoid uploading it
+          mv dist/checksums.txt ./checksums.txt.backup
+          ls -la dist/
+      
       - name: Publish to PyPI via OIDC with Sigstore attestations
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: ${{ github.event_name == 'workflow_dispatch' && 'https://test.pypi.org/legacy/' || '' }}
-          attestations: true           # Enable Sigstore attestations (automatic signing)
-          verify-metadata: true        # Verify package metadata
-          verbose: true               # Debug output for troubleshooting
+          packages-dir: dist/
           skip-existing: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}  # Allow re-uploads to TestPyPI
+          verbose: true               # Debug output for troubleshooting
+          verify-metadata: true        # Verify package metadata
           print-hash: true           # Log file hashes for audit trail
+          attestations: true           # Enable Sigstore attestations (automatic signing)
       
       - name: Verify attestations were created
         run: |
