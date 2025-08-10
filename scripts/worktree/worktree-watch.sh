@@ -58,6 +58,76 @@ color_mem() {
     fi
 }
 
+# GitHub issue cache directory
+CACHE_DIR="${HOME}/.cache/worktree-watch"
+ISSUE_CACHE_FILE="${CACHE_DIR}/issue_cache.json"
+ISSUE_CACHE_DURATION=1800  # 30 minutes in seconds
+
+# Initialize cache directory
+init_cache() {
+    mkdir -p "$CACHE_DIR"
+}
+
+# Get GitHub issue information with caching
+get_issue_info() {
+    local issue_num="$1"
+    local cache_key="issue_${issue_num}"
+    
+    # Check if we have cached data that's still valid
+    if [[ -f "$ISSUE_CACHE_FILE" ]]; then
+        local cache_time=$(stat -c %Y "$ISSUE_CACHE_FILE" 2>/dev/null || echo 0)
+        local current_time=$(date +%s)
+        local age=$((current_time - cache_time))
+        
+        if (( age < ISSUE_CACHE_DURATION )); then
+            # Use cached data
+            local cached_info
+            if command -v jq &>/dev/null && cached_info=$(jq -r ".\"$cache_key\" // empty" "$ISSUE_CACHE_FILE" 2>/dev/null); then
+                if [[ -n "$cached_info" && "$cached_info" != "null" ]]; then
+                    echo "$cached_info"
+                    return 0
+                fi
+            fi
+        fi
+    fi
+    
+    # Fetch fresh data from GitHub API
+    if command -v gh &>/dev/null; then
+        local repo_info
+        if repo_info=$(gh repo view --json owner,name 2>/dev/null); then
+            local owner=$(echo "$repo_info" | jq -r '.owner.login' 2>/dev/null)
+            local repo=$(echo "$repo_info" | jq -r '.name' 2>/dev/null)
+            
+            if [[ -n "$owner" && -n "$repo" && "$owner" != "null" && "$repo" != "null" ]]; then
+                local issue_data
+                if issue_data=$(gh api "repos/$owner/$repo/issues/$issue_num" 2>/dev/null); then
+                    local title=$(echo "$issue_data" | jq -r '.title // "Unknown"' 2>/dev/null)
+                    local url=$(echo "$issue_data" | jq -r '.html_url // ""' 2>/dev/null)
+                    
+                    # Cache the result
+                    local result="${title}|${url}"
+                    
+                    # Create or update cache file
+                    if command -v jq &>/dev/null; then
+                        local cache_content="{}"
+                        if [[ -f "$ISSUE_CACHE_FILE" ]]; then
+                            cache_content=$(cat "$ISSUE_CACHE_FILE" 2>/dev/null || echo "{}")
+                        fi
+                        echo "$cache_content" | jq ".\"$cache_key\" = \"$result\"" > "$ISSUE_CACHE_FILE" 2>/dev/null
+                    fi
+                    
+                    echo "$result"
+                    return 0
+                fi
+            fi
+        fi
+    fi
+    
+    # Return empty if we can't fetch
+    echo "|"
+    return 1
+}
+
 # Get process working directory
 get_process_cwd() {
     local pid="$1"
@@ -174,13 +244,21 @@ display_worktree_info() {
     local branch="$2"
     local basename=$(basename "$worktree_path")
     
-    # Extract issue number
+    # Extract issue number and get GitHub info
     local issue_num=$(extract_issue_number "$branch")
-    local issue_display=""
+    local issue_display="n/a"
+    local issue_title=""
+    local issue_url=""
+    
     if [[ -n "$issue_num" ]]; then
         issue_display="#$issue_num"
-    else
-        issue_display="n/a"
+        
+        # Get issue info from GitHub with caching
+        local issue_info=$(get_issue_info "$issue_num")
+        if [[ "$issue_info" != "|" ]]; then
+            issue_title=$(echo "$issue_info" | cut -d'|' -f1)
+            issue_url=$(echo "$issue_info" | cut -d'|' -f2)
+        fi
     fi
     
     # Clean branch name (remove refs/heads/)
@@ -189,6 +267,17 @@ display_worktree_info() {
     # Display worktree header with emoji (portrait layout)
     echo -e "📁 ${CYAN}$basename${NC}"
     echo -e "   Issue: ${BLUE}$issue_display${NC}"
+    
+    # Show issue title if available
+    if [[ -n "$issue_title" && "$issue_title" != "Unknown" ]]; then
+        echo -e "   Title: ${GRAY}$issue_title${NC}"
+    fi
+    
+    # Show issue URL if available
+    if [[ -n "$issue_url" ]]; then
+        echo -e "   URL: ${GRAY}$issue_url${NC}"
+    fi
+    
     echo -e "   Branch: ${GREEN}$clean_branch${NC}"
     echo -e "   Path: ${GRAY}$worktree_path${NC}"
     
@@ -243,6 +332,9 @@ main() {
             exit 0
             ;;
     esac
+    
+    # Initialize cache directory
+    init_cache
     
     if [[ "$test_mode" == true ]]; then
         # Test mode - run once
