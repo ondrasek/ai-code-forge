@@ -4,6 +4,60 @@
 # Part of the worktree management suite
 # Usage: ./worktree.sh watch [--test]
 
+# Color definitions
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+GRAY='\033[0;37m'
+NC='\033[0m' # No Color
+
+# Color CPU utilization based on thresholds
+color_cpu() {
+    local cpu="$1"
+    local cpu_int=${cpu%.*}  # Remove decimal part
+    
+    if (( cpu_int >= 50 )); then
+        echo -e "${RED}${cpu}%${NC} 🔥"
+    elif (( cpu_int >= 20 )); then
+        echo -e "${YELLOW}${cpu}%${NC} ⚡"
+    elif (( cpu_int >= 5 )); then
+        echo -e "${GREEN}${cpu}%${NC} ✅"
+    else
+        echo -e "${GRAY}${cpu}%${NC} 💤"
+    fi
+}
+
+# Color RSS memory based on thresholds (MB)
+color_rss() {
+    local rss_mb="$1"
+    
+    if (( rss_mb >= 1024 )); then  # >= 1GB
+        echo -e "${RED}${rss_mb}MB${NC} 🚨"
+    elif (( rss_mb >= 512 )); then  # >= 512MB
+        echo -e "${YELLOW}${rss_mb}MB${NC} ⚠️"
+    elif (( rss_mb >= 100 )); then  # >= 100MB
+        echo -e "${GREEN}${rss_mb}MB${NC} 📊"
+    else
+        echo -e "${GRAY}${rss_mb}MB${NC} 💾"
+    fi
+}
+
+# Color memory percentage based on thresholds
+color_mem() {
+    local mem="$1"
+    local mem_int=${mem%.*}  # Remove decimal part
+    
+    if (( mem_int >= 10 )); then
+        echo -e "${RED}${mem}%${NC}"
+    elif (( mem_int >= 5 )); then
+        echo -e "${YELLOW}${mem}%${NC}"
+    else
+        echo -e "${GREEN}${mem}%${NC}"
+    fi
+}
+
 # Get process working directory
 get_process_cwd() {
     local pid="$1"
@@ -132,8 +186,8 @@ display_worktree_info() {
     # Clean branch name (remove refs/heads/)
     local clean_branch=${branch#refs/heads/}
     
-    # Display worktree header
-    echo "$basename | $issue_display | $clean_branch | $worktree_path"
+    # Display worktree header with emoji
+    echo -e "📁 ${CYAN}$basename${NC} | ${BLUE}$issue_display${NC} | ${GREEN}$clean_branch${NC} | ${GRAY}$worktree_path${NC}"
     
     # Find and display associated processes
     local pids=$(find_worktree_processes "$worktree_path")
@@ -146,10 +200,23 @@ display_worktree_info() {
             read -r pcpu pmem rss_mb vsz comm <<< "$metrics"
             local cwd=$(get_process_cwd "$pid")
             
-            echo "  └─ PID $pid | $comm | CPU: ${pcpu}% | Mem: ${pmem}% | RSS: ${rss_mb}MB | CWD: $cwd"
+            # Get colored metrics
+            local colored_cpu=$(color_cpu "$pcpu")
+            local colored_mem=$(color_mem "$pmem")
+            local colored_rss=$(color_rss "$rss_mb")
+            
+            # Choose process emoji based on command
+            local process_emoji="🔧"
+            case "$comm" in
+                claude) process_emoji="🤖" ;;
+                zsh|bash) process_emoji="🐚" ;;
+                node) process_emoji="🟢" ;;
+            esac
+            
+            echo -e "  └─ $process_emoji PID ${YELLOW}$pid${NC} | $comm | CPU: $colored_cpu | Mem: $colored_mem | RSS: $colored_rss | CWD: ${GRAY}$cwd${NC}"
         done
     else
-        echo "  └─ No Claude processes found"
+        echo -e "  └─ ${GRAY}❌ No Claude processes found${NC}"
     fi
     
     echo ""  # Blank line between worktrees
@@ -178,20 +245,20 @@ main() {
         exit 0
     else
         # Interactive mode
-        echo "Worktree Watch - Press Ctrl+C to exit"
+        echo -e "🔍 ${CYAN}Worktree Watch${NC} - Press ${YELLOW}Ctrl+C${NC} to exit 👋"
         echo ""
         
         # Trap for cleanup
-        trap 'echo; echo "Exiting..."; exit 0' SIGINT SIGTERM
+        trap 'echo; echo -e "👋 ${CYAN}Exiting...${NC}"; exit 0' SIGINT SIGTERM
         
         while true; do
             clear
-            echo "Worktree Watch - $(date '+%Y-%m-%d %H:%M:%S')"
+            echo -e "🔍 ${CYAN}Worktree Watch${NC} - $(date '+%Y-%m-%d %H:%M:%S') ⏰"
             echo ""
             
             show_worktree_status
             
-            echo "Refreshing in 10 seconds..."
+            echo -e "🔄 ${GRAY}Refreshing in 10 seconds...${NC}"
             sleep 10
         done
     fi
