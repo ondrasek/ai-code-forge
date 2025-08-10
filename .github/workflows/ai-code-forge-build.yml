@@ -60,7 +60,6 @@ jobs:
     permissions:
       contents: write  # Required for creating releases and uploading assets
       actions: read    # Required for workflow execution
-      id-token: write  # Required for PyPI trusted publishing (OIDC)
     env:
       SHOULD_RELEASE: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
     
@@ -413,11 +412,6 @@ jobs:
           # Use PyPI API key for publishing
           cd ..  # Back to acf directory
           echo "🚀 Publishing to PyPI with API key authentication..."
-          
-          # Set PyPI credentials
-          export TWINE_USERNAME="__token__"
-          export TWINE_PASSWORD="${{ secrets.PYPI_API_TOKEN }}"
-          export TWINE_REPOSITORY_URL="https://upload.pypi.org/legacy/"
           
           # Install twine if not available
           if ! command -v twine &> /dev/null; then
