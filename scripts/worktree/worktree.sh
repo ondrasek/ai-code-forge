@@ -31,7 +31,7 @@ USAGE:
 COMMANDS:
     create <branch-name> [issue-number]  Create a new worktree
     create --from-issue <issue-number>   Create worktree from GitHub issue
-    path <issue-number|branch-name|main> Output worktree directory path
+    path <issue-number|main>             Output worktree directory path
     launch <issue-number|branch-name>    Launch Claude Code in specified worktree
     list [issue-number]                  List all worktrees or specific issue worktree
     list --verbose [issue-number]        List with detailed information

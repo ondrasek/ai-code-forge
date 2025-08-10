@@ -19,25 +19,28 @@ DESCRIPTION:
     Designed for use with cd command substitution.
 
 USAGE:
-    $0 <issue-number|branch-name|main>
+    $0 <issue-number|main>
 
 ARGUMENTS:
-    issue-number    Issue number (e.g., 123, #123)
-    branch-name     Full branch name (e.g., feature/add-cwd, 129)
+    issue-number    Issue number (e.g., 123, #123) - numbers only
     main           Main branch worktree (configurable per repository)
+
+SECURITY:
+    Only issue numbers and 'main' are accepted for security reasons.
+    Branch names and arbitrary paths are not allowed.
 
 EXAMPLES:
     $0 123                      # Output path for issue #123 worktree
-    $0 feature/add-cwd         # Output path for specific branch worktree  
-    $0 main                    # Output path for main branch worktree
+    $0 \#123                     # Output path for issue #123 worktree (with # prefix)
+    $0 main                     # Output path for main branch worktree
     
     # Usage with cd command:
     cd \$($0 123)              # Change to worktree for issue #123
     cd \$($0 main)             # Change to main branch worktree
 
 SHELL INTEGRATION:
-    # Recommended alias (note: use function instead of alias for parameters):
-    wtd() { cd "\$(worktree.sh path "\$1")"; }
+    # Recommended shell function:
+    wtd() { cd "\$(worktree.sh path "\$1")"; }  # Only works with issue numbers and 'main'
     
     # Usage:
     wtd 123                    # Change to issue #123 worktree
@@ -104,9 +107,38 @@ get_main_branch() {
     echo "$main_branch"
 }
 
-# Find worktree directory for issue number, branch name, or main
+# Validate input - only issue numbers and "main" allowed
+validate_identifier() {
+    local identifier="$1"
+    
+    # Allow "main"
+    if [[ "$identifier" == "main" ]]; then
+        return 0
+    fi
+    
+    # Remove # prefix if present for validation
+    local clean_id="${identifier#\#}"
+    
+    # Allow only pure numbers (issue numbers)
+    if [[ "$clean_id" =~ ^[0-9]+$ ]]; then
+        return 0
+    fi
+    
+    # Reject everything else
+    echo "ERROR: Only issue numbers (e.g., 123, #123) and 'main' are allowed" >&2
+    return 1
+}
+
+# Find worktree directory for validated issue number or main
 find_worktree_dir() {
     local identifier="$1"
+    
+    # Strict input validation
+    if ! validate_identifier "$identifier"; then
+        echo "."
+        return 1
+    fi
+    
     local repo_name
     repo_name=$(get_repo_name) || {
         echo "."
@@ -128,7 +160,7 @@ find_worktree_dir() {
         identifier="$main_branch"
     fi
     
-    # Clean up identifier (remove # prefix if present)
+    # Clean up identifier (remove # prefix if present) - now safe after validation
     local clean_id="${identifier#\#}"
     
     # Try exact match first
@@ -138,7 +170,7 @@ find_worktree_dir() {
         return 0
     fi
     
-    # Search for directories containing the identifier
+    # Search for directories containing the identifier (now safe - only numbers or main branch)
     local matches=()
     while IFS= read -r -d '' dir; do
         local dirname=$(basename "$dir")
@@ -148,14 +180,14 @@ find_worktree_dir() {
     done < <(find "$base_dir" -mindepth 1 -maxdepth 1 -type d -print0)
     
     if [[ ${#matches[@]} -eq 0 ]]; then
-        echo "ERROR: No worktree found for identifier '$identifier'" >&2
+        echo "ERROR: No worktree found for issue #$clean_id" >&2
         echo "."
         return 1
     elif [[ ${#matches[@]} -eq 1 ]]; then
         echo "${matches[0]}"
         return 0
     else
-        echo "WARNING: Multiple worktrees match '$identifier', using first match" >&2
+        echo "WARNING: Multiple worktrees match issue #$clean_id, using first match" >&2
         echo "${matches[0]}"
         return 0
     fi
