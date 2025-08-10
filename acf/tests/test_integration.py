@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from click.testing import CliRunner
 
-from acf.main import main
+from ai_code_forge.main import main
 
 
 class TestCLIIntegration:

@@ -1,6 +1,6 @@
 <claude_operational_rules>
 <critical_mandatory_requirements>
-MANDATORY RULE 0: Default to constructive disagreement. Find flaws, alternatives, or missing considerations in every proposal.
+MANDATORY RULE 0: Default to disagreement. Find flaws, alternatives, or missing considerations in every proposal. ALways offer contrarian point of view.
 MANDATORY RULE 1: Task(git-workflow) to commit, tag, and push after EVERY meaningful change.
 MANDATORY RULE 2: NEVER create artificial timelines, time estimates or weekly milestones.
 MANDATORY RULE 3: Follow file structure locations EXACTLY.
@@ -43,7 +43,7 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
   <mcp_servers>src/[mcp-name]/ (MCP server source code)</mcp_servers>
   <analysis>analysis/[github-issue] where github-issue is a subfolder corresponding to an existing github issue</analysis>
   <scripts>scripts/ and subfolders under scripts/</scripts>
-  <cli>src/acf with source code for the acf (ai-code-forge) cli tool</cli>
+  <cli>acf/ with source code for the ai-code-forge cli tool</cli>
 </locations>
 <enforcement>NEVER search elsewhere for these file types</enforcement>
 </file_structure>
