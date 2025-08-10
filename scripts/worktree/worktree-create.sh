@@ -342,12 +342,30 @@ validate_issue_number() {
     return 0
 }
 
+# Create worktree directory name from branch
+create_worktree_directory_name() {
+    local branch="$1"
+    
+    # Extract issue number if this is an issue-based branch
+    if [[ "$branch" =~ ^issue-([0-9]+)- ]]; then
+        echo "issue-${BASH_REMATCH[1]}"
+        return 0
+    fi
+    
+    # For non-issue branches, use the branch name as-is
+    echo "$branch"
+}
+
 # Create worktree directory safely
 create_worktree_path() {
     local branch="$1"
     local repo_name
     repo_name=$(get_repo_name) || return 1
-    local worktree_path="$WORKTREE_BASE/$repo_name/$branch"
+    
+    # Get directory name (may differ from branch name)
+    local directory_name
+    directory_name=$(create_worktree_directory_name "$branch")
+    local worktree_path="$WORKTREE_BASE/$repo_name/$directory_name"
 
     # Ensure base directories exist - fix race condition by validating after creation
     if [[ ! -d "$WORKTREE_BASE" ]]; then
@@ -383,7 +401,14 @@ create_worktree_path() {
 
     # Check if worktree already exists and validate no symlinks
     if [[ -d "$worktree_path" ]]; then
-        print_error "Worktree already exists at path"
+        # Special handling for issue-based directories that might be reused
+        if [[ "$directory_name" =~ ^issue-[0-9]+$ ]]; then
+            print_error "Worktree directory '$directory_name' already exists"
+            print_info "This issue may already have a worktree. Use different branch name or remove existing worktree."
+            print_info "Existing worktree path: $worktree_path"
+        else
+            print_error "Worktree already exists at path: $worktree_path"
+        fi
         return 1
     fi
 
@@ -617,7 +642,9 @@ main() {
     local worktree_path
     if [[ "$dry_run" == "true" ]]; then
         print_info "[DRY RUN] Would create worktree path for branch: $branch_name"
-        worktree_path="/workspace/worktrees/$(basename "$MAIN_REPO")/$branch_name"  # simulated path
+        local directory_name
+        directory_name=$(create_worktree_directory_name "$branch_name")
+        worktree_path="/workspace/worktrees/$(basename "$MAIN_REPO")/$directory_name"  # simulated path
         print_info "[DRY RUN] Simulated path: $worktree_path"
     else
         worktree_path=$(create_worktree_path "$branch_name") || exit 1
