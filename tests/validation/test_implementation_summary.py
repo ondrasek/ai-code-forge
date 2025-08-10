@@ -431,7 +431,7 @@ class TestIssue63Implementation(AsyncTestBase):
                     
                     # Verify proper test file structure
                     assert '"""' in content, f"Missing docstring in {file_path}"
-                    assert 'import pytest' in content, f"Missing pytest import in {file_path}"
+                    # Only test files need pytest import, not infrastructure files\n                    if "test_" in expected_file:\n                        assert 'import pytest' in content, f"Missing pytest import in {file_path}"
                     # Infrastructure files have base classes, test files have Test classes\n                    if "base_test_classes.py" in expected_file or "mock_factories.py" in expected_file or "performance_utils.py" in expected_file:\n                        assert 'class ' in content, f"Missing classes in {file_path}"\n                    else:\n                        assert 'class Test' in content, f"Missing test class in {file_path}"
                     
                     # Verify async tests where appropriate
