@@ -68,8 +68,9 @@ get_repo_name() {
     fi
     
     if [[ -z "$repo_name" ]]; then
+        echo "ERROR: Unable to determine repository name" >&2
         echo "."
-        return 0
+        return 1
     fi
     
     echo "$repo_name"
@@ -107,17 +108,17 @@ get_main_branch() {
 find_worktree_dir() {
     local identifier="$1"
     local repo_name
-    repo_name=$(get_repo_name)
-    if [[ "$repo_name" == "." ]]; then
+    repo_name=$(get_repo_name) || {
         echo "."
-        return 0
-    fi
+        return 1
+    }
     
     local base_dir="$WORKTREE_BASE/$repo_name"
     
     if [[ ! -d "$base_dir" ]]; then
+        echo "ERROR: No worktrees found in $base_dir" >&2
         echo "."
-        return 0
+        return 1
     fi
     
     # Handle "main" special case
@@ -147,13 +148,14 @@ find_worktree_dir() {
     done < <(find "$base_dir" -mindepth 1 -maxdepth 1 -type d -print0)
     
     if [[ ${#matches[@]} -eq 0 ]]; then
+        echo "ERROR: No worktree found for identifier '$identifier'" >&2
         echo "."
-        return 0
+        return 1
     elif [[ ${#matches[@]} -eq 1 ]]; then
         echo "${matches[0]}"
         return 0
     else
-        # Multiple matches - use first one
+        echo "WARNING: Multiple worktrees match '$identifier', using first match" >&2
         echo "${matches[0]}"
         return 0
     fi
