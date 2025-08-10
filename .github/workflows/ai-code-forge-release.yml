@@ -394,8 +394,7 @@ jobs:
             $PRERELEASE_FLAG \
             --verify-tag \
             dist/*.whl \
-            dist/*.tar.gz \
-            dist/checksums.txt
+            dist/*.tar.gz
           
           # Get release URL for summary
           RELEASE_URL=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
