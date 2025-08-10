@@ -58,17 +58,26 @@ color_mem() {
     fi
 }
 
-# GitHub issue cache directory
-CACHE_DIR="${HOME}/.cache/worktree-watch"
+# GitHub issue cache directory (per-instance isolation)
+CACHE_DIR=$(mktemp -d -t worktree-watch.XXXXXX)
 ISSUE_CACHE_FILE="${CACHE_DIR}/issue_cache.json"
-ISSUE_CACHE_DURATION=1800  # 30 minutes in seconds
+ISSUE_CACHE_DURATION=60  # Default: 1 minute in seconds (configurable via --ttl)
 
-# Initialize cache directory
+# Initialize cache directory and cleanup trap
 init_cache() {
-    mkdir -p "$CACHE_DIR"
+    # Cache directory already created by mktemp
+    # Set up cleanup trap to remove temporary cache on exit
+    trap cleanup_cache EXIT SIGTERM SIGINT
 }
 
-# Get GitHub issue information with caching
+# Cleanup temporary cache directory
+cleanup_cache() {
+    if [[ -n "$CACHE_DIR" && -d "$CACHE_DIR" ]]; then
+        rm -rf "$CACHE_DIR"
+    fi
+}
+
+# Get comprehensive GitHub issue information with progressive discovery
 get_issue_info() {
     local issue_num="$1"
     local cache_key="issue_${issue_num}"
@@ -91,7 +100,7 @@ get_issue_info() {
         fi
     fi
     
-    # Fetch fresh data from GitHub API
+    # Fetch fresh data from GitHub API with progressive discovery
     if command -v gh &>/dev/null; then
         local repo_info
         if repo_info=$(gh repo view --json owner,name 2>/dev/null); then
@@ -99,15 +108,40 @@ get_issue_info() {
             local repo=$(echo "$repo_info" | jq -r '.name' 2>/dev/null)
             
             if [[ -n "$owner" && -n "$repo" && "$owner" != "null" && "$repo" != "null" ]]; then
+                # Step 1: Fetch basic issue data
                 local issue_data
                 if issue_data=$(gh api "repos/$owner/$repo/issues/$issue_num" 2>/dev/null); then
                     local title=$(echo "$issue_data" | jq -r '.title // "Unknown"' 2>/dev/null)
                     local url=$(echo "$issue_data" | jq -r '.html_url // ""' 2>/dev/null)
+                    local state=$(echo "$issue_data" | jq -r '.state // "unknown"' 2>/dev/null)
+                    local assignee=$(echo "$issue_data" | jq -r '.assignee.login // ""' 2>/dev/null)
+                    local labels=$(echo "$issue_data" | jq -r '[.labels[].name] | join(",")' 2>/dev/null)
+                    local pull_request=$(echo "$issue_data" | jq -r '.pull_request.url // ""' 2>/dev/null)
+                    
+                    # Initialize result with basic data
+                    local result="$title|$url|$state|$assignee|$labels"
+                    
+                    # Step 2: Progressive discovery - fetch PR data only if issue has associated PR
+                    if [[ -n "$pull_request" ]]; then
+                        local pr_data
+                        if pr_data=$(gh api "$pull_request" 2>/dev/null); then
+                            local pr_state=$(echo "$pr_data" | jq -r '.state // "unknown"' 2>/dev/null)
+                            local pr_mergeable=$(echo "$pr_data" | jq -r '.mergeable // false' 2>/dev/null)
+                            local pr_merged=$(echo "$pr_data" | jq -r '.merged // false' 2>/dev/null)
+                            result="$result|PR:$pr_state"
+                            if [[ "$pr_merged" == "true" ]]; then
+                                result="$result,merged"
+                            elif [[ "$pr_mergeable" == "false" ]]; then
+                                result="$result,conflicts"
+                            fi
+                        else
+                            result="$result|PR:unknown"
+                        fi
+                    else
+                        result="$result|"
+                    fi
                     
                     # Cache the result
-                    local result="${title}|${url}"
-                    
-                    # Create or update cache file
                     if command -v jq &>/dev/null; then
                         local cache_content="{}"
                         if [[ -f "$ISSUE_CACHE_FILE" ]]; then
@@ -124,7 +158,7 @@ get_issue_info() {
     fi
     
     # Return empty if we can't fetch
-    echo "|"
+    echo "||||||||"
     return 1
 }
 
@@ -249,15 +283,23 @@ display_worktree_info() {
     local issue_display="n/a"
     local issue_title=""
     local issue_url=""
+    local issue_state=""
+    local issue_assignee=""
+    local issue_labels=""
+    local pr_info=""
     
     if [[ -n "$issue_num" ]]; then
         issue_display="#$issue_num"
         
         # Get issue info from GitHub with caching
         local issue_info=$(get_issue_info "$issue_num")
-        if [[ "$issue_info" != "|" ]]; then
+        if [[ "$issue_info" != "||||||||" ]]; then
             issue_title=$(echo "$issue_info" | cut -d'|' -f1)
             issue_url=$(echo "$issue_info" | cut -d'|' -f2)
+            issue_state=$(echo "$issue_info" | cut -d'|' -f3)
+            issue_assignee=$(echo "$issue_info" | cut -d'|' -f4)
+            issue_labels=$(echo "$issue_info" | cut -d'|' -f5)
+            pr_info=$(echo "$issue_info" | cut -d'|' -f6)
         fi
     fi
     
@@ -266,11 +308,43 @@ display_worktree_info() {
     
     # Display worktree header with emoji (portrait layout)
     echo -e "📁 ${CYAN}$basename${NC}"
-    echo -e "   Issue: ${BLUE}$issue_display${NC}"
+    
+    # Show issue with state indicator
+    local state_emoji=""
+    local state_color="$BLUE"
+    case "$issue_state" in
+        "open") state_emoji="🟢" ;;
+        "closed") state_emoji="🔴"; state_color="$RED" ;;
+        *) state_emoji="❓" ;;
+    esac
+    echo -e "   Issue: ${state_color}$issue_display${NC} $state_emoji"
     
     # Show issue title if available
     if [[ -n "$issue_title" && "$issue_title" != "Unknown" ]]; then
         echo -e "   Title: ${GRAY}$issue_title${NC}"
+    fi
+    
+    # Show assignee if available
+    if [[ -n "$issue_assignee" ]]; then
+        echo -e "   Assignee: ${YELLOW}@$issue_assignee${NC} 👤"
+    fi
+    
+    # Show labels if available
+    if [[ -n "$issue_labels" ]]; then
+        echo -e "   Labels: ${CYAN}$issue_labels${NC} 🏷️"
+    fi
+    
+    # Show PR info if available
+    if [[ -n "$pr_info" ]]; then
+        local pr_emoji=""
+        local pr_color="$GREEN"
+        case "$pr_info" in
+            *"merged"*) pr_emoji="✅"; pr_color="$GREEN" ;;
+            *"closed"*) pr_emoji="❌"; pr_color="$RED" ;;
+            *"open"*) pr_emoji="🔄"; pr_color="$YELLOW" ;;
+            *"conflicts"*) pr_emoji="⚠️"; pr_color="$RED" ;;
+        esac
+        echo -e "   ${pr_color}$pr_info${NC} $pr_emoji"
     fi
     
     # Show issue URL if available
@@ -321,17 +395,41 @@ main() {
     local test_mode=false
     
     # Parse arguments
-    case "${1:-}" in
-        "--test"|"-t")
-            test_mode=true
-            ;;
-        "--help"|"-h")
-            echo "Usage: $0 [--test] [--help]"
-            echo "  --test    Run once and exit"
-            echo "  --help    Show this help"
-            exit 0
-            ;;
-    esac
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            "--test"|"-t")
+                test_mode=true
+                shift
+                ;;
+            "--ttl")
+                if [[ -n "$2" && "$2" =~ ^[0-9]+$ ]]; then
+                    ISSUE_CACHE_DURATION="$2"
+                    shift 2
+                else
+                    echo "Error: --ttl requires a numeric value (seconds)"
+                    exit 1
+                fi
+                ;;
+            "--help"|"-h")
+                echo "Usage: $0 [--test] [--ttl SECONDS] [--help]"
+                echo "  --test         Run once and exit"
+                echo "  --ttl SECONDS  Set cache duration in seconds (default: 60)"
+                echo "  --help         Show this help"
+                echo ""
+                echo "Examples:"
+                echo "  $0                    # Run with default 1-minute cache"
+                echo "  $0 --ttl 300         # Run with 5-minute cache"
+                echo "  $0 --ttl 1800        # Run with 30-minute cache (original)"
+                echo "  $0 --test --ttl 30   # Test with 30-second cache"
+                exit 0
+                ;;
+            *)
+                echo "Error: Unknown option $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
     
     # Initialize cache directory
     init_cache
