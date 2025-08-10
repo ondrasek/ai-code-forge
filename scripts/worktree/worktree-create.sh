@@ -256,20 +256,45 @@ create_issue_branch_name() {
         fi
     fi
 
-    # Create branch name
+    # Create branch name with smart truncation
     local branch_suffix=""
     local prefix="issue-$issue_num-"
-    local max_suffix_length=$((100 - ${#prefix}))
+    local max_total_length=35  # Keep total branch name short
+    local max_suffix_length=$((max_total_length - ${#prefix}))
 
     if [[ -n "$issue_title" ]]; then
         # Convert title to branch-friendly format
-        branch_suffix=$(echo "$issue_title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-*\|-*$//g')
-        # Ensure total branch name stays under 100 characters
-        if [[ ${#branch_suffix} -gt $max_suffix_length ]]; then
-            branch_suffix=$(echo "$branch_suffix" | cut -c1-$max_suffix_length)
+        local clean_title=$(echo "$issue_title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-*\|-*$//g')
+        
+        # Smart truncation: keep meaningful words, truncate at word boundaries
+        if [[ ${#clean_title} -gt $max_suffix_length ]]; then
+            # Extract first few meaningful words (skip common words)
+            local words=($(echo "$clean_title" | tr '-' '\n' | grep -vE '^(the|and|or|for|with|from|in|on|at|by|of|a|an|that|this|is|are|will|should|would|could|to)$' | head -4))
+            
+            branch_suffix=""
+            local current_length=0
+            for word in "${words[@]}"; do
+                local test_suffix="${branch_suffix}${branch_suffix:+-}${word}"
+                if [[ ${#test_suffix} -le $max_suffix_length ]]; then
+                    branch_suffix="$test_suffix"
+                    current_length=${#branch_suffix}
+                else
+                    break
+                fi
+            done
+            
+            # If no meaningful words found or result too short, use truncated original
+            if [[ ${#branch_suffix} -lt 4 ]]; then
+                branch_suffix=$(echo "$clean_title" | cut -c1-$((max_suffix_length-3)))
+                # Remove partial word at end
+                branch_suffix=$(echo "$branch_suffix" | sed 's/-[^-]*$//')
+                [[ -n "$branch_suffix" ]] || branch_suffix="work"
+            fi
+        else
+            branch_suffix="$clean_title"
         fi
     else
-        branch_suffix="implementation"
+        branch_suffix="work"
     fi
 
     echo "issue-$issue_num-$branch_suffix"
