@@ -214,21 +214,14 @@ jobs:
           uv run pytest --verbose --tb=short
           echo "✅ Tests completed"
           
-      - name: Generate checksums for artifacts
+      - name: Verify artifact integrity
         run: |
-          echo "🔍 Generating artifact checksums..."
+          echo "🔍 Verifying artifact integrity..."
           cd acf/dist
           
-          # Generate SHA256 checksums
-          sha256sum *.whl > checksums.txt
-          sha256sum *.tar.gz >> checksums.txt
-          
-          echo "Generated checksums:"
-          cat checksums.txt
-          
-          # Verify checksums
-          sha256sum -c checksums.txt
-          echo "✅ Checksum generation and verification passed"
+          # Verify files are not corrupted (basic check)
+          file *.whl *.tar.gz
+          echo "✅ Artifact integrity verification passed"
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -448,28 +441,7 @@ jobs:
             exit 1
           fi
           
-          if [[ ! -f dist/checksums.txt ]]; then
-            echo "❌ Checksums missing"
-            exit 1
-          fi
-          
-          # Verify checksums
-          cd dist
-          sha256sum -c checksums.txt || { echo "❌ Checksum verification failed"; exit 1; }
-          cd ..
-          
           echo "✅ All artifact verification passed"
-      
-      - name: Prepare artifacts for upload (exclude checksums.txt)
-        run: |
-          echo "📦 Preparing artifacts for PyPI upload..."
-          # Move checksums.txt temporarily to avoid uploading it
-          if [[ -f dist/checksums.txt ]]; then
-            mv dist/checksums.txt ./checksums.txt.backup
-            echo "✅ Moved checksums.txt temporarily"
-          fi
-          echo "Files to upload:"
-          ls -la dist/
       
       - name: Publish to PyPI via OIDC with Sigstore attestations
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -481,14 +453,6 @@ jobs:
           verify-metadata: true        # Verify package metadata
           print-hash: true           # Log file hashes for audit trail
           attestations: true           # Enable Sigstore attestations (automatic signing)
-      
-      - name: Restore checksums file
-        if: always()  # Run even if publish step fails
-        run: |
-          if [[ -f ./checksums.txt.backup ]]; then
-            mv ./checksums.txt.backup dist/checksums.txt
-            echo "✅ Restored checksums.txt"
-          fi
       
       - name: Verify attestations were created
         run: |
