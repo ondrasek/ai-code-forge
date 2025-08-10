@@ -28,7 +28,7 @@ class TestPerplexityConcurrentLoad(AsyncTestBase, PerformanceTestMixin):
     
     def setup_method(self):
         super().setup_method()
-        PerformanceTestMixin.__init__(self)
+        self._init_performance_baselines()
         self.performance_tester = PerformanceTester()
         self.sample_data = GenericMockFactory.create_sample_data()
     
@@ -236,7 +236,7 @@ class TestOpenAIConcurrentLoad(AsyncTestBase, PerformanceTestMixin):
     
     def setup_method(self):
         super().setup_method()
-        PerformanceTestMixin.__init__(self)
+        self._init_performance_baselines()
         self.performance_tester = PerformanceTester()
         self.sample_data = GenericMockFactory.create_sample_data()
     

@@ -22,7 +22,7 @@ class TestClaudeCodeResearchWorkflows(AsyncTestBase, PerformanceTestMixin):
     
     def setup_method(self):
         super().setup_method()
-        PerformanceTestMixin.__init__(self)
+        self._init_performance_baselines()
         self.sample_data = GenericMockFactory.create_sample_data()
     
     @pytest.mark.asyncio

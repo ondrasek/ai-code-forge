@@ -17,7 +17,7 @@ class TestPerplexityPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
     
     def setup_method(self):
         super().setup_method()
-        PerformanceTestMixin.__init__(self)
+        self._init_performance_baselines()
         self._test_performance_tracking = True
         
         # Setup Perplexity server import with mock API key
@@ -121,7 +121,7 @@ class TestOpenAIPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
     
     def setup_method(self):
         super().setup_method()
-        PerformanceTestMixin.__init__(self)
+        self._init_performance_baselines()
         self._test_performance_tracking = True
         
         # Setup OpenAI server import with mock API key

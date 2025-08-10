@@ -25,7 +25,7 @@ class TestMCPServerCoordination(AsyncTestBase, PerformanceTestMixin):
     
     def setup_method(self):
         super().setup_method()
-        PerformanceTestMixin.__init__(self)
+        self._init_performance_baselines()
         
         # Setup mock clients
         self.perplexity_mock = PerplexityMockFactory.create_client_mock()

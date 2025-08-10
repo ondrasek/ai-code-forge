@@ -90,13 +90,15 @@ class AsyncTestBase(MCPServerTestBase):
 class PerformanceTestMixin:
     """Mixin for performance testing capabilities."""
     
-    def __init__(self):
-        self.performance_baselines = {
-            'health_check': 100,  # ms
-            'simple_query': 500,  # ms
-            'complex_query': 2000,  # ms
-            'batch_operation': 5000  # ms
-        }
+    def _init_performance_baselines(self):
+        """Initialize performance baselines if not already set."""
+        if not hasattr(self, 'performance_baselines'):
+            self.performance_baselines = {
+                'health_check': 100,  # ms
+                'simple_query': 500,  # ms
+                'complex_query': 2000,  # ms
+                'batch_operation': 5000  # ms
+            }
     
     def record_performance(self, operation: str, duration_ms: float):
         """Record performance metrics for analysis."""
@@ -110,6 +112,7 @@ class PerformanceTestMixin:
     
     def assert_performance_baseline(self, operation: str, duration_ms: float):
         """Assert operation meets performance baseline."""
+        self._init_performance_baselines()
         baseline = self.performance_baselines.get(operation, 1000)
         assert duration_ms <= baseline, f"{operation} exceeded baseline: {duration_ms:.2f}ms > {baseline}ms"
     
