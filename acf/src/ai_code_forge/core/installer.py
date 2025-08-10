@@ -24,8 +24,8 @@ class ACFInstaller:
         
         # Then try importlib.resources for installed package
         try:
-            import acf.data
-            data_files = resources.files("acf.data")
+            import ai_code_forge.data
+            data_files = resources.files("ai_code_forge.data")
             # For Python 3.9+ with Traversable interface
             if hasattr(data_files, '__fspath__'):
                 return Path(data_files.__fspath__())

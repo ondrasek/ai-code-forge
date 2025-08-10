@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from acf.core.installer import ACFInstaller
+from ai_code_forge.core.installer import ACFInstaller
 
 
 class TestACFInstaller:
@@ -198,7 +198,7 @@ class TestACFInstaller:
         assert path.exists()
         assert (path / "claude").exists() or "Package data" in str(path)
     
-    @patch('acf.core.installer.resources.files')
+    @patch('ai_code_forge.core.installer.resources.files')
     def test_get_package_data_path_installed_package(self, mock_resources):
         """Test package data path for installed package."""
         # Mock the case where development path doesn't exist
