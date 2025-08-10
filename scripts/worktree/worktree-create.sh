@@ -96,23 +96,27 @@ print_info() { echo -e "${BLUE}INFO:${NC} $1"; }
 # Usage information
 show_usage() {
     cat << EOF
-Usage: $0 <branch-name> [issue-number] [--dry-run]
+Usage: $0 <branch-name-or-issue> [issue-number] [--dry-run]
        $0 --from-issue <issue-number> [--dry-run]
+       $0 --numeric-only <branch-name> [--dry-run]
 
 Creates a git worktree for parallel development workflow.
+When a numeric value is provided as branch-name-or-issue, automatically creates
+descriptive branch name from GitHub issue (equivalent to --from-issue).
 
 Arguments:
-  branch-name     Name of the branch to create worktree for
-  issue-number    Optional GitHub issue number for validation
-  --from-issue    Create worktree from GitHub issue (auto-detects or creates branch)
-  --dry-run       Show what commands would be executed without running them
+  branch-name-or-issue  Branch name OR issue number (auto-detected)
+  issue-number         Optional GitHub issue number for validation
+  --from-issue         Create worktree from GitHub issue (auto-detects or creates branch)
+  --numeric-only       Force numeric branch name (disables auto-detection)
+  --dry-run           Show what commands would be executed without running them
 
 Examples:
-  $0 feature/new-agent
-  $0 issue-105-worktree 105
-  $0 --from-issue 105
+  $0 132                    # Auto-detects issue, creates "issue-132-descriptive-name"
+  $0 feature/new-agent      # Uses literal branch name
+  $0 --from-issue 105       # Explicit issue mode
+  $0 --numeric-only 132     # Forces branch name "132" (no auto-detection)
   $0 --from-issue 105 --dry-run
-  $0 hotfix/critical-bug
 
 Location: Worktrees created in $WORKTREE_BASE/<repository>/<branch-name>
 EOF
@@ -532,6 +536,7 @@ main() {
     local branch_name=""
     local issue_number=""
     local from_issue_mode=false
+    local numeric_only_mode=false
     local dry_run=false
 
     # Parse arguments
@@ -563,14 +568,31 @@ main() {
             from_issue_mode=true
             issue_number="${clean_args[1]}"
             ;;
+        "--numeric-only")
+            if [[ ${#clean_args[@]} -lt 2 ]]; then
+                print_error "--numeric-only requires a branch name"
+                show_usage
+                exit 1
+            fi
+            numeric_only_mode=true
+            branch_name="${clean_args[1]}"
+            issue_number="${clean_args[2]:-}"
+            ;;
         "")
             print_error "Missing required arguments"
             show_usage
             exit 1
             ;;
         *)
-            branch_name="${clean_args[0]}"
-            issue_number="${clean_args[1]:-}"
+            # Auto-detection logic: if first argument is purely numeric, treat as issue
+            if [[ "${clean_args[0]}" =~ ^[0-9]+$ ]] && [[ ! "$numeric_only_mode" == "true" ]]; then
+                print_info "Auto-detected issue number: ${clean_args[0]}"
+                from_issue_mode=true
+                issue_number="${clean_args[0]}"
+            else
+                branch_name="${clean_args[0]}"
+                issue_number="${clean_args[1]:-}"
+            fi
             ;;
     esac
 
