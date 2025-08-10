@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Git Worktree Current Working Directory Utility
+# Git Worktree Path Utility
 # Outputs the directory path for specified worktree
-# Usage: ./worktree-cwd.sh <issue-number|branch-name|main>
+# Usage: ./worktree-path.sh <issue-number|branch-name|main>
 
 WORKTREE_BASE="/workspace/worktrees"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,7 +12,7 @@ MAIN_REPO="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Show usage information
 show_usage() {
     cat << EOF
-Git Worktree Current Working Directory Utility
+Git Worktree Path Utility
 
 DESCRIPTION:
     Output the directory path for a specified worktree.
@@ -37,7 +37,7 @@ EXAMPLES:
 
 SHELL INTEGRATION:
     # Recommended alias (note: use function instead of alias for parameters):
-    wtd() { cd "\$(worktree.sh cwd "\$1")" 2>/dev/null || echo "Worktree not found: \$1" >&2; }
+    wtd() { cd "\$(worktree.sh path "\$1")"; }
     
     # Usage:
     wtd 123                    # Change to issue #123 worktree
@@ -68,8 +68,8 @@ get_repo_name() {
     fi
     
     if [[ -z "$repo_name" ]]; then
-        echo "ERROR: Unable to determine repository name" >&2
-        return 1
+        echo "."
+        return 0
     fi
     
     echo "$repo_name"
@@ -107,13 +107,17 @@ get_main_branch() {
 find_worktree_dir() {
     local identifier="$1"
     local repo_name
-    repo_name=$(get_repo_name) || return 1
+    repo_name=$(get_repo_name)
+    if [[ "$repo_name" == "." ]]; then
+        echo "."
+        return 0
+    fi
     
     local base_dir="$WORKTREE_BASE/$repo_name"
     
     if [[ ! -d "$base_dir" ]]; then
-        echo "ERROR: No worktrees found in $base_dir" >&2
-        return 1
+        echo "."
+        return 0
     fi
     
     # Handle "main" special case
@@ -143,18 +147,15 @@ find_worktree_dir() {
     done < <(find "$base_dir" -mindepth 1 -maxdepth 1 -type d -print0)
     
     if [[ ${#matches[@]} -eq 0 ]]; then
-        echo "ERROR: No worktree found for identifier '$identifier'" >&2
-        return 1
+        echo "."
+        return 0
     elif [[ ${#matches[@]} -eq 1 ]]; then
         echo "${matches[0]}"
         return 0
     else
-        echo "ERROR: Multiple worktrees match '$identifier':" >&2
-        for match in "${matches[@]}"; do
-            echo "  $(basename "$match")" >&2
-        done
-        echo "ERROR: Please be more specific" >&2
-        return 1
+        # Multiple matches - use first one
+        echo "${matches[0]}"
+        return 0
     fi
 }
 

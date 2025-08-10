@@ -31,7 +31,7 @@ USAGE:
 COMMANDS:
     create <branch-name> [issue-number]  Create a new worktree
     create --from-issue <issue-number>   Create worktree from GitHub issue
-    cwd <issue-number|branch-name|main>  Output worktree directory path
+    path <issue-number|branch-name|main> Output worktree directory path
     launch <issue-number|branch-name>    Launch Claude Code in specified worktree
     list [issue-number]                  List all worktrees or specific issue worktree
     list --verbose [issue-number]        List with detailed information
@@ -46,9 +46,9 @@ EXAMPLES:
     ./worktree.sh create feature/new-api
     ./worktree.sh create feature/fix-123 123
     ./worktree.sh create --from-issue 456
-    ./worktree.sh cwd 123                # Output path for issue #123
-    ./worktree.sh cwd main               # Output path for main branch
-    cd \$(./worktree.sh cwd 123)          # Change to issue #123 worktree
+    ./worktree.sh path 123               # Output path for issue #123
+    ./worktree.sh path main              # Output path for main branch
+    cd \$(./worktree.sh path 123)         # Change to issue #123 worktree
     ./worktree.sh launch 123
     ./worktree.sh launch feature/fix-456
     ./worktree.sh list
@@ -88,12 +88,12 @@ main() {
             fi
             exec "$SCRIPT_DIR/worktree-create.sh" "$@"
             ;;
-        cwd)
-            if [[ ! -f "$SCRIPT_DIR/worktree-cwd.sh" ]]; then
-                print_error "worktree-cwd.sh not found in $SCRIPT_DIR"
+        path)
+            if [[ ! -f "$SCRIPT_DIR/worktree-path.sh" ]]; then
+                print_error "worktree-path.sh not found in $SCRIPT_DIR"
                 exit 1
             fi
-            exec "$SCRIPT_DIR/worktree-cwd.sh" "$@"
+            exec "$SCRIPT_DIR/worktree-path.sh" "$@"
             ;;
         launch)
             if [[ ! -f "$SCRIPT_DIR/worktree-launch.sh" ]]; then
