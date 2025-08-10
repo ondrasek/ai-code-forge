@@ -29,6 +29,7 @@ USAGE:
     ./worktree.sh <command> [options]
 
 COMMANDS:
+    init [--shell SHELL]                 Generate shell-specific configuration for eval
     create <branch-name> [issue-number]  Create a new worktree
     create --from-issue <issue-number>   Create worktree from GitHub issue
     path <issue-number|main>             Output worktree directory path
@@ -44,6 +45,9 @@ COMMANDS:
     help                                 Show this help message
 
 EXAMPLES:
+    ./worktree.sh init                   # Generate shell config (auto-detect)
+    eval "\$(./worktree.sh init)"         # Apply configuration to current shell
+    ./worktree.sh init --shell zsh       # Generate zsh-specific config
     ./worktree.sh create feature/new-api
     ./worktree.sh create feature/fix-123 123
     ./worktree.sh create --from-issue 456
@@ -84,6 +88,13 @@ main() {
     shift
 
     case "$command" in
+        init)
+            if [[ ! -f "$SCRIPT_DIR/worktree-init.sh" ]]; then
+                print_error "worktree-init.sh not found in $SCRIPT_DIR"
+                exit 1
+            fi
+            exec "$SCRIPT_DIR/worktree-init.sh" "$@"
+            ;;
         create)
             if [[ ! -f "$SCRIPT_DIR/worktree-create.sh" ]]; then
                 print_error "worktree-create.sh not found in $SCRIPT_DIR"
