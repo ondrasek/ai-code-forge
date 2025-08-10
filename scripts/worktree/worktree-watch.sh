@@ -4,7 +4,7 @@
 # Terminal-based monitoring system for Claude Code instances and worktrees
 # Created for GitHub Issue #131
 
-set -euo pipefail
+set -eo pipefail
 
 # Configuration
 REFRESH_INTERVAL_PROCESS=10    # Process monitoring refresh (seconds)
@@ -175,17 +175,20 @@ parse_github_data() {
     
     # Parse each issue individually to avoid pipe character issues
     local issue_numbers
-    issue_numbers=$(jq -r '.[].number' "$GITHUB_CACHE_FILE" 2>/dev/null)
+    if ! issue_numbers=$(jq -r '.[].number' "$GITHUB_CACHE_FILE" 2>/dev/null); then
+        log_message "Failed to parse issue numbers from GitHub cache"
+        return 1
+    fi
     
     while IFS= read -r number; do
         [[ -z "$number" ]] && continue
         
-        # Get individual issue data
+        # Get individual issue data with error handling
         local title state updated_at labels
-        title=$(jq -r ".[] | select(.number==$number) | .title" "$GITHUB_CACHE_FILE" 2>/dev/null)
-        state=$(jq -r ".[] | select(.number==$number) | .state" "$GITHUB_CACHE_FILE" 2>/dev/null)
-        updated_at=$(jq -r ".[] | select(.number==$number) | .updatedAt" "$GITHUB_CACHE_FILE" 2>/dev/null)
-        labels=$(jq -r ".[] | select(.number==$number) | [.labels[].name] | join(\",\")" "$GITHUB_CACHE_FILE" 2>/dev/null)
+        title=$(jq -r ".[] | select(.number==$number) | .title" "$GITHUB_CACHE_FILE" 2>/dev/null || echo "Unknown title")
+        state=$(jq -r ".[] | select(.number==$number) | .state" "$GITHUB_CACHE_FILE" 2>/dev/null || echo "UNKNOWN")
+        updated_at=$(jq -r ".[] | select(.number==$number) | .updatedAt" "$GITHUB_CACHE_FILE" 2>/dev/null || echo "Unknown date")
+        labels=$(jq -r ".[] | select(.number==$number) | [.labels[].name] | join(\",\")" "$GITHUB_CACHE_FILE" 2>/dev/null || echo "")
         
         # Store without pipe delimiters that cause parsing issues
         ISSUE_METADATA["$number"]="$title|$state|$updated_at|$labels"
@@ -194,7 +197,11 @@ parse_github_data() {
     done <<< "$issue_numbers"
     
     debug_log "Parsed $parse_count issues total"
-    debug_log "Issue metadata keys: ${!ISSUE_METADATA[*]}"
+    if [[ ${#ISSUE_METADATA[@]} -gt 0 ]]; then
+        debug_log "Issue metadata keys: ${!ISSUE_METADATA[*]}"
+    else
+        debug_log "No issue metadata found"
+    fi
 }
 
 # Get Claude Code processes and associate with worktrees
