@@ -31,6 +31,7 @@ USAGE:
 COMMANDS:
     create <branch-name> [issue-number]  Create a new worktree
     create --from-issue <issue-number>   Create worktree from GitHub issue
+    launch <issue-number|branch-name>    Launch Claude Code in specified worktree
     list [issue-number]                  List all worktrees or specific issue worktree
     list --verbose [issue-number]        List with detailed information
     inspect <issue-spec> [--json] [-v]   Comprehensive issue and worktree state analysis
@@ -44,6 +45,8 @@ EXAMPLES:
     ./worktree.sh create feature/new-api
     ./worktree.sh create feature/fix-123 123
     ./worktree.sh create --from-issue 456
+    ./worktree.sh launch 123
+    ./worktree.sh launch feature/fix-456
     ./worktree.sh list
     ./worktree.sh list 123               # Show worktree for issue #123
     ./worktree.sh list --verbose
@@ -80,6 +83,13 @@ main() {
                 exit 1
             fi
             exec "$SCRIPT_DIR/worktree-create.sh" "$@"
+            ;;
+        launch)
+            if [[ ! -f "$SCRIPT_DIR/worktree-launch.sh" ]]; then
+                print_error "worktree-launch.sh not found in $SCRIPT_DIR"
+                exit 1
+            fi
+            exec "$SCRIPT_DIR/worktree-launch.sh" "$@"
             ;;
         list)
             if [[ ! -f "$SCRIPT_DIR/worktree-list.sh" ]]; then
