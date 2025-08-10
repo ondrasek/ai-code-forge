@@ -1,6 +1,6 @@
 [project]
 name = "ai-code-forge"
-version = "0.2.0"
+version = "2.91.0"
 description = "Configuration management tool for AI Code Forge"
 readme = "README.md"
 requires-python = ">=3.13"
