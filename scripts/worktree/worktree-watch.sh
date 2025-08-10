@@ -98,15 +98,26 @@ show_claude_processes() {
         while IFS= read -r pid; do
             if [[ -n "$pid" ]]; then
                 local cmd=""
-                local cpu_mem=""
+                local metrics=""
                 
-                # Get command info
+                # Get detailed process info
                 if command -v ps &>/dev/null; then
                     cmd=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
-                    cpu_mem=$(ps -p "$pid" -o pcpu,pmem --no-headers 2>/dev/null || echo "0.0 0.0")
+                    local ps_output
+                    ps_output=$(ps -p "$pid" -o pcpu,pmem,rss,vsz --no-headers 2>/dev/null || echo "0.0 0.0 0 0")
+                    
+                    # Parse the output
+                    read -r pcpu pmem rss vsz <<< "$ps_output"
+                    
+                    # Convert RSS from KB to MB for readability
+                    local rss_mb=$((rss / 1024))
+                    local vsz_gb=$((vsz / 1024 / 1024))
+                    
+                    # Format metrics with proper labels
+                    metrics="CPU: ${pcpu}%, Mem: ${pmem}%, RSS: ${rss_mb}MB, VSZ: ${vsz_gb}GB"
                 fi
                 
-                print_status "OK" "PID $pid: $cmd ($cpu_mem)"
+                print_status "OK" "PID $pid: $cmd ($metrics)"
                 ((count++))
             fi
         done <<< "$pids"
