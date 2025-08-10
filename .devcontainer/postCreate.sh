@@ -122,6 +122,9 @@ export PYTHONIOENCODING=UTF-8
 
 # Add local bin to PATH
 export PATH="$HOME/.local/bin:$PATH"
+
+# Initialize worktree commands
+eval "$(cd $workingCopy && ./scripts/worktree/worktree.sh init --shell bash)"
 EOF
 
 # ...thsi time with variable substitution
@@ -143,6 +146,9 @@ export PYTHONIOENCODING=UTF-8
 
 # Add local bin to PATH
 export PATH="$HOME/.local/bin:$PATH"
+
+# Initialize worktree commands
+eval "$(cd $workingCopy && ./scripts/worktree/worktree.sh init --shell zsh)"
 
 # Go to workspace
 cd /workspace/$repositoryName
