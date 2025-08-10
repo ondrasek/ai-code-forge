@@ -417,8 +417,8 @@ jobs:
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
     
     environment:
-      name: ${{ github.event_name == 'workflow_dispatch' && 'pypi-test' || 'pypi' }}
-      url: ${{ github.event_name == 'workflow_dispatch' && 'https://test.pypi.org/project/ai-code-forge/' || 'https://pypi.org/project/ai-code-forge/' }}
+      name: pypi
+      url: https://pypi.org/project/ai-code-forge/
     
     permissions:
       id-token: write        # REQUIRED for OIDC authentication
@@ -463,9 +463,8 @@ jobs:
       - name: Publish to PyPI via OIDC with Sigstore attestations
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: ${{ github.event_name == 'workflow_dispatch' && 'https://test.pypi.org/legacy/' || '' }}
           packages-dir: dist-pypi/
-          skip-existing: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}  # Allow re-uploads to TestPyPI
+          skip-existing: false        # Strict version control for production
           verbose: true               # Debug output for troubleshooting
           verify-metadata: true        # Verify package metadata
           print-hash: true           # Log file hashes for audit trail
@@ -475,16 +474,15 @@ jobs:
         run: |
           echo "🔐 Verifying Sigstore attestations were generated..."
           
-          # Determine target repository
+          # Determine release version and set PyPI URL
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            REPO_NAME="TestPyPI"
             RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
-            PYPI_URL="https://test.pypi.org/project/ai-code-forge/$RELEASE_VERSION/"
           else
-            REPO_NAME="PyPI"
             RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
-            PYPI_URL="https://pypi.org/project/ai-code-forge/$RELEASE_VERSION/"
           fi
+          
+          REPO_NAME="PyPI"
+          PYPI_URL="https://pypi.org/project/ai-code-forge/$RELEASE_VERSION/"
           
           # Note: Attestations are automatically generated and verified by PyPI/TestPyPI
           # This step confirms the publishing process completed with attestations
@@ -534,14 +532,9 @@ jobs:
             echo "🏪 GitHub Release: ⏭️ Skipped (no release trigger)"
           fi
           
-          # PyPI/TestPyPI status
+          # PyPI status
           if [[ "${{ needs.publish-to-pypi.result }}" == "success" ]]; then
-            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-              echo "📦 TestPyPI Publishing: ✅ Published with Sigstore attestations"
-              echo "🧪 Note: This was a test release to TestPyPI"
-            else
-              echo "📦 PyPI Publishing: ✅ Published with Sigstore attestations"
-            fi
+            echo "📦 PyPI Publishing: ✅ Published with Sigstore attestations"
             if [[ -n "${PYPI_URL:-}" ]]; then
               echo "Package URL: $PYPI_URL"
             fi
