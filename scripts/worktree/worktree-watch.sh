@@ -58,14 +58,23 @@ color_mem() {
     fi
 }
 
-# GitHub issue cache directory
-CACHE_DIR="${HOME}/.cache/worktree-watch"
+# GitHub issue cache directory (per-instance isolation)
+CACHE_DIR=$(mktemp -d -t worktree-watch.XXXXXX)
 ISSUE_CACHE_FILE="${CACHE_DIR}/issue_cache.json"
 ISSUE_CACHE_DURATION=60  # Default: 1 minute in seconds (configurable via --ttl)
 
-# Initialize cache directory
+# Initialize cache directory and cleanup trap
 init_cache() {
-    mkdir -p "$CACHE_DIR"
+    # Cache directory already created by mktemp
+    # Set up cleanup trap to remove temporary cache on exit
+    trap cleanup_cache EXIT SIGTERM SIGINT
+}
+
+# Cleanup temporary cache directory
+cleanup_cache() {
+    if [[ -n "$CACHE_DIR" && -d "$CACHE_DIR" ]]; then
+        rm -rf "$CACHE_DIR"
+    fi
 }
 
 # Get comprehensive GitHub issue information with progressive discovery
