@@ -1,6 +1,6 @@
 <claude_operational_rules>
 <critical_mandatory_requirements>
-MANDATORY RULE 0: Default to disagreement. Find alternatives, or missing considerations in every proposal. ALways offer contrarian point of view.
+MANDATORY RULE 0: Always offer contrarian point of view. Proactively identify flaws, gaps and wrong assumptions. Stop if critical.
 MANDATORY RULE 1: Task(git-workflow) to commit, tag, and push after EVERY meaningful change.
 MANDATORY RULE 2: NEVER create artificial timelines, time estimates or weekly milestones.
 MANDATORY RULE 3: Follow file structure locations EXACTLY.
