@@ -20,6 +20,30 @@ print_success() { echo -e "${GREEN}SUCCESS:${NC} $1" >&2; }
 print_warning() { echo -e "${YELLOW}WARNING:${NC} $1" >&2; }
 print_info() { echo -e "${BLUE}INFO:${NC} $1" >&2; }
 
+# Check if running from main working copy
+check_main_working_copy() {
+    local current_dir
+    current_dir="$(pwd)"
+    
+    # Check if we're in a git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        print_warning "Not in a git repository - cannot verify main working copy location"
+        return 0
+    fi
+    
+    # Get worktree list and find the main working copy
+    local main_worktree_path
+    main_worktree_path="$(git worktree list | head -n 1 | awk '{print $1}')"
+    
+    # Check if current directory is the main working copy
+    if [[ "$(realpath "$current_dir")" != "$(realpath "$main_worktree_path")" ]]; then
+        print_warning "Running 'init' from worktree instead of main working copy"
+        print_warning "Generated paths will point to: $SCRIPT_DIR"
+        print_warning "For consistent behavior, consider running from: $main_worktree_path"
+        print_warning "Current configuration will only work when scripts are available at the generated paths"
+    fi
+}
+
 # Show usage information
 show_usage() {
     cat << EOF
@@ -287,6 +311,9 @@ main() {
         print_error "Main worktree.sh script is not executable: $SCRIPT_DIR/worktree.sh" >&2
         exit 1
     fi
+    
+    # Check if running from main working copy and warn if not
+    check_main_working_copy
     
     # Generate configuration based on shell type
     case "$target_shell" in
