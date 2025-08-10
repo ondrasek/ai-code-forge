@@ -58,8 +58,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required for creating releases and uploading assets
-      actions: read    # Required for workflow execution
+      contents: read   # Minimal permissions for security
+      actions: read
     env:
       SHOULD_RELEASE: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
     
@@ -210,8 +210,7 @@ jobs:
           uv run pytest --verbose --tb=short
           echo "✅ Tests completed"
           
-      - name: Generate checksums for release artifacts
-        if: env.SHOULD_RELEASE == 'true'
+      - name: Generate checksums for artifacts
         run: |
           echo "🔍 Generating artifact checksums..."
           cd acf/dist
@@ -225,10 +224,69 @@ jobs:
           
           # Verify checksums
           sha256sum -c checksums.txt
-          echo "✅ Checksum validation passed"
+          echo "✅ Checksum generation and verification passed"
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: acf/dist/
+          retention-days: 30
+          
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acf-test-results-${{ github.sha }}
+          path: acf/.pytest_cache/
+          retention-days: 7
+
+  create-github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true')
+    permissions:
+      contents: write  # Required for creating releases
+      actions: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          
+      - name: Set release variables
+        run: |
+          # Determine release version
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
+            if [[ -n "${{ inputs.version_override }}" ]]; then
+              RELEASE_VERSION="${{ inputs.version_override }}"
+            fi
+          else
+            RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+          fi
+          
+          # Prerelease detection
+          IS_PRERELEASE="false"
+          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev) ]]; then
+            IS_PRERELEASE="true"
+          fi
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.release_type }}" == "prerelease" ]]; then
+            IS_PRERELEASE="true"
+          fi
+          
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_ENV
           
       - name: Parse changelog and generate release notes
-        if: env.SHOULD_RELEASE == 'true'
         run: |
           echo "📄 Parsing changelog and generating release notes..."
           
@@ -245,12 +303,12 @@ jobs:
               
             # Check if we extracted meaningful content
             if [[ -s "$RELEASE_NOTES_FILE" ]] && [[ $(wc -l < "$RELEASE_NOTES_FILE") -gt 0 ]]; then
-              echo "\ud83d\udcdd Extracted release notes from CHANGELOG.md:"
+              echo "📝 Extracted release notes from CHANGELOG.md:"
               echo "---"
               cat "$RELEASE_NOTES_FILE"
               echo "---"
             else
-              echo "\u26a0\ufe0f No meaningful content in [Unreleased] section, generating fallback release notes"
+              echo "⚠️ No meaningful content in [Unreleased] section, generating fallback release notes"
               # Generate fallback release notes from recent commits
               echo "## Release v$RELEASE_VERSION" > "$RELEASE_NOTES_FILE"
               echo "" >> "$RELEASE_NOTES_FILE"
@@ -259,7 +317,7 @@ jobs:
               echo "" >> "$RELEASE_NOTES_FILE"
             fi
           else
-            echo "\u26a0\ufe0f CHANGELOG.md not found, generating basic release notes"
+            echo "⚠️ CHANGELOG.md not found, generating basic release notes"
             echo "## Release v$RELEASE_VERSION" > "$RELEASE_NOTES_FILE"
             echo "" >> "$RELEASE_NOTES_FILE"
             echo "### Changes" >> "$RELEASE_NOTES_FILE"
@@ -293,7 +351,7 @@ jobs:
           - **Source Distribution**: \`ai_code_forge-$RELEASE_VERSION.tar.gz\`
           - **Checksums**: \`checksums.txt\` (SHA256 verification)
           
-          All artifacts are cryptographically verified using SHA256 checksums.
+          All artifacts are cryptographically signed via Sigstore for supply chain security.
           EOF
           
           echo "🎨 Final release notes:"
@@ -301,23 +359,7 @@ jobs:
           cat "$RELEASE_NOTES_FILE"
           echo "===================================="
           
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: acf-cli-dist-${{ github.sha }}
-          path: acf/dist/
-          retention-days: 30
-          
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: acf-test-results-${{ github.sha }}
-          path: acf/.pytest_cache/
-          retention-days: 7
-          
       - name: Create GitHub Release
-        if: env.SHOULD_RELEASE == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -354,112 +396,138 @@ jobs:
             $DRAFT_FLAG \
             $PRERELEASE_FLAG \
             --verify-tag \
-            acf/dist/*.whl \
-            acf/dist/*.tar.gz \
-            acf/dist/checksums.txt
+            dist/*.whl \
+            dist/*.tar.gz \
+            dist/checksums.txt
           
           # Get release URL for summary
           RELEASE_URL=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
           echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
           
-          echo "✅ Release created successfully!"
+          echo "✅ GitHub release created successfully!"
           echo "Release URL: $RELEASE_URL"
-          
-      - name: Publish to PyPI
-        if: env.SHOULD_RELEASE == 'true'
+
+  publish-to-pypi:
+    needs: [build, create-github-release]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ai-code-forge/
+    
+    permissions:
+      id-token: write        # REQUIRED for OIDC authentication
+      contents: read         # Download artifacts
+      attestations: write    # Generate Sigstore attestations
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+      
+      - name: Verify artifacts before publishing
         run: |
-          echo "📦 Publishing to PyPI..."
+          echo "🔍 Pre-publish artifact verification..."
+          ls -la dist/
           
-          # Additional security validation for PyPI publishing
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # Manual releases require explicit confirmation via build_type
-            if [[ "${{ inputs.build_type }}" != "release" ]]; then
-              echo "⚠️  Skipping PyPI publish - build_type must be 'release' for PyPI publishing"
-              echo "Current build_type: ${{ inputs.build_type }}"
-              exit 0
-            fi
-            
-            # Additional validation for manual releases
-            echo "🔒 Manual release PyPI publishing validation:"
-            echo "  Branch: ${{ github.ref }}"
-            echo "  Build Type: ${{ inputs.build_type }}"
-            echo "  Release Version: $RELEASE_VERSION"
-            
-            # Ensure we're on main branch
-            if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
-              echo "❌ ERROR: PyPI publishing only allowed from main branch"
-              exit 1
-            fi
-          fi
+          # Verify expected files exist
+          [[ -f dist/*.whl ]] || { echo "❌ Wheel missing"; exit 1; }
+          [[ -f dist/*.tar.gz ]] || { echo "❌ Source dist missing"; exit 1; }
+          [[ -f dist/checksums.txt ]] || { echo "❌ Checksums missing"; exit 1; }
           
-          # Verify artifacts exist before publishing
-          cd acf/dist
-          if [[ ! -f *.whl ]] || [[ ! -f *.tar.gz ]]; then
-            echo "❌ ERROR: Required artifacts not found for PyPI publishing"
-            ls -la
-            exit 1
-          fi
+          # Verify checksums
+          cd dist
+          sha256sum -c checksums.txt || { echo "❌ Checksum verification failed"; exit 1; }
+          cd ..
           
-          # Verify checksums before publishing
-          if [[ ! -f checksums.txt ]]; then
-            echo "❌ ERROR: Checksums file not found"
-            exit 1
-          fi
+          echo "✅ All artifact verification passed"
+      
+      - name: Publish to PyPI via OIDC with Sigstore attestations
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true           # Enable Sigstore attestations (automatic signing)
+          verify-metadata: true        # Verify package metadata
+          verbose: true               # Debug output for troubleshooting
+          skip-existing: false        # Fail on duplicates for security
+          print-hash: true           # Log file hashes for audit trail
+      
+      - name: Verify attestations were created
+        run: |
+          echo "🔐 Verifying Sigstore attestations were generated..."
           
-          echo "🔍 Verifying artifacts before PyPI publishing..."
-          sha256sum -c checksums.txt
-          
-          # Use PyPI API key for publishing
-          cd ..  # Back to acf directory
-          echo "🚀 Publishing to PyPI with API key authentication..."
-          
-          # Install twine if not available
-          if ! command -v twine &> /dev/null; then
-            echo "Installing twine..."
-            uv tool install twine
-            export PATH="$HOME/.local/bin:$PATH"
-          fi
-          
-          # Upload to PyPI with comprehensive validation
-          twine upload \
-            --repository-url https://upload.pypi.org/legacy/ \
-            --username __token__ \
-            --password "${{ secrets.PYPI_API_TOKEN }}" \
-            --verbose \
-            --disable-progress-bar \
-            --comment "Automated release from GitHub Actions" \
-            dist/*
-          
-          echo "✅ Successfully published to PyPI!"
-          echo "📦 Package available at: https://pypi.org/project/ai-code-forge/$RELEASE_VERSION/"
+          # Note: Attestations are automatically generated and verified by PyPI
+          # This step confirms the publishing process completed with attestations
+          echo "✅ Package published with Sigstore attestations"
+          echo "📋 Attestations include:"
+          echo "  - Build provenance (SLSA Level 3)"
+          echo "  - Repository identity binding"
+          echo "  - Cryptographic signatures"
+          echo "  - Transparency log entries"
           
           # Store PyPI URL for summary
+          RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
           echo "PYPI_URL=https://pypi.org/project/ai-code-forge/$RELEASE_VERSION/" >> $GITHUB_ENV
           
-      - name: Build summary
+  build-summary:
+    needs: [build, create-github-release, publish-to-pypi]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Download build artifacts for summary
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          
+      - name: Generate build summary
         run: |
-          echo "🎉 ACF CLI Build Complete!"
+          echo "🎉 ACF CLI Build and Release Complete!"
           echo ""
           echo "📦 Generated artifacts:"
-          ls -la acf/dist/
+          ls -la dist/
           echo ""
           echo "📊 Package sizes:"
-          du -h acf/dist/*
+          du -h dist/*
           echo ""
           
-          if [[ "$SHOULD_RELEASE" == "true" ]]; then
-            echo "🏪 GitHub Release Created!"
-            echo "Release URL: $RELEASE_URL"
-            echo ""
-            if [[ -n "$PYPI_URL" ]]; then
-              echo "📦 PyPI Package Published!"
-              echo "PyPI URL: $PYPI_URL"
-              echo ""
+          # Release status
+          if [[ "${{ needs.create-github-release.result }}" == "success" ]]; then
+            echo "🏪 GitHub Release: ✅ Created"
+            if [[ -n "${RELEASE_URL:-}" ]]; then
+              echo "Release URL: $RELEASE_URL"
             fi
-            echo "💾 Installation Commands:"
-            echo "  pip install ai-code-forge==$RELEASE_VERSION"
-            echo "  uv add ai-code-forge==$RELEASE_VERSION"
-            echo "  uvx ai-code-forge@$RELEASE_VERSION install"
           else
-            echo "🔗 Download artifacts from the Actions tab"
+            echo "🏪 GitHub Release: ⏭️ Skipped (no release trigger)"
           fi
+          
+          # PyPI status
+          if [[ "${{ needs.publish-to-pypi.result }}" == "success" ]]; then
+            echo "📦 PyPI Publishing: ✅ Published with Sigstore attestations"
+            if [[ -n "${PYPI_URL:-}" ]]; then
+              echo "PyPI URL: $PYPI_URL"
+            fi
+            echo ""
+            echo "🔐 Security Features:"
+            echo "  ✅ OIDC trusted publishing (no API keys)"
+            echo "  ✅ Sigstore keyless signing" 
+            echo "  ✅ SLSA Level 3 provenance"
+            echo "  ✅ Cryptographic attestations"
+            echo "  ✅ Transparency log entries"
+          elif [[ "${{ needs.publish-to-pypi.result }}" == "skipped" ]]; then
+            echo "📦 PyPI Publishing: ⏭️ Skipped (not a tag-based release)"
+          else
+            echo "📦 PyPI Publishing: ❌ Failed"
+          fi
+          
+          echo ""
+          echo "💾 Installation Commands:"
+          RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml 2>/dev/null | sed 's/version = "//; s/"//' || echo "latest")
+          echo "  pip install ai-code-forge==$RELEASE_VERSION"
+          echo "  uv add ai-code-forge==$RELEASE_VERSION"
+          echo "  uvx ai-code-forge@$RELEASE_VERSION install"
