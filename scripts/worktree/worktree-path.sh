@@ -153,42 +153,65 @@ find_worktree_dir() {
         return 1
     fi
     
-    # Handle "main" special case
+    # Handle "main" special case - try both "main" and actual main branch name
+    local search_identifiers=()
     if [[ "$identifier" == "main" ]]; then
+        # Try "main" first (in case worktree was created as "main")
+        search_identifiers+=("main")
+        # Also try the actual main branch name
         local main_branch
         main_branch=$(get_main_branch)
-        identifier="$main_branch"
-    fi
-    
-    # Clean up identifier (remove # prefix if present) - now safe after validation
-    local clean_id="${identifier#\#}"
-    
-    # Try exact match first
-    local target_dir="$base_dir/$clean_id"
-    if [[ -d "$target_dir" ]]; then
-        echo "$target_dir"
-        return 0
-    fi
-    
-    # Search for directories containing the identifier (now safe - only numbers or main branch)
-    local matches=()
-    while IFS= read -r -d '' dir; do
-        local dirname=$(basename "$dir")
-        if [[ "$dirname" == *"$clean_id"* ]]; then
-            matches+=("$dir")
+        if [[ "$main_branch" != "main" ]]; then
+            search_identifiers+=("$main_branch")
         fi
-    done < <(find "$base_dir" -mindepth 1 -maxdepth 1 -type d -print0)
+    else
+        search_identifiers+=("$identifier")
+    fi
     
-    if [[ ${#matches[@]} -eq 0 ]]; then
-        echo "ERROR: No worktree found for issue #$clean_id" >&2
+    # Search through all possible identifiers
+    local all_matches=()
+    
+    for search_id in "${search_identifiers[@]}"; do
+        # Clean up identifier (remove # prefix if present) - now safe after validation
+        local clean_id="${search_id#\#}"
+        
+        # Try exact match first
+        local target_dir="$base_dir/$clean_id"
+        if [[ -d "$target_dir" ]]; then
+            echo "$target_dir"
+            return 0
+        fi
+        
+        # Search for directories containing the identifier (now safe - only numbers or main branch)
+        while IFS= read -r -d '' dir; do
+            local dirname=$(basename "$dir")
+            if [[ "$dirname" == *"$clean_id"* ]]; then
+                all_matches+=("$dir")
+            fi
+        done < <(find "$base_dir" -mindepth 1 -maxdepth 1 -type d -print0)
+    done
+    
+    # Use the original identifier for error messages
+    local clean_original="${identifier#\#}"
+    
+    if [[ ${#all_matches[@]} -eq 0 ]]; then
+        if [[ "$identifier" == "main" ]]; then
+            echo "ERROR: No worktree found for main branch (tried: ${search_identifiers[*]})" >&2
+        else
+            echo "ERROR: No worktree found for issue #$clean_original" >&2
+        fi
         echo "."
         return 1
-    elif [[ ${#matches[@]} -eq 1 ]]; then
-        echo "${matches[0]}"
+    elif [[ ${#all_matches[@]} -eq 1 ]]; then
+        echo "${all_matches[0]}"
         return 0
     else
-        echo "WARNING: Multiple worktrees match issue #$clean_id, using first match" >&2
-        echo "${matches[0]}"
+        if [[ "$identifier" == "main" ]]; then
+            echo "WARNING: Multiple worktrees match main branch, using first match" >&2
+        else
+            echo "WARNING: Multiple worktrees match issue #$clean_original, using first match" >&2
+        fi
+        echo "${all_matches[0]}"
         return 0
     fi
 }
