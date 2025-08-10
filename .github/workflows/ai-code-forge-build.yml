@@ -60,6 +60,7 @@ jobs:
     permissions:
       contents: write  # Required for creating releases and uploading assets
       actions: read    # Required for workflow execution
+      id-token: write  # Required for PyPI trusted publishing (OIDC)
     env:
       SHOULD_RELEASE: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
     
@@ -365,6 +366,82 @@ jobs:
           echo "✅ Release created successfully!"
           echo "Release URL: $RELEASE_URL"
           
+      - name: Publish to PyPI
+        if: env.SHOULD_RELEASE == 'true'
+        run: |
+          echo "📦 Publishing to PyPI..."
+          
+          # Additional security validation for PyPI publishing
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Manual releases require explicit confirmation via build_type
+            if [[ "${{ inputs.build_type }}" != "release" ]]; then
+              echo "⚠️  Skipping PyPI publish - build_type must be 'release' for PyPI publishing"
+              echo "Current build_type: ${{ inputs.build_type }}"
+              exit 0
+            fi
+            
+            # Additional validation for manual releases
+            echo "🔒 Manual release PyPI publishing validation:"
+            echo "  Branch: ${{ github.ref }}"
+            echo "  Build Type: ${{ inputs.build_type }}"
+            echo "  Release Version: $RELEASE_VERSION"
+            
+            # Ensure we're on main branch
+            if [[ "${{ github.ref }}" != "refs/heads/main" ]]; then
+              echo "❌ ERROR: PyPI publishing only allowed from main branch"
+              exit 1
+            fi
+          fi
+          
+          # Verify artifacts exist before publishing
+          cd acf/dist
+          if [[ ! -f *.whl ]] || [[ ! -f *.tar.gz ]]; then
+            echo "❌ ERROR: Required artifacts not found for PyPI publishing"
+            ls -la
+            exit 1
+          fi
+          
+          # Verify checksums before publishing
+          if [[ ! -f checksums.txt ]]; then
+            echo "❌ ERROR: Checksums file not found"
+            exit 1
+          fi
+          
+          echo "🔍 Verifying artifacts before PyPI publishing..."
+          sha256sum -c checksums.txt
+          
+          # Use PyPI API key for publishing
+          cd ..  # Back to acf directory
+          echo "🚀 Publishing to PyPI with API key authentication..."
+          
+          # Set PyPI credentials
+          export TWINE_USERNAME="__token__"
+          export TWINE_PASSWORD="${{ secrets.PYPI_API_TOKEN }}"
+          export TWINE_REPOSITORY_URL="https://upload.pypi.org/legacy/"
+          
+          # Install twine if not available
+          if ! command -v twine &> /dev/null; then
+            echo "Installing twine..."
+            uv tool install twine
+            export PATH="$HOME/.local/bin:$PATH"
+          fi
+          
+          # Upload to PyPI with comprehensive validation
+          twine upload \
+            --repository-url https://upload.pypi.org/legacy/ \
+            --username __token__ \
+            --password "${{ secrets.PYPI_API_TOKEN }}" \
+            --verbose \
+            --disable-progress-bar \
+            --comment "Automated release from GitHub Actions" \
+            dist/*
+          
+          echo "✅ Successfully published to PyPI!"
+          echo "📦 Package available at: https://pypi.org/project/ai-code-forge/$RELEASE_VERSION/"
+          
+          # Store PyPI URL for summary
+          echo "PYPI_URL=https://pypi.org/project/ai-code-forge/$RELEASE_VERSION/" >> $GITHUB_ENV
+          
       - name: Build summary
         run: |
           echo "🎉 ACF CLI Build Complete!"
@@ -380,6 +457,11 @@ jobs:
             echo "🏪 GitHub Release Created!"
             echo "Release URL: $RELEASE_URL"
             echo ""
+            if [[ -n "$PYPI_URL" ]]; then
+              echo "📦 PyPI Package Published!"
+              echo "PyPI URL: $PYPI_URL"
+              echo ""
+            fi
             echo "💾 Installation Commands:"
             echo "  pip install ai-code-forge==$RELEASE_VERSION"
             echo "  uv add ai-code-forge==$RELEASE_VERSION"
