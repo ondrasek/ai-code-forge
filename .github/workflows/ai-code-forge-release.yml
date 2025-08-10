@@ -412,7 +412,7 @@ jobs:
           echo "Release URL: $RELEASE_URL"
 
   publish-to-pypi:
-    needs: [build, create-github-release]
+    needs: [build]
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true')
     
