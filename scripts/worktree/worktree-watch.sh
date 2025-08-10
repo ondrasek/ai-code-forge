@@ -354,10 +354,10 @@ main() {
     
     if [[ "$test_mode" == "--test" ]]; then
         # Test mode - run once and exit (no screen clearing)
-        echo -e "\\n${COLOR_HEADER}=== CLAUDE DASHBOARD TEST MODE ===${COLOR_RESET}\\n"
+        echo -e "\n${COLOR_HEADER}=== CLAUDE DASHBOARD TEST MODE ===${COLOR_RESET}\n"
         show_header
         display_dashboard
-        echo -e "\\n${COLOR_DIM}Test mode - completed single display${COLOR_RESET}"
+        echo -e "\n${COLOR_DIM}Test mode - completed single display${COLOR_RESET}"
         return 0
     fi
     
