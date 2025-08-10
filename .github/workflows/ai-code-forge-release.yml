@@ -238,8 +238,12 @@ jobs:
         if: always()
         with:
           name: acf-test-results-${{ github.sha }}
-          path: acf/.pytest_cache/
+          path: |
+            acf/.pytest_cache/
+            acf/htmlcov/
+            acf/test-results.xml
           retention-days: 7
+          if-no-files-found: warn
 
   create-github-release:
     needs: build
