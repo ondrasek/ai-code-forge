@@ -1,4 +1,4 @@
-name: ACF CLI Build
+name: ai-code-forge cli build
 
 on:
   push:
