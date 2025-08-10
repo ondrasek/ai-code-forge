@@ -61,7 +61,7 @@ color_mem() {
 # GitHub issue cache directory
 CACHE_DIR="${HOME}/.cache/worktree-watch"
 ISSUE_CACHE_FILE="${CACHE_DIR}/issue_cache.json"
-ISSUE_CACHE_DURATION=60  # 1 minute in seconds
+ISSUE_CACHE_DURATION=60  # Default: 1 minute in seconds (configurable via --ttl)
 
 # Initialize cache directory
 init_cache() {
@@ -386,17 +386,41 @@ main() {
     local test_mode=false
     
     # Parse arguments
-    case "${1:-}" in
-        "--test"|"-t")
-            test_mode=true
-            ;;
-        "--help"|"-h")
-            echo "Usage: $0 [--test] [--help]"
-            echo "  --test    Run once and exit"
-            echo "  --help    Show this help"
-            exit 0
-            ;;
-    esac
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            "--test"|"-t")
+                test_mode=true
+                shift
+                ;;
+            "--ttl")
+                if [[ -n "$2" && "$2" =~ ^[0-9]+$ ]]; then
+                    ISSUE_CACHE_DURATION="$2"
+                    shift 2
+                else
+                    echo "Error: --ttl requires a numeric value (seconds)"
+                    exit 1
+                fi
+                ;;
+            "--help"|"-h")
+                echo "Usage: $0 [--test] [--ttl SECONDS] [--help]"
+                echo "  --test         Run once and exit"
+                echo "  --ttl SECONDS  Set cache duration in seconds (default: 60)"
+                echo "  --help         Show this help"
+                echo ""
+                echo "Examples:"
+                echo "  $0                    # Run with default 1-minute cache"
+                echo "  $0 --ttl 300         # Run with 5-minute cache"
+                echo "  $0 --ttl 1800        # Run with 30-minute cache (original)"
+                echo "  $0 --test --ttl 30   # Test with 30-second cache"
+                exit 0
+                ;;
+            *)
+                echo "Error: Unknown option $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
     
     # Initialize cache directory
     init_cache
