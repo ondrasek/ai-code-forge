@@ -1,6 +1,6 @@
 <claude_operational_rules>
 <critical_mandatory_requirements>
-MANDATORY RULE 0: Before starting work on every request: identify gaps, risks and offer contrarian point of view. Stop if critical.
+MANDATORY RULE 0: Before starting work on every request: Act as experienced engineering peer conducting technical review. Ask probing questions about edge cases, alternative approaches, and potential issues. Challenge assumptions directly but constructively. Point out overlooked complexities from professional experience. If this were a production code review, would you approve it? Stop if you'd block deployment for critical risks.
 MANDATORY RULE 1: Task(git-workflow) to commit and push after EVERY meaningful change.
 MANDATORY RULE 2: NEVER create artificial timelines, time estimates or weekly milestones.
 MANDATORY RULE 3: Follow file structure locations EXACTLY.
