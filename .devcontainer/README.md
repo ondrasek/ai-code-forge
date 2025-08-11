@@ -12,6 +12,17 @@ The devcontainer provides:
 - **MCP Servers**: Perplexity research server configured and ready
 - **All Tools**: Same development tools, extensions, and configurations
 
+## Claude Code Preconfiguration
+
+The devcontainer automatically configures Claude Code to bypass the setup wizard:
+
+- **User-Level Configuration**: Creates `~/.claude.json` with pre-accepted trust dialogs
+- **Bypass Permissions**: Sets default permission mode to bypass for smooth development  
+- **Authentication**: Uses `CLAUDE_CODE_OAUTH_TOKEN` environment variable
+- **Repository Defaults**: Preserves `.claude/settings.json` files as recommended defaults
+
+This means Claude Code will start immediately without requiring manual configuration after each devcontainer rebuild.
+
 ## Quick Start
 
 1. **Open in DevContainer**:
@@ -20,14 +31,16 @@ The devcontainer provides:
 
 2. **Set Environment Variables**:
    ```bash
-   # Set your API keys as environment variables on your host machine
-   export CLAUDE_API_KEY="your-key-here"
-   export PERPLEXITY_API_KEY="your-key-here"
+   # Copy the template and configure your keys
+   cp .env.template .env
    
-   # Make them persistent in your shell profile
-   echo 'export CLAUDE_API_KEY="your-key"' >> ~/.bashrc
-   echo 'export PERPLEXITY_API_KEY="your-key"' >> ~/.bashrc
+   # Edit .env with your API keys:
+   # CLAUDE_CODE_OAUTH_TOKEN=your_claude_oauth_token_here
+   # PERPLEXITY_API_KEY=your_perplexity_api_key_here
+   # GITHUB_TOKEN=your_github_token_here
    ```
+   
+   **Get Claude Code OAuth Token**: Visit [Anthropic Console](https://console.anthropic.com/settings/keys) to create an OAuth token.
 
 3. **Validate Setup**:
    ```bash
