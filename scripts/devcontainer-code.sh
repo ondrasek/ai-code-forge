@@ -230,12 +230,12 @@ launch_vscode_method1() {
     local json_config
     json_config=$(cat <<EOF
 {
-  "hostPath": "$PROJECT_ROOT",
-  "localDocker": true,
+  "containerName": "$(docker ps --filter "id=$container_id" --format "{{.Names}}")",
   "configFile": {
-    "path": "$config_file",
-    "scheme": "file"
-  }
+    "file": "$config_file"
+  },
+  "workspaceMount": "source=${PROJECT_ROOT},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace"
 }
 EOF
     )
@@ -244,7 +244,7 @@ EOF
     local hex_encoded
     hex_encoded=$(printf "%s" "$json_config" | xxd -p | tr -d '\n')
     
-    local dev_container_uri="vscode-remote://dev-container+${hex_encoded}/workspace/${PROJECT_NAME}"
+    local dev_container_uri="vscode-remote://dev-container+${hex_encoded}/workspace"
     
     if [[ "$DRY_RUN" == true ]]; then
         echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
@@ -261,11 +261,11 @@ launch_vscode_method2() {
     log "Method 2: VS Code --folder-uri with container scheme"
     
     if [[ "$DRY_RUN" == true ]]; then
-        echo "DRY RUN: code --folder-uri \"vscode-remote://dev-container+$container_id/workspace/${PROJECT_NAME}\""
+        echo "DRY RUN: code --folder-uri \"vscode-remote://dev-container+$container_id/workspace\""
         return 0
     fi
     
-    code --folder-uri "vscode-remote://dev-container+$container_id/workspace/${PROJECT_NAME}"
+    code --folder-uri "vscode-remote://dev-container+$container_id/workspace"
 }
 
 launch_vscode_method3() {
@@ -273,7 +273,7 @@ launch_vscode_method3() {
     log "Method 3: VS Code with container ID direct attach"
     
     # Use container ID directly with attach-to-running-container approach
-    local dev_container_uri="vscode-remote://attached-container+${container_id}/workspace/${PROJECT_NAME}"
+    local dev_container_uri="vscode-remote://attached-container+${container_id}/workspace"
     
     if [[ "$DRY_RUN" == true ]]; then
         echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
@@ -296,7 +296,7 @@ launch_vscode_method4() {
 {
   "containerName": "$container_name",
   "localDocker": true,
-  "workspaceFolder": "/workspace/${PROJECT_NAME}"
+  "workspaceFolder": "/workspace"
 }
 EOF
     )
@@ -305,7 +305,7 @@ EOF
     local hex_encoded
     hex_encoded=$(printf "%s" "$json_config" | xxd -p | tr -d '\n')
     
-    local dev_container_uri="vscode-remote://dev-container+${hex_encoded}/workspace/${PROJECT_NAME}"
+    local dev_container_uri="vscode-remote://dev-container+${hex_encoded}/workspace"
     
     if [[ "$DRY_RUN" == true ]]; then
         echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
@@ -386,7 +386,7 @@ main() {
             error "  1. Run: code ."
             error "  2. Use Command Palette: Remote-Containers: Attach to Running Container"
             error "  3. Select container: $container_id"
-            error "  4. Open folder: /workspace/${PROJECT_NAME}"
+            error "  4. Open folder: /workspace"
             exit 1
         fi
     fi
