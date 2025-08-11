@@ -26,10 +26,13 @@ echo "worktreesDir: $worktreesDir"
 # Detect if we're in a container environment
 export CONTAINER_ENV=1
 
-# Skip the hassle when in GitHub Codespaces
+# Detect runtime environment for scripts
+export RUNTIME_ENV="devcontainer"
 if [ "$CODESPACES" = "true" ]; then
-  echo "In Codespaces, exiting..."
-  exit 0
+  export RUNTIME_ENV="codespaces"
+  echo "🌐 GitHub Codespaces environment detected"
+else
+  echo "🐳 DevContainer environment detected"
 fi
 
 set -e
