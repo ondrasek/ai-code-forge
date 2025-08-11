@@ -35,15 +35,16 @@ fi
 set -e
 
 # Execute setup scripts in order
-echo "🔄 Running setup scripts..."
+postCreateScriptsDir=$(dirname $0)/postCreate-scripts
+echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 
-"$POSTCREATE_SCRIPTS_DIR/install-dev-tools.sh"
-"$POSTCREATE_SCRIPTS_DIR/configure-shell.sh"
-"$POSTCREATE_SCRIPTS_DIR/setup-git.sh"
-"$POSTCREATE_SCRIPTS_DIR/authenticate-github.sh"
-"$POSTCREATE_SCRIPTS_DIR/prepare-repository.sh"
-"$POSTCREATE_SCRIPTS_DIR/initialize-worktree.sh"
-"$POSTCREATE_SCRIPTS_DIR/configure-shell-environment.sh"
-"$POSTCREATE_SCRIPTS_DIR/verify-installation.sh"
+"$postCreateScriptsDir/install-dev-tools.sh"
+"$postCreateScriptsDir/configure-shell.sh"
+"$postCreateScriptsDir/setup-git.sh"
+"$postCreateScriptsDir/authenticate-github.sh"
+"$postCreateScriptsDir/prepare-repository.sh"
+"$postCreateScriptsDir/initialize-worktree.sh"
+"$postCreateScriptsDir/configure-shell-environment.sh"
+"$postCreateScriptsDir/verify-installation.sh"
 
 echo "🎉 All setup scripts completed successfully!"

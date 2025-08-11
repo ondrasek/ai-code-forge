@@ -18,6 +18,6 @@ fi
 
 # Set up worktree directories
 mkdir -p $worktreesDir
-git config --global -add safe.directory $worktreesDir
+git config --global --add safe.directory $worktreesDir
 
 echo "✅ Repository preparation completed"
