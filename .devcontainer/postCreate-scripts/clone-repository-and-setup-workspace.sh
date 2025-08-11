@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# Prepare repository workspace for DevContainer
+# Prepare repository workspace
 set -e
+
+# Skip in Codespaces (repository already available)
+if [ "$CODESPACES" = "true" ]; then
+    echo "🌐 Skipping repository setup - running in Codespaces"
+    exit 0
+fi
 
 echo "📋 Preparing repository workspace for DevContainer..."
 

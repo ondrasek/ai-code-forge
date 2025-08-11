@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# Set up Git configuration for DevContainer
+# Set up Git configuration
 set -e
+
+# Skip in Codespaces (git config set from GitHub account)
+if [ "$CODESPACES" = "true" ]; then
+    echo "🌐 Skipping git configuration - running in Codespaces"
+    exit 0
+fi
 
 echo "🔧 Setting up Git configuration for DevContainer..."
 

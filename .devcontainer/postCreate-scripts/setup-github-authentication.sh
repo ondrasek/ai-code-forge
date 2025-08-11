@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# Set up GitHub CLI authentication for DevContainer
+# Set up GitHub CLI authentication
 set -e
+
+# Skip in Codespaces (GitHub CLI pre-authenticated)
+if [ "$CODESPACES" = "true" ]; then
+    echo "🌐 Skipping GitHub authentication - running in Codespaces"
+    exit 0
+fi
 
 echo "🔐 Setting up GitHub CLI authentication for DevContainer..."
 
