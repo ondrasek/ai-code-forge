@@ -20,13 +20,16 @@ The devcontainer provides:
 
 2. **Set Environment Variables**:
    ```bash
-   # Set your API keys as environment variables on your host machine
-   export CLAUDE_API_KEY="your-key-here"
-   export PERPLEXITY_API_KEY="your-key-here"
+   # Copy environment template
+   cp .env.template .env
    
-   # Make them persistent in your shell profile
-   echo 'export CLAUDE_API_KEY="your-key"' >> ~/.bashrc
-   echo 'export PERPLEXITY_API_KEY="your-key"' >> ~/.bashrc
+   # Method 1: Claude Code OAuth Token (Preserves Claude Max subscription)
+   claude setup-token  # Run on host machine to get OAuth token
+   echo "CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token" >> .env
+   
+   # Method 2: Alternative API authentication (Uses pay-as-you-go billing)
+   echo "CLAUDE_API_KEY=your-api-key" >> .env
+   echo "PERPLEXITY_API_KEY=your-perplexity-key" >> .env
    ```
 
 3. **Validate Setup**:
@@ -118,6 +121,41 @@ The devcontainer includes enterprise-grade secret management with multiple secur
 gh auth login          # GitHub authentication
 claude auth status     # Verify Claude authentication
 /tmp/validate-environment.sh  # Validate development environment
+```
+
+## Claude Code Preconfiguration
+
+The devcontainer automatically configures Claude Code to bypass the setup wizard on every rebuild, preserving your authentication and preferences.
+
+### Authentication Methods
+
+**🔑 OAuth Token (Recommended for Claude Max subscribers)**:
+- Preserves Claude Max subscription benefits
+- Run `claude setup-token` on your host machine  
+- Add `CLAUDE_CODE_OAUTH_TOKEN=your-token` to your `.env` file
+
+**🔧 API Key (Alternative)**:
+- Uses pay-as-you-go billing (no subscription benefits)
+- Add `CLAUDE_API_KEY=your-key` to your `.env` file
+
+### Automatic Configuration
+
+The devcontainer preconfigures:
+- ✅ Trust dialogs pre-accepted for `/workspace`
+- ✅ Permission bypass mode enabled for smooth development
+- ✅ Setup wizard bypassed on container rebuilds
+- ✅ Project onboarding completed automatically
+
+### Manual Override
+
+If you need to reconfigure Claude Code manually:
+```bash
+# Reset configuration
+rm ~/.claude.json
+claude config reset
+
+# Reconfigure manually
+claude config set hasTrustDialogAccepted true
 ```
 
 ## MCP Server Configuration
