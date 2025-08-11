@@ -156,14 +156,25 @@ detect_devcontainer() {
 # Test different VS Code connection methods
 launch_vscode_method1() {
     local container_id=$1
-    log "Method 1: VS Code --remote dev-container"
+    log "Method 1: VS Code --folder-uri with hex-encoded dev-container configuration"
+    
+    # Get container details for proper dev-container URI
+    local container_name
+    container_name=$(docker ps --filter "id=$container_id" --format "{{.Names}}")
+    
+    # Create hex-encoded container configuration identifier (project root + container name)
+    local config_identifier="${PROJECT_ROOT}+${container_name}"
+    local hex_config
+    hex_config=$(printf "$config_identifier" | xxd -p | tr -d '\n')
+    
+    local dev_container_uri="vscode-remote://dev-container+${hex_config}/workspace"
     
     if [[ "$DRY_RUN" == true ]]; then
-        echo "DRY RUN: code --remote dev-container+$container_id /workspace"
+        echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
         return 0
     fi
     
-    code --remote "dev-container+$container_id" /workspace
+    code --folder-uri "$dev_container_uri"
 }
 
 launch_vscode_method2() {
@@ -180,17 +191,23 @@ launch_vscode_method2() {
 
 launch_vscode_method3() {
     local container_id=$1
-    log "Method 3: VS Code with container name"
+    log "Method 3: VS Code with container name and folder-uri"
     
     local container_name
     container_name=$(docker ps --filter "id=$container_id" --format "{{.Names}}")
     
+    # Create hex-encoded container configuration for proper dev-container URI
+    local hex_container
+    hex_container=$(printf "$container_name" | xxd -p | tr -d '\n')
+    
+    local dev_container_uri="vscode-remote://dev-container+${hex_container}/workspace"
+    
     if [[ "$DRY_RUN" == true ]]; then
-        echo "DRY RUN: code --remote dev-container+$container_name /workspace"
+        echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
         return 0
     fi
     
-    code --remote "dev-container+$container_name" /workspace
+    code --folder-uri "$dev_container_uri"
 }
 
 # Main execution function
