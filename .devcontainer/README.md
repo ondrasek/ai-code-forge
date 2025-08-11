@@ -18,15 +18,15 @@ The devcontainer provides:
    - VS Code: Use "Dev Containers: Reopen in Container" command
    - GitHub Codespaces: Will automatically use this configuration
 
-2. **Set Environment Variables**:
+2. **Configure Authentication**:
    ```bash
-   # Set your API keys as environment variables on your host machine
-   export CLAUDE_API_KEY="your-key-here"
-   export PERPLEXITY_API_KEY="your-key-here"
+   # Copy the environment template
+   cp .env.template .env
    
-   # Make them persistent in your shell profile
-   echo 'export CLAUDE_API_KEY="your-key"' >> ~/.bashrc
-   echo 'export PERPLEXITY_API_KEY="your-key"' >> ~/.bashrc
+   # Edit .env file with your tokens
+   # Get your Claude Code OAuth token from: https://claude.ai/settings
+   # Add: CLAUDE_CODE_OAUTH_TOKEN=your_oauth_token_here
+   # Add: PERPLEXITY_API_KEY=your_perplexity_key_here (optional)
    ```
 
 3. **Validate Setup**:
@@ -83,18 +83,17 @@ The devcontainer includes enterprise-grade secret management with multiple secur
 
 1. **GitHub Codespaces** (Automatic):
    - Configure at: `https://github.com/settings/codespaces`
-   - Add repository or organization secrets: `CLAUDE_API_KEY`, `PERPLEXITY_API_KEY`
+   - Add repository or organization secrets: `CLAUDE_CODE_OAUTH_TOKEN`, `PERPLEXITY_API_KEY`
    - Secrets automatically injected into container
 
-2. **Local Environment Variables** (Development):
+2. **Local .env File** (Development):
    ```bash
-   # Set on your host machine
-   export CLAUDE_API_KEY="your-key-here"
-   export PERPLEXITY_API_KEY="your-key-here"
+   # Copy and configure the environment template
+   cp .env.template .env
    
-   # Make persistent in your shell profile
-   echo 'export CLAUDE_API_KEY="your-key"' >> ~/.bashrc
-   echo 'export PERPLEXITY_API_KEY="your-key"' >> ~/.bashrc
+   # Edit .env file with your tokens:
+   # CLAUDE_CODE_OAUTH_TOKEN=your_oauth_token_here
+   # PERPLEXITY_API_KEY=your_perplexity_key_here
    ```
 
 3. **Enterprise Vault Integration** (Advanced):
@@ -143,12 +142,14 @@ While this devcontainer aims for exact replication, some minor differences exist
 
 ### Common Issues
 
-**Claude CLI Not Working**:
+**Claude Code Not Working**:
 ```bash
 # Verify installation
 claude --version
-# Check API key
-echo "CLAUDE_API_KEY is set: ${CLAUDE_API_KEY:+yes}"
+# Check OAuth token
+echo "CLAUDE_CODE_OAUTH_TOKEN is set: ${CLAUDE_CODE_OAUTH_TOKEN:+yes}"
+# Check user-level configuration
+ls -la ~/.claude/
 ```
 
 **MCP Server Issues**:
@@ -160,9 +161,9 @@ uv run python -c "import fastmcp; print('FastMCP OK')"
 
 **Permission Issues**:
 ```bash
-# Fix common permission issues
-sudo chown -R codespace:codespace ~/.claude
-sudo chown -R codespace:codespace .support/logs
+# Fix common permission issues  
+sudo chown -R vscode:vscode ~/.claude
+sudo chown -R vscode:vscode .support/logs
 ```
 
 **Environment Validation**:

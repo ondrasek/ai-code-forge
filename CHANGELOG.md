@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Claude Code Configuration**: Removed repository-level settings pollution preventing devcontainer rebuild configuration persistence (fixes #159)
+  - Removed problematic `.claude/settings.json` from repository that was creating user-specific configuration in shared codebase
+  - Removed corresponding template file from ACF installer that was propagating repository-level Claude Code settings
+  - Added proper user-level Claude Code configuration script `configure-claude-code.sh` for devcontainer setup
+  - Configuration now creates `~/.claude/config.json` at user level with permission bypass settings to avoid configuration wizard
+  - Added `.env.template` with proper `CLAUDE_CODE_OAUTH_TOKEN` authentication setup instructions
+  - Updated devcontainer documentation to reflect secure user-level configuration approach
+  - Maintains wizard bypass functionality without polluting repository with user-specific settings
+
 ### Added
 - **ACF CLI Tool**: Complete configuration management tool for AI Code Forge installations (closes #59)
   - `ai-code-forge install` command for automated configuration deployment with comprehensive file management
