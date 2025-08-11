@@ -8,7 +8,12 @@ set -euo pipefail
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_NAME=$(basename "$PROJECT_ROOT")
+# Use gh to get repository name, fallback to basename if gh unavailable
+if command -v gh &> /dev/null; then
+    PROJECT_NAME=$(gh repo view --json name -q ".name" 2>/dev/null || basename "$PROJECT_ROOT")
+else
+    PROJECT_NAME=$(basename "$PROJECT_ROOT")
+fi
 
 # Colors for output
 RED='\033[0;31m'
