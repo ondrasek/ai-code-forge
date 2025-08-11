@@ -20,13 +20,16 @@ The devcontainer provides:
 
 2. **Set Environment Variables**:
    ```bash
-   # Set your API keys as environment variables on your host machine
-   export CLAUDE_API_KEY="your-key-here"
-   export PERPLEXITY_API_KEY="your-key-here"
+   # Copy the environment template
+   cp .env.template .env
    
-   # Make them persistent in your shell profile
-   echo 'export CLAUDE_API_KEY="your-key"' >> ~/.bashrc
-   echo 'export PERPLEXITY_API_KEY="your-key"' >> ~/.bashrc
+   # Edit .env file with your API keys
+   # Required: CLAUDE_CODE_OAUTH_TOKEN (get from https://docs.anthropic.com/en/docs/claude-code/authentication)
+   # Optional: PERPLEXITY_API_KEY for MCP servers
+   
+   # Alternative: Set as host environment variables
+   export CLAUDE_CODE_OAUTH_TOKEN="your-token-here"
+   export PERPLEXITY_API_KEY="your-key-here"
    ```
 
 3. **Validate Setup**:
