@@ -13,7 +13,13 @@ set -e
 
 # Load environment variables first - these must be available to all scripts
 devcontainerDir=/tmp/.devcontainer
-eval "$(grep -v '^#' $devcontainerDir/postCreate.env.tmp | sed 's/^/export /')"
+postCreateEnvFile=$devcontainerDir/postCreate.env.tmp
+[ -f $postCreateEnvFile ] || {
+    echo $postCreateEnvFile does not exist!
+    exit 1
+}
+
+eval "$(grep -v '^#' $postCreateEnvFile | sed 's/^/export /')"
 export workingCopy=/workspace/$repositoryName
 export worktreesDir=/workspace/worktrees/$repositoryName
 
@@ -23,6 +29,7 @@ echo "repositoryNameWithOwner: $repositoryNameWithOwner"
 echo "gitUserName: $gitUserName"
 echo "gitUserEmail: $gitUserEmail"
 echo "workingCopy: $workingCopy"
+echo "worktreesDir: $worktreesDir"
 
 # Detect if we're in a container environment
 export CONTAINER_ENV=1
@@ -34,9 +41,8 @@ mkdir -p ~/.claude
 echo "🚀 Setting up Claude Code Template DevContainer..."
 sudo mkdir -p /workspace && sudo chown vscode:vscode /workspace && cd /workspace
 
-# Get the script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-POSTCREATE_SCRIPTS_DIR="$SCRIPT_DIR/postCreate-scripts"
+# Get the postCreate-scripts directory relative to this script
+POSTCREATE_SCRIPTS_DIR="$(dirname "$0")/postCreate-scripts"
 
 # Execute setup scripts in order
 echo "🔄 Running setup scripts..."
