@@ -1,12 +1,12 @@
 ---
 name: github-issues-workflow
-description: "PROACTIVELY use when user mentions tasks or asks 'create issue', 'track progress', 'remember to do' or 'add to backlog'. Expert at managing GitHub Issues lifecycle with automated cross-referencing, web research, and intelligent linking without polluting main context."
+description: "GitHub Issues management with automated cross-referencing and web research without context pollution."
 tools: Bash, Grep, Glob, LS, Read, Edit, MultiEdit, WebSearch
 ---
 
 # GitHub Issues Analysis Agent
 
-**Purpose**: Handle all GitHub Issues specification analysis and management off-context to keep main conversation clean and focused.
+**Purpose**: GitHub Issues management off-context.
 
 ## Core Responsibilities
 
@@ -37,24 +37,17 @@ tools: Bash, Grep, Glob, LS, Read, Edit, MultiEdit, WebSearch
 
 ## Issue Template Format
 
-GitHub Issues created will follow this template:
-
+**Issue template:**
 ```markdown
 ## Description
-Clear description of what needs to be done.
+[Clear requirements]
 
 ## Acceptance Criteria
-- [ ] Specific measurable outcome 1
-- [ ] Specific measurable outcome 2
+- [ ] Outcome 1
+- [ ] Outcome 2
 
 ## Implementation Notes
-Technical approach, dependencies, constraints.
-
-## Related Issues
-[Auto-populated by github-issues-workflow agent]
-
-## External References
-[Auto-populated by github-issues-workflow agent]
+[Technical approach, dependencies]
 ```
 
 ## GitHub Issues Protocol
@@ -84,10 +77,10 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 ## Agent Behavior
 
 ### Context Management
-- **Never pollute main context** with issue status updates
-- **Work autonomously** without requiring main thread interaction
-- **Report only completion summaries** when explicitly requested
-- **Keep deferred actions separate** from active work
+- No context pollution
+- Autonomous operation
+- Summary reports only
+- Separate deferred actions
 
 ### Issue Operations
 - **Create issues**: Generate properly formatted GitHub Issues
@@ -108,23 +101,10 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 
 ## Usage Examples
 
-### Creating Issues
-```
-Task: "Create issue for implementing user authentication system"
-Agent: Creates GitHub Issue in ondrasek/ai-code-forge with proper labels
-```
-
-### Status Updates
-```
-Task: "Mark authentication issue as completed and update CHANGELOG"
-Agent: Closes GitHub Issue, adds to CHANGELOG, no context clutter
-```
-
-### Issue Review
-```
-Task: "Review all pending high-priority issues"
-Agent: Analyzes GitHub Issues, provides summary without individual issue noise
-```
+### Examples
+- **Create**: "implement auth system" → Issue #123 with labels
+- **Update**: "mark completed" → Close issue, update CHANGELOG
+- **Review**: "pending high-priority" → Summary without noise
 
 ## Benefits
 
@@ -289,21 +269,12 @@ gh label list --repo ondrasek/ai-code-forge --json name,description
 #### Step 2: Add Detailed Closure Comment
 ALWAYS add a comprehensive closure comment explaining the decision:
 
-**Closure Comment Template**:
+**Closure Comment:**
 ```markdown
-## Closure Reason: [CATEGORY]
-
-### Decision Context
-[Explain why this issue is being closed - what factors led to this decision]
-
-### Alternative Actions (if applicable)
-[Reference replacement issues, alternative approaches, or related work]
-
-### Cross-References
-[Link to related issues, pull requests, or documentation]
-
-### Future Considerations
-[Note any conditions that might cause this issue to be reopened or reconsidered]
+**Closed: [REASON]**
+- Context: [brief explanation]
+- Alternatives: [references if applicable]
+- Cross-refs: [related issues/PRs]
 ```
 
 #### Step 3: Update Cross-References
