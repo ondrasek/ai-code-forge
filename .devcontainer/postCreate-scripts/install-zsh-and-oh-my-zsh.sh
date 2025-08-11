@@ -10,7 +10,7 @@ if command -v zsh >/dev/null 2>&1; then
     echo "✅ zsh already installed"
 else
     echo "🔄 Installing zsh..."
-    sudo apt-get update && sudo apt-get install -y zsh
+    sudo apt-get install -y zsh
 fi
 
 # Set zsh as default shell (needed in both environments)
