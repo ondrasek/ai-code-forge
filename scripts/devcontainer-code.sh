@@ -25,6 +25,7 @@ NC='\033[0m' # No Color
 # Debug flag
 DEBUG=false
 DRY_RUN=false
+SPECIFIC_METHOD=""
 
 show_help() {
     cat << EOF
@@ -40,17 +41,57 @@ DESCRIPTION:
 OPTIONS:
     --debug         Enable debug output
     --dry-run       Show what would be done without executing
+    --method N      Use specific connection method (1-4)
+    --list-methods  Show available connection methods
     --help         Show this help message
 
 EXAMPLES:
-    $0                    # Launch VS Code connected to DevContainer
-    $0 --debug           # Launch with debug output
-    $0 --dry-run         # Preview actions without execution
+    $0                    # Try all methods in sequence
+    $0 --method 2        # Use only method 2 (direct container ID)
+    $0 --list-methods    # Show all available methods
+    $0 --debug --method 1 # Debug method 1 specifically
+
+METHODS:
+    1: JSON-encoded dev-container configuration
+    2: Direct container ID connection
+    3: Attached container scheme
+    4: Container name with JSON structure
 
 REQUIREMENTS:
     - VS Code with Remote-Containers extension installed
     - Docker running with DevContainer already started
     - DevContainer must have label: my.repositoryName=$PROJECT_NAME
+
+EOF
+}
+
+list_methods() {
+    cat << EOF
+Available VS Code DevContainer Connection Methods:
+
+METHOD 1: JSON-encoded dev-container configuration
+  - Creates comprehensive JSON config with hostPath and configFile
+  - Hex-encodes the JSON for URI compatibility
+  - Most complete but complex approach
+
+METHOD 2: Direct container ID connection
+  - Uses container ID directly in URI scheme
+  - Simple and often most reliable
+  - Format: vscode-remote://dev-container+CONTAINER_ID
+
+METHOD 3: Attached container scheme
+  - Uses attached-container URI scheme
+  - Alternative approach for direct container access
+  - Format: vscode-remote://attached-container+CONTAINER_ID
+
+METHOD 4: Container name with JSON structure
+  - Creates JSON config using container name
+  - Hex-encodes containerName-based configuration
+  - Fallback for name-based container identification
+
+USAGE:
+  $0 --method 2    # Use method 2 only
+  $0               # Try all methods in sequence (2,1,4,3)
 
 EOF
 }
@@ -83,6 +124,18 @@ while [[ $# -gt 0 ]]; do
         --dry-run)
             DRY_RUN=true
             shift
+            ;;
+        --method)
+            if [[ -z "$2" ]] || [[ ! "$2" =~ ^[1-4]$ ]]; then
+                error "Method must be 1, 2, 3, or 4"
+                exit 1
+            fi
+            SPECIFIC_METHOD="$2"
+            shift 2
+            ;;
+        --list-methods)
+            list_methods
+            exit 0
             ;;
         --help)
             show_help
@@ -291,32 +344,51 @@ main() {
     
     info "Attempting to launch VS Code connected to DevContainer..."
     
-    # Try different connection methods in order of likelihood to work
-    # Method 2 (direct container ID) usually works best, followed by JSON approaches
-    local methods=(launch_vscode_method2 launch_vscode_method1 launch_vscode_method4 launch_vscode_method3)
     local success=false
     
-    for method in "${methods[@]}"; do
-        info "Trying $method..."
+    if [[ -n "$SPECIFIC_METHOD" ]]; then
+        # Use specific method requested by user
+        local method_func="launch_vscode_method${SPECIFIC_METHOD}"
+        info "Using specific method: $method_func"
         
-        if $method "$container_id"; then
-            info "Successfully launched VS Code using $method"
+        if $method_func "$container_id"; then
+            info "Successfully launched VS Code using $method_func"
             success=true
-            break
         else
-            warn "$method failed, trying next method..."
+            error "Method $SPECIFIC_METHOD failed"
+            error ""
+            error "Try a different method with --method [1-4] or run --list-methods"
+            error "Or run without --method to try all methods sequentially"
+            exit 1
         fi
-    done
-    
-    if [[ "$success" != true ]]; then
-        error "All VS Code connection methods failed"
-        error ""
-        error "Manual fallback:"
-        error "  1. Run: code ."
-        error "  2. Use Command Palette: Remote-Containers: Attach to Running Container"
-        error "  3. Select container: $container_id"
-        error "  4. Open folder: /workspace/${PROJECT_NAME}"
-        exit 1
+    else
+        # Try different connection methods in order of likelihood to work
+        # Method 2 (direct container ID) usually works best, followed by JSON approaches
+        local methods=(launch_vscode_method2 launch_vscode_method1 launch_vscode_method4 launch_vscode_method3)
+        
+        for method in "${methods[@]}"; do
+            info "Trying $method..."
+            
+            if $method "$container_id"; then
+                info "Successfully launched VS Code using $method"
+                success=true
+                break
+            else
+                warn "$method failed, trying next method..."
+            fi
+        done
+        
+        if [[ "$success" != true ]]; then
+            error "All VS Code connection methods failed"
+            error ""
+            error "Try a specific method: $0 --method [1-4]"
+            error "Or manual fallback:"
+            error "  1. Run: code ."
+            error "  2. Use Command Palette: Remote-Containers: Attach to Running Container"
+            error "  3. Select container: $container_id"
+            error "  4. Open folder: /workspace/${PROJECT_NAME}"
+            exit 1
+        fi
     fi
     
     info "VS Code should now be connected to your DevContainer!"
