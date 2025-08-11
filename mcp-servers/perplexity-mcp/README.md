@@ -17,7 +17,7 @@ Transform Claude Code into a research powerhouse with live web search, current i
 
 ```bash
 # 1. Navigate to server directory
-cd src/perplexity-mcp
+cd perplexity-mcp
 
 # 2. Install dependencies
 uv sync  # or: pip install -e .
@@ -313,19 +313,48 @@ The enhanced logging system provides multiple specialized log files:
 
 ### Running Tests
 
+The server includes comprehensive test coverage with multiple test categories:
+
 ```bash
-# Run all tests
-uv run pytest
+# Install test dependencies
+uv sync --group dev
 
-# Run with coverage
-uv run pytest --cov=perplexity_mcp --cov-report=html
+# Run all server tests
+uv run pytest tests/
 
-# Run specific test file
-uv run pytest tests/test_client.py -v
+# Run with coverage reporting
+uv run pytest tests/ --cov=perplexity_mcp --cov-report=html
 
-# Run tests with live API (requires valid API key)
-PERPLEXITY_API_KEY=your_key uv run pytest tests/test_integration.py -v
+# Run specific test categories
+uv run pytest tests/test_client.py -v         # Client functionality
+uv run pytest tests/test_server.py -v        # Server operations
+uv run pytest tests/test_protocol_compliance.py -v  # MCP protocol validation
+uv run pytest tests/test_error_handling.py -v       # Error simulation
+
+# Run framework-wide tests (from repository root)
+pytest mcp-servers/tests/benchmark/           # Performance baselines
+pytest mcp-servers/tests/integration/         # Cross-server workflows
+pytest mcp-servers/tests/load/                # Load and stress testing
 ```
+
+**Test Categories:**
+- **Unit Tests** (`tests/test_*.py`) - Individual component validation
+- **Protocol Compliance** - MCP specification adherence testing
+- **Error Handling** - Failure scenario simulation and recovery
+- **Performance Baselines** - Response time and throughput validation
+- **Integration Tests** - Cross-server coordination testing
+- **Load Tests** - Concurrent connection and resource exhaustion testing
+
+**Test Environment:**
+```bash
+# Set performance test environment (affects baseline thresholds)
+export PERFORMANCE_TEST_ENV=local  # or ci, production
+
+# Run performance-sensitive tests
+pytest tests/test_protocol_compliance.py -v
+```
+
+See [Testing Framework Documentation](../tests/README.md) for detailed information about the test infrastructure.
 
 ### Project Structure
 
