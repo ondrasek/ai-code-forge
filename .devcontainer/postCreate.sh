@@ -41,13 +41,23 @@ set -e
 postCreateScriptsDir=$(dirname $0)/postCreate-scripts
 echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 
-"$postCreateScriptsDir/install-development-tools.sh"
-"$postCreateScriptsDir/install-zsh-and-oh-my-zsh.sh"
-"$postCreateScriptsDir/configure-git-user-and-credentials.sh"
-"$postCreateScriptsDir/setup-github-authentication.sh"
-"$postCreateScriptsDir/clone-repository-and-setup-workspace.sh"
-"$postCreateScriptsDir/configure-worktree-shell-commands.sh"
-"$postCreateScriptsDir/setup-shell-environment-variables.sh"
-"$postCreateScriptsDir/verify-all-tools-installed.sh"
+if [ "$RUNTIME_ENV" = "codespaces" ]; then
+  echo "🌐 Codespaces: Running minimal setup (skipping git/auth setup)"
+  "$postCreateScriptsDir/install-development-tools.sh"
+  "$postCreateScriptsDir/install-zsh-and-oh-my-zsh.sh"
+  "$postCreateScriptsDir/configure-worktree-shell-commands.sh"
+  "$postCreateScriptsDir/setup-shell-environment-variables.sh"
+  "$postCreateScriptsDir/verify-all-tools-installed.sh"
+else
+  echo "🐳 DevContainer: Running full setup"
+  "$postCreateScriptsDir/install-development-tools.sh"
+  "$postCreateScriptsDir/install-zsh-and-oh-my-zsh.sh"
+  "$postCreateScriptsDir/configure-git-user-and-credentials.sh"
+  "$postCreateScriptsDir/setup-github-authentication.sh"
+  "$postCreateScriptsDir/clone-repository-and-setup-workspace.sh"
+  "$postCreateScriptsDir/configure-worktree-shell-commands.sh"
+  "$postCreateScriptsDir/setup-shell-environment-variables.sh"
+  "$postCreateScriptsDir/verify-all-tools-installed.sh"
+fi
 
 echo "🎉 All setup scripts completed successfully!"

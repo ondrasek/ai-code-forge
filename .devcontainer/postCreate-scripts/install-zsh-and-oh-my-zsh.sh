@@ -5,18 +5,11 @@ set -e
 
 echo "🐚 Configuring shell environment..."
 
-# Check if running in Codespaces (may have zsh pre-installed)
-if [ "$RUNTIME_ENV" = "codespaces" ]; then
-    echo "🌐 Codespaces: Checking for pre-installed zsh..."
-    if command -v zsh >/dev/null 2>&1; then
-        echo "✅ zsh already installed in Codespaces"
-    else
-        echo "🔄 Installing zsh in Codespaces..."
-        sudo apt-get update && sudo apt-get install -y zsh
-    fi
+# Install zsh if not present
+if command -v zsh >/dev/null 2>&1; then
+    echo "✅ zsh already installed"
 else
-    # Install and configure zsh for DevContainer
-    echo "🐳 DevContainer: Installing zsh shell environment..."
+    echo "🔄 Installing zsh..."
     sudo apt-get update && sudo apt-get install -y zsh
 fi
 

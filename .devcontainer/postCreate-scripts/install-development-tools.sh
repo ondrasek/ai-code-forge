@@ -5,13 +5,6 @@ set -e
 
 echo "📦 Installing development tools..."
 
-# Skip some installations in Codespaces (pre-installed)
-if [ "$RUNTIME_ENV" = "codespaces" ]; then
-    echo "🌐 Codespaces detected - skipping system packages"
-else
-    echo "🐳 DevContainer - installing all development tools"
-fi
-
 # Install uv (modern Python package manager)
 echo "🔄 Installing uv Python package manager..."
 python3 -m pip install --user uv
