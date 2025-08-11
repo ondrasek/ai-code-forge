@@ -2,8 +2,15 @@
 
 import pytest
 import os
+import sys
+from pathlib import Path
 from unittest.mock import patch
 import asyncio
+
+# Add mcp-servers directory to Python path for shared test imports
+mcp_servers_root = Path(__file__).parent.parent.parent
+if str(mcp_servers_root) not in sys.path:
+    sys.path.insert(0, str(mcp_servers_root))
 
 
 @pytest.fixture(scope="session")
@@ -18,7 +25,7 @@ def event_loop():
 def mock_env_vars():
     """Mock environment variables for all tests."""
     with patch.dict(os.environ, {
-        "PERPLEXITY_API_KEY": "test-api-key-123",
+        "PERPLEXITY_API_KEY": "sk-test-fake-perplexity-key-do-not-use-123",
         "PERPLEXITY_LOG_LEVEL": "DEBUG",
         "PERPLEXITY_DEFAULT_MODEL": "sonar",
         "PERPLEXITY_DEFAULT_SYSTEM": "Test system message"

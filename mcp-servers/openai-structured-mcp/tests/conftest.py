@@ -2,9 +2,16 @@
 
 import pytest
 import os
+import sys
+from pathlib import Path
 from unittest.mock import patch, AsyncMock, MagicMock
 import asyncio
 from datetime import datetime
+
+# Add mcp-servers directory to Python path for shared test imports
+mcp_servers_root = Path(__file__).parent.parent.parent
+if str(mcp_servers_root) not in sys.path:
+    sys.path.insert(0, str(mcp_servers_root))
 
 
 @pytest.fixture(scope="session")
@@ -19,7 +26,7 @@ def event_loop():
 def mock_env_vars():
     """Mock environment variables for all tests."""
     with patch.dict(os.environ, {
-        "OPENAI_API_KEY": "sk-test-key-123",
+        "OPENAI_API_KEY": "sk-test-fake-openai-key-do-not-use-123",
         "OPENAI_STRUCTURED_LOG_LEVEL": "DEBUG",
         "OPENAI_DEFAULT_MODEL": "gpt-4o-mini",
         "OPENAI_DEFAULT_TEMPERATURE": "0.7",
