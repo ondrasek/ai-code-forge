@@ -1,20 +1,9 @@
 #!/bin/bash
 
-# Configure shell environment (zsh + Oh My Zsh)
+# Configure Oh My Zsh for enhanced zsh experience
 set -e
 
-echo "🐚 Configuring shell environment..."
-
-# Install zsh if not present
-if command -v zsh >/dev/null 2>&1; then
-    echo "✅ zsh already installed"
-else
-    echo "🔄 Installing zsh..."
-    sudo apt-get install -y zsh
-fi
-
-# Set zsh as default shell (needed in both environments)
-sudo chsh -s $(which zsh) $USER
+echo "🎨 Configuring Oh My Zsh..."
 
 # Install Oh My Zsh for better zsh experience (needed in both environments)
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -29,4 +18,4 @@ else
     echo "✅ Oh My Zsh already installed"
 fi
 
-echo "✅ Shell configuration completed"
+echo "✅ Oh My Zsh configuration completed"

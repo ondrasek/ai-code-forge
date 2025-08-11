@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Configure shell environment variables and navigation
+# Setup environment variables for both shells
 set -e
 
-echo "🐚 Configuring shell environment variables..."
+echo "🔧 Setting up environment variables..."
 
 # Environment variables are loaded by postCreate.sh and exported to child processes
 
-# Set up shell aliases and environment for both bash and zsh
+# Set up shell aliases and environment for bash
 cat >> ~/.bashrc << 'EOF'
 
 # Environment variables for Claude Code
@@ -23,9 +23,6 @@ cat >> ~/.bashrc << EOF
 export REPOSITORY_NAME=$repositoryName
 export WORKING_COPY=$workingCopy
 export WORKTREES=$worktreesDir
-
-# Go to workspace
-cd /workspace/$repositoryName
 EOF
 
 # Configure zsh with same environment
@@ -44,9 +41,6 @@ cat >> ~/.zshrc << EOF
 export REPOSITORY_NAME=$repositoryName
 export WORKING_COPY=$workingCopy
 export WORKTREES=$worktreesDir
-
-# Go to workspace
-cd /workspace/$repositoryName
 EOF
 
-echo "✅ Shell environment configuration completed"
+echo "✅ Environment variables setup completed"
