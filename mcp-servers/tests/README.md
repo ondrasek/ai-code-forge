@@ -112,6 +112,33 @@ export PERFORMANCE_TEST_ENV=local  # or ci, production
 
 ### Execution Commands
 
+#### Recommended: Use Test Runner Scripts
+
+**From repository root:**
+```bash
+# Simple shell script wrapper
+mcp-servers/tests/run_tests.sh                    # Run all tests
+mcp-servers/tests/run_tests.sh --verbose          # Detailed output
+mcp-servers/tests/run_tests.sh --env ci           # CI environment baselines
+mcp-servers/tests/run_tests.sh --quick            # Fast unit tests only
+mcp-servers/tests/run_tests.sh --coverage         # Generate coverage report
+mcp-servers/tests/run_tests.sh --include-slow     # Include load tests
+
+# Direct Python script (more options)
+cd mcp-servers && python tests/run_tests.py --help
+```
+
+**Features of the test runner:**
+- ✅ **Dependency checking** - Verifies required packages are installed
+- ✅ **Environment setup** - Automatically sets PERFORMANCE_TEST_ENV
+- ✅ **Comprehensive coverage** - Runs all test categories in logical order
+- ✅ **Error reporting** - Clear success/failure indicators with timing
+- ✅ **Flexible options** - Quick mode, coverage, verbose output
+- ✅ **Load test safety** - Resource-intensive tests are optional
+
+#### Manual pytest Commands
+
+**From repository root:**
 ```bash
 # Run all tests
 pytest mcp-servers/tests/
