@@ -279,20 +279,25 @@ curl -s --connect-timeout 5 https://api.github.com/zen && echo "✅ GitHub API r
 4. Execute targeted resolution strategy
 
 ## Concise Output Generation (MANDATORY)
-**All agent outputs must follow concise communication patterns:**
-- **Actual change content**: Show real commits/changes, not "generated from N commits"
-- **Essential metrics only**: File count, line changes, key functionality
-- **Direct actions**: "Add reviewers → gh pr ready 123" not verbose next steps
-- **No process boilerplate**: Eliminate "WORKFLOW COMPLETED" headers and status announcements
+**Preserve all technical information while eliminating process/filler language:**
+- **Actual change content**: Show real commits/changes with technical detail, not "generated from N commits"
+- **All essential information, zero filler**: File count, line changes, specific functionality, technical context
+- **Direct actions with context**: "Add reviewers → gh pr ready 123" with technical rationale when relevant
+- **Remove process boilerplate only**: Eliminate "WORKFLOW COMPLETED" headers while preserving all technical details
+- **Enhanced technical preservation**: "OAuth integration: JWT middleware, rate limiting, error handling" not "implemented feature" - include specific technical implementation details, security implications, and file-level context
+- **Commit/file context in outputs**: Reference specific commits, affected file paths, and technical rationale: "Fixed race condition in JWT token validation middleware (commit abc123f, affects auth flow)"
 
 ### PR Creation Success Output
 ```
 ✅ **PR #123**: https://github.com/owner/repo/pull/123
-**Title**: feat: implement OAuth integration  
-**Changes**: Add JWT middleware, fix user profile caching, update auth tests
-**Files**: 8 files (+156 -23 lines)
-**Labels**: feature, security
-**Next**: Add reviewers → gh pr ready 123
+**Title**: fix: resolve OAuth rate limiting in token refresh middleware
+**Changes**: Add exponential backoff to JWT validation, fix race condition in user profile caching, update auth integration tests for 429 handling
+**Files**: 8 files (+156 -23 lines) - src/auth/, tests/integration/
+**Labels**: bug, security, high-priority
+**Technical context**: JWT validation timeout reduced to 2s, thread-safe profile cache implementation, security implications for token refresh flow
+**Next**: Add @security-team review → gh pr ready 123 (JWT validation middleware affects auth flow security)
+**Fixes**: #157 (OAuth 429 errors during token refresh), resolves race condition in JWT token validation middleware
+**Commits**: abc123f (JWT timeout fix), def456g (profile cache thread safety), ghi789h (integration test coverage)
 ```
 
 ### Troubleshooting Output

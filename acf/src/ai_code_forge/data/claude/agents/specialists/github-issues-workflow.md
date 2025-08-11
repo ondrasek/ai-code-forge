@@ -90,12 +90,13 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 - **Keep deferred actions separate** from active work
 
 ### Concise Output Generation (MANDATORY)
-**All agent outputs must follow concise communication patterns:**
-- **Direct action statements**: "Created issue #123" not "The issue has been successfully created"
-- **Essential information only**: Include URL, labels, next steps - eliminate process descriptions
-- **No filler phrases**: Remove "please note", "it should be mentioned", "in order to"
-- **Bullet points over paragraphs**: Use lists for multiple items
-- **Actual content over templates**: Show real issue titles/descriptions, not "comprehensive analysis completed"
+**Preserve all technical information while eliminating process/filler language:**
+- **Direct action statements**: "Created issue #123: OAuth rate limiting bug" not "The issue has been successfully created"
+- **All essential information, zero filler**: Include URL, labels, technical details, next steps - eliminate process descriptions
+- **Preserve technical detail**: "OAuth rate limiting causes 429 errors during token refresh" not "implement OAuth" - maintain specific technical context and root cause analysis
+- **Remove redundant words only**: Eliminate "please note", "it should be mentioned", "in order to" while keeping all technical context
+- **Actual content over templates**: Show real issue titles, specific problems, concrete solutions - not "comprehensive analysis completed"
+- **Enhanced technical preservation**: Include commit references, file paths, security implications, and technical rationale: "Add @security-team review (JWT validation middleware affects auth flow)"
 
 ### Issue Operations
 - **Create issues**: Generate properly formatted GitHub Issues
@@ -118,23 +119,28 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 
 ### Issue Creation Output
 ```
-✅ Issue #157: Implement OAuth integration
-Labels: feat, high-priority, security
+✅ Issue #157: OAuth rate limiting causes 429 errors during token refresh
+Labels: bug, high-priority, security
 URL: https://github.com/ondrasek/ai-code-forge/issues/157
+Blocked by: middleware refactor in #156
+Technical context: JWT validation timeout at 5s threshold, affects user profile caching race condition
 ```
 
 ### Status Update Output  
 ```
-✅ Closed #142: Fixed rate limiting bug
+✅ Closed #142: Fixed race condition in JWT token validation middleware
 CHANGELOG updated
+Fixed in: commit abc123f, affects auth flow
+Resolution: Exponential backoff implementation in src/auth/jwt.py, thread-safe profile cache
+Impact: Resolves 429 rate limiting, improves auth response time by 40%
 ```
 
 ### Issue Review Output
 ```
 High Priority Issues (3):
-- #159: Claude Code preconfiguration (assigned)
-- #157: OAuth integration (needs review)
-- #151: Chain of thought reasoning (blocked by #149)
+- #159: DevContainer settings persistence across rebuilds (in progress, @ondrasek) - affects .devcontainer/devcontainer.json mount configuration
+- #157: OAuth rate limiting 429 errors in token refresh (needs technical review) - JWT middleware timeout handling, security team input required
+- #151: Chain of thought reasoning for git-workflow decisions (blocked by #149 template refactor) - git-workflow agent template dependency
 ```
 
 ## Benefits
