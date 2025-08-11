@@ -66,7 +66,7 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 
 - **Label Discovery**: MUST execute label discovery command before every issue operation that requires labels
 - **Type Classification**: Map issue content to available type labels discovered from repository
-- **Priority Assignment**: Apply priority labels found in repository based on issue urgency  
+- **Priority Assignment**: Apply priority labels using BINARY CONFIDENCE SYSTEM based on strict criteria (see Priority Classification Protocol below)
 - **Status Updates**: ALWAYS update issue labels when working on issues using only discovered labels
 - **Quality Assessment**: Apply quality-related labels found in repository for issue management
 - **Label Restriction**: ONLY use labels discovered from repository - no autonomous label creation by agent
@@ -80,6 +80,71 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 - Update issue: `gh issue edit --repo ondrasek/ai-code-forge`
 - Close issue: `gh issue close --repo ondrasek/ai-code-forge`
 - **CRITICAL**: Never use `gh label create` autonomously - only select from existing labels unless explicitly instructed by users
+
+## Priority Classification Protocol (MANDATORY)
+
+### Binary Confidence System
+
+**CONFIDENCE LEVELS**: All priority assignments must use binary classification:
+- **Confident**: Issue meets ALL 6 strict criteria (assign priority label)
+- **Uncertain**: Issue fails ANY criteria (NO priority label = medium priority default)
+
+**STRICT CRITERIA FOR "CONFIDENT" CLASSIFICATION** (ALL must be met):
+
+1. **3+ Clear Indicators**: Must cite 3+ specific keywords/phrases from issue content
+   - Urgency: "urgent", "critical", "blocking", "breaks", "security", "production"
+   - Impact: "all users", "data loss", "system down", "regression", "breaking change"
+   - Scope: "core functionality", "main feature", "primary workflow"
+
+2. **Specific Evidence**: Must quote exact text passages supporting priority decision
+   - Direct quotes from issue description demonstrating urgency
+   - Explicit user impact statements or technical severity indicators
+
+3. **Clear Precedent**: Must reference similar issues with established priority patterns
+   - Search existing repository issues for comparable situations
+   - Cite specific issue numbers with similar technical scope or urgency
+
+4. **No Conflicts**: Must verify NO conflicting indicators exist
+   - Check for "enhancement", "nice to have", "future", "optional"
+   - Verify absence of low-priority language or scope limitations
+
+5. **Falsifiable Logic**: Must provide reasoning that can be proven wrong with evidence
+   - Specific technical claims that can be validated
+   - Measurable impact assertions that can be verified
+
+6. **Explicit Keywords**: Content must contain explicit priority indicators
+   - Technical severity terms present in issue text
+   - Business impact language clearly stated by user
+
+**CONFIDENCE ASSESSMENT ALGORITHM**:
+```
+For each issue:
+1. Extract keywords and technical concepts from issue content
+2. Count urgency/impact indicators (requirement: 3+)  
+3. Search for conflicting low-priority indicators
+4. Verify precedent by searching similar existing issues
+5. Generate falsifiable reasoning with specific evidence
+6. If ALL 6 criteria met → Confident (apply priority label)
+7. If ANY criteria failed → Uncertain (NO priority label)
+```
+
+**MANDATORY CONFIDENCE DOCUMENTATION**:
+ALWAYS add confidence assessment comment to every created issue:
+
+```markdown
+## Priority Analysis
+**Confidence Level**: [Confident/Uncertain]
+
+**Assessment Details**:
+- **Keywords Found**: [list 3+ specific indicators or "insufficient keywords"]
+- **Evidence**: [direct quotes from issue or "insufficient evidence"]  
+- **Precedent**: [reference similar issues #XX, #YY or "no clear precedent"]
+- **Conflicts**: [any conflicting indicators found or "none detected"]
+- **Reasoning**: [falsifiable logic or "logic not falsifiable"]
+- **Decision**: [priority label applied or "defaulting to medium priority (no label)"]
+
+**Priority Assignment**: [High Priority label applied / Medium Priority (default - no label)]
+```
 
 ## Agent Behavior
 

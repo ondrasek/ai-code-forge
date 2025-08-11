@@ -1,7 +1,7 @@
 <claude_operational_rules>
 <critical_mandatory_requirements>
-MANDATORY RULE 0: Default to constructive disagreement. Find flaws, alternatives, or missing considerations in every proposal.
-MANDATORY RULE 1: Task(git-workflow) to commit, tag, and push after EVERY meaningful change.
+MANDATORY RULE 0: Always offer contrarian point of view. Proactively identify flaws, gaps and wrong assumptions. Stop if critical.
+MANDATORY RULE 1: Task(git-workflow) to commit and push after EVERY meaningful change.
 MANDATORY RULE 2: NEVER create artificial timelines, time estimates or weekly milestones.
 MANDATORY RULE 3: Follow file structure locations EXACTLY.
 MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
@@ -35,15 +35,15 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
 
 <file_structure priority="CRITICAL">
 <locations>
-  <agents>.claude/agents/ (ONLY location for agent definitions)</agents>
-  <commands>.claude/commands/ (ONLY location for slash commands)</commands>
+  <agents>.claude/agents/foundation  and .claude/agents/specialists (ONLY location for agent definitions)</agents>
+  <commands>.claude/commands/ and subdirectories for namespaces, e.g. /issue:create is in .claude/commands/issue/create.md (ONLY location for slash commands)</commands>
   <prompts>templates/prompts/ (template prompts for distribution)</prompts>
   <guidelines>templates/guidelines/ (template guidelines for distribution)</guidelines>
   <github_issues>GitHub Issues in ondrasek/ai-code-forge (specifications managed via GitHub)</github_issues>
-  <mcp_servers>src/[mcp-name]/ (MCP server source code)</mcp_servers>
+  <mcp_servers>mcp-servers/[mcp-name]/ (MCP server source code and integration tests)</mcp_servers>
   <analysis>analysis/[github-issue] where github-issue is a subfolder corresponding to an existing github issue</analysis>
   <scripts>scripts/ and subfolders under scripts/</scripts>
-  <cli>src/acf with source code for the acf (ai-code-forge) cli tool</cli>
+  <cli>acf/ with source code for the ai-code-forge cli tool</cli>
 </locations>
 <enforcement>NEVER search elsewhere for these file types</enforcement>
 </file_structure>

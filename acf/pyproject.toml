@@ -1,6 +1,6 @@
 [project]
 name = "ai-code-forge"
-version = "0.2.0"
+version = "2.91.0"
 description = "Configuration management tool for AI Code Forge"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -32,10 +32,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-ai-code-forge = "acf.main:main"
+ai-code-forge = "ai_code_forge.main:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/acf"]
+packages = ["src/ai_code_forge"]
 
 [tool.uv]
 dev-dependencies = [

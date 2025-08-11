@@ -1,4 +1,7 @@
-"""Tests for ACF CLI main module."""
+"""Tests for ACF CLI main module.
+
+Test change to verify git-workflow manual tagging behavior.
+"""
 
 import pytest
 import tempfile
@@ -7,7 +10,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from unittest.mock import patch, MagicMock
 
-from acf.main import main, install, status
+from ai_code_forge.main import main, install, status
 
 
 class TestMainCLI:
@@ -48,7 +51,7 @@ class TestMainCLI:
         assert result.exit_code == 0
         assert "Target directory does not exist" in result.output
     
-    @patch('acf.main.ACFInstaller')
+    @patch('ai_code_forge.main.ACFInstaller')
     def test_install_already_exists(self, mock_installer_class):
         """Test install when configuration already exists."""
         # Mock installer
@@ -65,7 +68,7 @@ class TestMainCLI:
             assert "already exists" in result.output
             assert "--force" in result.output
     
-    @patch('acf.main.ACFInstaller')
+    @patch('ai_code_forge.main.ACFInstaller')
     def test_install_success(self, mock_installer_class):
         """Test successful install."""
         # Mock installer
@@ -83,7 +86,7 @@ class TestMainCLI:
             assert "Ready to use!" in result.output
             mock_installer.install.assert_called_once()
     
-    @patch('acf.main.ACFInstaller')
+    @patch('ai_code_forge.main.ACFInstaller')
     def test_install_force(self, mock_installer_class):
         """Test force install."""
         # Mock installer
@@ -101,7 +104,7 @@ class TestMainCLI:
             assert "Force installation" in result.output
             mock_installer.install.assert_called_once()
     
-    @patch('acf.main.ACFInstaller')
+    @patch('ai_code_forge.main.ACFInstaller')
     def test_install_failure(self, mock_installer_class):
         """Test install failure."""
         # Mock installer
@@ -119,7 +122,7 @@ class TestMainCLI:
             # Should not show success message when install fails
             assert "Ready to use!" not in result.output
     
-    @patch('acf.main.ACFInstaller')
+    @patch('ai_code_forge.main.ACFInstaller')
     def test_status_complete_installation(self, mock_installer_class):
         """Test status with complete installation."""
         # Mock installer
@@ -140,7 +143,7 @@ class TestMainCLI:
             assert "agents" in result.output
             assert "README.md" in result.output
     
-    @patch('acf.main.ACFInstaller')
+    @patch('ai_code_forge.main.ACFInstaller')
     def test_status_no_installation(self, mock_installer_class):
         """Test status with no installation."""
         # Mock installer
@@ -160,7 +163,7 @@ class TestMainCLI:
             assert "No ACF installation found" in result.output
             assert "run 'ai-code-forge install'" in result.output
     
-    @patch('acf.main.ACFInstaller')
+    @patch('ai_code_forge.main.ACFInstaller')
     def test_status_partial_installation(self, mock_installer_class):
         """Test status with partial installation."""
         # Mock installer

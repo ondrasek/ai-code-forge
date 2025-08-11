@@ -11,7 +11,7 @@ echo "Step 1: Building package data..."
 
 # Get repository root (parent of acf directory)
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PACKAGE_DATA="$(cd "$(dirname "${BASH_SOURCE[0]}")/src/acf/data" && pwd)"
+PACKAGE_DATA="$(cd "$(dirname "${BASH_SOURCE[0]}")/src/ai_code_forge/data" && pwd)"
 
 echo "Repository root: $REPO_ROOT"
 echo "Package data dir: $PACKAGE_DATA"
@@ -59,7 +59,7 @@ fi
 
 # Test that the package can be imported
 echo "Testing package import..."
-if uv run python -c "import acf; print('✅ Package imports successfully')"; then
+if uv run python -c "import ai_code_forge; print('✅ Package imports successfully')"; then
     echo "✅ Package validation passed"
 else
     echo "❌ Package validation failed"
