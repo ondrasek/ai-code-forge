@@ -23,5 +23,5 @@ echo
 
 workspaceFolder=.
 devcontainer build --workspace-folder $workspaceFolder
-devcontainer up --workspace-folder $workspaceFolder
+devcontainer up --workspace-folder $workspaceFolder --remove-existing-container
 

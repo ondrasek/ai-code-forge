@@ -3,15 +3,19 @@
 # DevContainer Setup Script - Replicates Codespace Environment
 # This script sets up the exact same environment as the GitHub Codespace
 
+# Install and configure zsh
+echo "🐚 Setting up zsh shell environment..."
+sudo apt-get update && sudo apt-get install -y zsh
+
 # Install uv (modern Python package manager) - Secure installation via pip
 echo "📦 Installing uv Python package manager..."
-python3 -m pip install --user uv
+python3 -m pip install uv
 
 # Install Claude CLI globally
 echo "🤖 Installing Claude CLI, OpenAI Codex and OpenCode..."
 npm install -g @anthropic-ai/claude-code
 npm install -g @openai/codex
-npm install -f opencode-ai
+npm install -g opencode-ai
 
 # Install MCP tools
 echo "🔗 Installing MCP tools..."
@@ -53,10 +57,6 @@ export CONTAINER_ENV=1
 # Create necessary directories
 echo "📁 Creating necessary directories..."
 mkdir -p ~/.claude
-
-# Install and configure zsh
-echo "🐚 Setting up zsh shell environment..."
-sudo apt-get update && sudo apt-get install -y zsh
 
 # Install Oh My Zsh for better zsh experience - Secure git clone method
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -111,7 +111,7 @@ fi
 
 worktreesDir=/workspace/worktrees/$repositoryName
 mkdir -p $worktreesDir
-git config --global -add safe.directory $worktreesDir
+git config --global --add safe.directory $worktreesDir
 
 # Set up shell aliases and environment for both bash and zsh
 echo "🐚 Configuring shell environment..."
