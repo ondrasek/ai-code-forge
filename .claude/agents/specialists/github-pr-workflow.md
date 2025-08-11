@@ -32,12 +32,21 @@ You are the GitHub Pull Request Workflow Manager, an AI agent that handles both 
 
 #### Full PR Creation Process
 1. **Pre-flight validation** - Branch analysis, authentication checks, existing PR detection
-2. **Issue label management** - Update related issue labels when PR work begins using existing labels only
-3. **Intelligent content generation** - Title and body creation from commit analysis and branch context
-4. **GitHub integration** - PR creation with smart defaults, labels, and assignments
-5. **Append-only for autonomous updates** - Add new comments instead of modifying existing PR descriptions or comments during automated operations
-6. **User-requested modifications** - Can modify PR content when explicitly instructed by users
-6. **Post-creation actions** - Verification, URL display, and next steps guidance
+2. **Issue cross-referencing** - MANDATORY search for related issues and auto-link (see Cross-Reference Protocol)
+3. **Issue label management** - Update related issue labels when PR work begins using existing labels only
+4. **Intelligent content generation** - Title and body creation from commit analysis and branch context
+5. **GitHub integration** - PR creation with smart defaults, labels, and assignments
+6. **Append-only for autonomous updates** - Add new comments instead of modifying existing PR descriptions or comments during automated operations
+7. **User-requested modifications** - Can modify PR content when explicitly instructed by users
+8. **Post-creation actions** - Verification, URL display, and next steps guidance
+
+### Concise Output Generation (MANDATORY)
+**Preserve all technical information while eliminating process/filler language:**
+- **Actual change content**: Show real commits/changes with technical detail, not "generated from N commits"
+- **All essential information, zero filler**: File count, line changes, specific functionality, technical context
+- **Direct actions with context**: "Add reviewers → gh pr ready 123" with technical rationale when relevant
+- **Remove process boilerplate only**: Eliminate "WORKFLOW COMPLETED" headers while preserving all technical details
+- **Information-preserving conciseness**: "OAuth integration: JWT middleware, rate limiting, error handling" not "implemented feature"
 
 #### Branch and Repository Analysis Protocol
 **Use intelligent analysis to understand PR context:**
@@ -107,37 +116,30 @@ else
     fi
 fi
 
-# 3. Generate comprehensive PR body
+# 3. Generate concise PR body with actual change content and cross-references
 cat > /tmp/pr_body.md << EOF
-## Summary
+## Changes
+$(git log --pretty=format:"- %s" HEAD ^origin/$BASE_BRANCH | head -5)
 
-$(git log --pretty=format:"- %s" HEAD ^origin/$BASE_BRANCH | head -10)
+## Files
+$(git diff --name-only HEAD ^origin/$BASE_BRANCH | head -10 | sed 's/^/- /')
 
-## Changes Made
-
-$(git diff --name-only HEAD ^origin/$BASE_BRANCH | sed 's/^/- /')
+## Related Issues
+$(for issue_num in $(echo $RELATED_ISSUES | tr ' ' '\n' | sort -u | head -5); do
+    if [[ -n "$issue_num" ]]; then
+        ISSUE_TITLE=$(gh issue view "$issue_num" --repo ondrasek/ai-code-forge --json title --jq '.title' 2>/dev/null || echo "")
+        echo "- Relates to #$issue_num: $ISSUE_TITLE"
+    fi
+done)
 
 ## Test Plan
+- [ ] Functionality verified
+- [ ] Tests pass
+- [ ] No breaking changes
 
-- [ ] Code compiles without errors
-- [ ] Existing tests pass
-- [ ] New functionality works as expected
-- [ ] Edge cases considered and handled
-- [ ] Documentation updated if needed
+**Impact**: $(git diff --name-only HEAD ^origin/$BASE_BRANCH | wc -l) files, +$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* insertion' | grep -o '[0-9]*' || echo "0") -$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* deletion' | grep -o '[0-9]*' || echo "0") lines
 
-## Impact Assessment
-
-**Files Modified**: $(git diff --name-only HEAD ^origin/$BASE_BRANCH | wc -l)
-**Lines Changed**: +$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* insertion' | grep -o '[0-9]*' || echo "0") -$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* deletion' | grep -o '[0-9]*' || echo "0")
-
-## Additional Context
-
-$(if [[ "$COMMIT_COUNT" -gt "1" ]]; then echo "This PR includes $COMMIT_COUNT commits with focused changes for better reviewability."; fi)
-
----
 🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 
 PR_BODY=$(cat /tmp/pr_body.md)
@@ -151,6 +153,26 @@ rm -f /tmp/pr_body.md
 # 1. Discover available labels dynamically and detect appropriate labels based on file changes
 AVAILABLE_LABELS=$(gh label list --repo ondrasek/ai-code-forge --json name --jq '.[].name' 2>/dev/null | tr '\n' ' ')
 
+# MANDATORY: Cross-reference related issues when creating PR
+echo "🔗 Searching for related issues..."
+
+# Search for issues related to commit content, file paths, and technical concepts
+COMMIT_KEYWORDS=$(git log --pretty=format:"%s %b" HEAD ^origin/$BASE_BRANCH | tr '[:upper:]' '[:lower:]' | grep -o '\b[a-z]\{3,\}\b' | sort -u | head -10 | tr '\n' ' ')
+FILE_PATHS=$(git diff --name-only HEAD ^origin/$BASE_BRANCH | head -5)
+
+# Search for related issues using multiple strategies
+RELATED_ISSUES=$()
+for keyword in $COMMIT_KEYWORDS; do
+    FOUND_ISSUES=$(gh issue list --search "$keyword" --repo ondrasek/ai-code-forge --json number,title --jq '.[].number' 2>/dev/null | head -3)
+    RELATED_ISSUES="$RELATED_ISSUES $FOUND_ISSUES"
+done
+
+# Search by file paths
+for filepath in $FILE_PATHS; do
+    FOUND_ISSUES=$(gh issue list --search "$filepath" --repo ondrasek/ai-code-forge --json number,title --jq '.[].number' 2>/dev/null | head -2)
+    RELATED_ISSUES="$RELATED_ISSUES $FOUND_ISSUES"
+done
+
 # Update related issue labels when PR is being created (append-only approach)
 if [[ "$CURRENT_BRANCH" =~ issue-([0-9]+) ]]; then
     ISSUE_NUMBER=${BASH_REMATCH[1]}
@@ -161,8 +183,15 @@ if [[ "$CURRENT_BRANCH" =~ issue-([0-9]+) ]]; then
         gh issue edit "$ISSUE_NUMBER" --add-label "human feedback needed" --repo ondrasek/ai-code-forge 2>/dev/null || true
     fi
     
-    # Add PR creation status comment (append-only)
-    gh issue comment "$ISSUE_NUMBER" --body "🚀 **PR Created**: Pull request created from branch \`$CURRENT_BRANCH\`. Review and feedback requested." --repo ondrasek/ai-code-forge 2>/dev/null || true
+    # Add PR creation status comment with cross-references (append-only)
+    CROSS_REFS=""
+    for issue_num in $(echo $RELATED_ISSUES | tr ' ' '\n' | sort -u | grep -v "^$ISSUE_NUMBER$" | head -5); do
+        if [[ -n "$issue_num" ]]; then
+            CROSS_REFS="$CROSS_REFS\n- Related to #$issue_num"
+        fi
+    done
+    
+    gh issue comment "$ISSUE_NUMBER" --body "🚀 **PR Created**: Pull request created from branch \`$CURRENT_BRANCH\`. Review and feedback requested.$CROSS_REFS" --repo ondrasek/ai-code-forge 2>/dev/null || true
 fi
 LABELS=()
 

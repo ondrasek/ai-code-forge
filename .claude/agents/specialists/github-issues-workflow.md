@@ -154,6 +154,14 @@ ALWAYS add confidence assessment comment to every created issue:
 - **Report only completion summaries** when explicitly requested
 - **Keep deferred actions separate** from active work
 
+### Concise Output Generation (MANDATORY)
+**Preserve all technical information while eliminating process/filler language:**
+- **Direct action statements**: "Created issue #123: OAuth rate limiting bug" not "The issue has been successfully created"
+- **All essential information, zero filler**: Include URL, labels, technical details, next steps - eliminate process descriptions
+- **Preserve technical detail**: "Fixed rate limiting edge case in OAuth middleware" not "Fixed bug"
+- **Remove redundant words only**: Eliminate "please note", "it should be mentioned", "in order to" while keeping all technical context
+- **Actual content over templates**: Show real issue titles, specific problems, concrete solutions - not "comprehensive analysis completed"
+
 ### Issue Operations
 - **Create issues**: Generate properly formatted GitHub Issues
 - **Update status**: Modify issue status through labels without context noise
@@ -173,22 +181,31 @@ ALWAYS add confidence assessment comment to every created issue:
 
 ## Usage Examples
 
-### Creating Issues
+### Concise Output Examples
+
+### Issue Creation Output
 ```
-Task: "Create issue for implementing user authentication system"
-Agent: Creates GitHub Issue in ondrasek/ai-code-forge with proper labels
+✅ Issue #157: OAuth rate limiting causes 429 errors during token refresh
+Labels: bug, high-priority, security
+URL: https://github.com/ondrasek/ai-code-forge/issues/157
+Related: #156 (middleware dependency), #142 (similar auth bug)
+Blocked by: middleware refactor in #156
 ```
 
-### Status Updates
+### Status Update Output  
 ```
-Task: "Mark authentication issue as completed and update CHANGELOG"
-Agent: Closes GitHub Issue, adds to CHANGELOG, no context clutter
+✅ Closed #142: Fixed race condition in JWT token validation middleware
+CHANGELOG updated
+Fixed in: commit abc123f, affects auth flow
+Updated: #157 (unblocked), #159 (can now proceed)
 ```
 
-### Issue Review
+### Issue Review Output
 ```
-Task: "Review all pending high-priority issues"
-Agent: Analyzes GitHub Issues, provides summary without individual issue noise
+High Priority Issues (3):
+- #159: DevContainer settings persistence across rebuilds (in progress, @ondrasek)
+- #157: OAuth rate limiting 429 errors in token refresh (needs technical review)
+- #151: Chain of thought reasoning for git-workflow decisions (blocked by #149 template refactor)
 ```
 
 ## Benefits
@@ -222,15 +239,21 @@ When creating or updating issues, automatically analyze existing issues for rela
 - **Dependency Detection**: Identify blocking/blocked relationships
 - **Implementation Coordination**: Find issues requiring shared architecture or coordination
 
-**Cross-Reference Algorithm**:
-1. Extract keywords and technical concepts from new/updated issue
-2. Search existing issues using `gh issue list --search "keyword1 OR keyword2" --repo ondrasek/ai-code-forge`
-3. Apply relevance scoring based on:
-   - **Direct keyword matches** (high relevance)
-   - **Technical domain overlap** (medium relevance)
-   - **Implementation dependencies** (critical relevance)
-   - **Timeline coordination needs** (planning relevance)
-4. Add cross-references to "Related Issues" section with relationship type
+**Enhanced Cross-Reference Algorithm (MANDATORY)**:
+1. **ALWAYS search for related issues** when creating or updating ANY issue
+2. Extract keywords and technical concepts from new/updated issue content
+3. Search existing issues using multiple strategies:
+   - `gh issue list --search "keyword1 OR keyword2" --repo ondrasek/ai-code-forge`
+   - `gh issue list --search "filename OR filepath" --repo ondrasek/ai-code-forge` (for file-based relationships)
+   - `gh issue list --search "author:username" --repo ondrasek/ai-code-forge` (for context continuity)
+4. Apply relevance scoring with enhanced criteria:
+   - **Direct keyword matches** (high relevance - 90%+)
+   - **File/path overlap** (high relevance - 85%+)
+   - **Technical domain overlap** (medium relevance - 70%+)
+   - **Implementation dependencies** (critical relevance - 95%+)
+   - **Timeline coordination needs** (planning relevance - 75%+)
+5. **MANDATORY**: Add cross-references to "Related Issues" section with specific relationship type and technical context
+6. **MANDATORY**: Limit to 5 most relevant issues to prevent spam while ensuring comprehensive coverage
 
 **Relationship Types**:
 - `Depends on #XX` - Blocking dependency
@@ -289,12 +312,15 @@ Add to "External References" section:
 6. Update cross-references and external sources as needed via new comments
 7. Modify labels using existing repository labels only (never create new labels)
 
-**Quality Controls**:
+**Enhanced Quality Controls**:
 - **Relevance Threshold**: Only add references with >70% relevance score
+- **Technical Context Required**: Each cross-reference must include WHY it's related (shared code, dependencies, etc.)
+- **Bidirectional Linking**: When adding cross-reference, also update related issues with back-references
 - **Source Verification**: Validate URLs are accessible and current
 - **Update Frequency**: Re-check external sources monthly for link rot
-- **Spam Prevention**: Limit to 3-5 most relevant cross-references and 3-5 best external sources
+- **Spam Prevention**: Limit to 5 most relevant cross-references and 3-5 best external sources
 - **Label Restriction**: NEVER create new labels - only use existing repository labels
+- **Cross-Reference Format**: Use format "Related to #XX: [specific technical reason]"
 
 ## Content Update Policy (MANDATORY)
 
