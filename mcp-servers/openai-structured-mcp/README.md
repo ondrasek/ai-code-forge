@@ -311,9 +311,9 @@ uv run pytest tests/test_protocol_compliance.py -v  # Protocol validation
 uv run pytest tests/test_error_handling.py -v       # Error simulation
 
 # Framework-wide tests (from repository root)
-pytest tests/benchmark/           # Performance baselines
-pytest tests/integration/         # Cross-server workflows  
-pytest tests/load/                # Load and stress testing
+pytest mcp-servers/tests/benchmark/           # Performance baselines
+pytest mcp-servers/tests/integration/         # Cross-server workflows  
+pytest mcp-servers/tests/load/                # Load and stress testing
 ```
 
 **Test Categories:**

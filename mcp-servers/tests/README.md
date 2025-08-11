@@ -98,8 +98,8 @@ Install test dependencies:
 pip install -e ".[dev]"
 
 # Or for individual servers
-cd perplexity-mcp && pip install -e ".[dev]"
-cd openai-structured-mcp && pip install -e ".[dev]"
+cd mcp-servers/perplexity-mcp && pip install -e ".[dev]" && cd ../..
+cd mcp-servers/openai-structured-mcp && pip install -e ".[dev]" && cd ../..
 ```
 
 ### Environment Setup
@@ -114,18 +114,18 @@ export PERFORMANCE_TEST_ENV=local  # or ci, production
 
 ```bash
 # Run all tests
-pytest tests/
+pytest mcp-servers/tests/
 
 # Run specific test categories
-pytest tests/benchmark/           # Performance tests
-pytest tests/integration/        # Integration tests
-pytest perplexity-mcp/tests/    # Perplexity server tests
+pytest mcp-servers/tests/benchmark/           # Performance tests
+pytest mcp-servers/tests/integration/        # Integration tests
+pytest mcp-servers/perplexity-mcp/tests/    # Perplexity server tests
 
 # Run with performance reporting
-pytest tests/benchmark/ -v --tb=short
+pytest mcp-servers/tests/benchmark/ -v --tb=short
 
 # Run load tests (warning: resource intensive)  
-pytest tests/load/ -v -s
+pytest mcp-servers/tests/load/ -v -s
 ```
 
 ### Test Configuration

@@ -8,10 +8,10 @@ from unittest.mock import patch, AsyncMock, MagicMock
 import asyncio
 from datetime import datetime
 
-# Add repository root to Python path for shared test imports
-repo_root = Path(__file__).parent.parent.parent
-if str(repo_root) not in sys.path:
-    sys.path.insert(0, str(repo_root))
+# Add mcp-servers directory to Python path for shared test imports
+mcp_servers_root = Path(__file__).parent.parent.parent
+if str(mcp_servers_root) not in sys.path:
+    sys.path.insert(0, str(mcp_servers_root))
 
 
 @pytest.fixture(scope="session")
