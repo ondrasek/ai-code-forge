@@ -12,19 +12,7 @@ VOLUME_NAME="ai-code-forge"
 echo "🧹 DevContainer Cleanup Script for $REPO_NAME"
 echo "================================================"
 
-# Safety check - warn about data loss
-echo "⚠️  WARNING: This will delete ALL containers, images, and volumes related to $REPO_NAME"
-echo "   - Any unsaved work in containers will be lost"
-echo "   - All cached data in volumes will be deleted"
-echo "   - This action cannot be undone"
-echo
-
-read -p "Are you sure you want to continue? (y/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "❌ Cleanup cancelled"
-    exit 0
-fi
+# Skip confirmation for automated use
 
 echo "🔍 Finding containers and volumes..."
 

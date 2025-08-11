@@ -306,14 +306,7 @@ remove_all_worktrees() {
         return 0
     fi
     
-    # Confirmation prompt
-    echo -n "Are you sure? Type 'yes' to confirm: "
-    read -r confirmation
-    
-    if [[ "$confirmation" != "yes" ]]; then
-        print_info "Operation cancelled"
-        return 0
-    fi
+    # Skip confirmation for automated use
     
     cd "$MAIN_REPO"
     
