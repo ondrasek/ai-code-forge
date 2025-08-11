@@ -156,21 +156,42 @@ detect_devcontainer() {
 # Test different VS Code connection methods
 launch_vscode_method1() {
     local container_id=$1
-    log "Method 1: VS Code --folder-uri with hex-encoded dev-container configuration"
+    log "Method 1: VS Code --folder-uri with JSON-encoded dev-container"
     
-    # Get container details for proper dev-container URI
-    local container_name
-    container_name=$(docker ps --filter "id=$container_id" --format "{{.Names}}")
+    # Detect devcontainer configuration file
+    local config_file="$PROJECT_ROOT/.devcontainer/devcontainer.json"
+    if [[ ! -f "$config_file" ]]; then
+        config_file="$PROJECT_ROOT/.devcontainer.json"
+        if [[ ! -f "$config_file" ]]; then
+            warn "No devcontainer.json found, using default configuration"
+            config_file="$PROJECT_ROOT/.devcontainer/devcontainer.json"
+        fi
+    fi
     
-    # Create hex-encoded container configuration identifier (project root + container name)
-    local config_identifier="${PROJECT_ROOT}+${container_name}"
-    local hex_config
-    hex_config=$(printf "$config_identifier" | xxd -p | tr -d '\n')
+    # Create JSON structure for remote authority
+    local json_config
+    json_config=$(cat <<EOF
+{
+  "hostPath": "$PROJECT_ROOT",
+  "localDocker": true,
+  "configFile": {
+    "path": "$config_file",
+    "scheme": "file"
+  }
+}
+EOF
+    )
     
-    local dev_container_uri="vscode-remote://dev-container+${hex_config}/workspace"
+    # Hex-encode the JSON configuration
+    local hex_encoded
+    hex_encoded=$(printf "%s" "$json_config" | xxd -p | tr -d '\n')
+    
+    local dev_container_uri="vscode-remote://dev-container+${hex_encoded}/workspace"
     
     if [[ "$DRY_RUN" == true ]]; then
         echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
+        echo "JSON Config: $json_config"
+        echo "Hex Encoded: $hex_encoded"
         return 0
     fi
     
