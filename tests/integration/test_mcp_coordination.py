@@ -61,12 +61,12 @@ class TestMCPServerCoordination(AsyncTestBase, PerformanceTestMixin):
             )
             
             # Wait for both to complete
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             perplexity_result, openai_result = await asyncio.gather(
                 perplexity_task,
                 openai_task
             )
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             
             # Verify both operations succeeded
             assert "Research result from Perplexity" in perplexity_result
@@ -226,9 +226,9 @@ class TestMCPServerCoordination(AsyncTestBase, PerformanceTestMixin):
                 async with semaphore:
                     return await task
             
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             results = await asyncio.gather(*[limited_task(task) for task in tasks])
-            duration = asyncio.get_event_loop().time() - start_time
+            duration = time.perf_counter() - start_time
             
             # Verify all requests completed successfully
             assert len(results) == num_requests

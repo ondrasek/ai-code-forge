@@ -18,7 +18,7 @@ from tests.shared.mock_factories import (
 )
 
 # Setup servers with mock keys
-with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key", "OPENAI_API_KEY": "test-key"}):
+with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "sk-test-fake-perplexity-key-do-not-use", "OPENAI_API_KEY": "sk-test-fake-openai-key-do-not-use"}):
     from perplexity_mcp import server as perplexity_server
     from openai_structured_mcp import server as openai_server
 

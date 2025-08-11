@@ -12,7 +12,7 @@ from tests.shared.base_test_classes import AsyncTestBase, PerformanceTestMixin
 from tests.shared.mock_factories import PerplexityMockFactory, OpenAIMockFactory, GenericMockFactory
 
 # Setup servers with mock keys
-with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key", "OPENAI_API_KEY": "test-key"}):
+with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "sk-test-fake-perplexity-key-do-not-use", "OPENAI_API_KEY": "sk-test-fake-openai-key-do-not-use"}):
     from perplexity_mcp import server as perplexity_server
     from openai_structured_mcp import server as openai_server
 
@@ -87,7 +87,7 @@ class TestClaudeCodeResearchWorkflows(AsyncTestBase, PerformanceTestMixin):
                          OpenAIMockFactory.create_client_mock([extraction_response, implementation_plan])):
             
             # Execute workflow
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             # Step 1: Initial research
             initial_result = await perplexity_server.perplexity_search(
@@ -112,7 +112,7 @@ class TestClaudeCodeResearchWorkflows(AsyncTestBase, PerformanceTestMixin):
                 description="Create comprehensive ML deployment pipeline based on research findings"
             )
             
-            duration = asyncio.get_event_loop().time() - start_time
+            duration = time.perf_counter() - start_time
             self.record_performance('comprehensive_workflow', duration * 1000)
             
             # Validate workflow results

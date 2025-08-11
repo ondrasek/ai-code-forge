@@ -5,6 +5,7 @@ import asyncio
 import statistics
 import json
 import os
+import yaml
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,7 +37,34 @@ class PerformanceTracker:
         self.baselines: Dict[str, PerformanceBaseline] = self._load_default_baselines()
     
     def _load_default_baselines(self) -> Dict[str, PerformanceBaseline]:
-        """Load default performance baselines for MCP operations."""
+        """Load performance baselines from configuration file."""
+        config_path = Path(__file__).parent.parent / 'config' / 'performance_baselines.yaml'
+        
+        try:
+            with open(config_path) as f:
+                config = yaml.safe_load(f)
+            
+            baselines = {}
+            environment = os.getenv('PERFORMANCE_TEST_ENV', config['settings']['default_environment'])
+            multiplier = config['environments'].get(environment, {}).get('multiplier', 1.0)
+            
+            for operation, baseline_config in config['baselines'].items():
+                baselines[operation] = PerformanceBaseline(
+                    operation=operation,
+                    max_duration_ms=int(baseline_config['max_duration_ms'] * multiplier),
+                    percentile_95_ms=int(baseline_config['percentile_95_ms'] * multiplier),
+                    description=baseline_config['description']
+                )
+            
+            return baselines
+            
+        except (FileNotFoundError, KeyError, yaml.YAMLError) as e:
+            # Fall back to hardcoded baselines if config file is missing or invalid
+            print(f"Warning: Could not load performance baselines config: {e}. Using defaults.")
+            return self._get_fallback_baselines()
+    
+    def _get_fallback_baselines(self) -> Dict[str, PerformanceBaseline]:
+        """Fallback hardcoded baselines if configuration file is unavailable."""
         return {
             'health_check': PerformanceBaseline(
                 operation='health_check',

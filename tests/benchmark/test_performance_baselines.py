@@ -3,6 +3,7 @@
 import pytest
 import asyncio
 import os
+import time
 from unittest.mock import patch
 from pathlib import Path
 
@@ -39,11 +40,11 @@ class TestPerplexityPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
         with patch.object(self.perplexity_server, 'perplexity_client', mock_client):
             # Time the health check operation
             tracker = get_global_tracker()
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             result = await self.perplexity_server.health_check()
             
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             tracker.record('health_check', duration_ms, {'server': 'perplexity'})
             
             # Assert baseline compliance
@@ -61,11 +62,11 @@ class TestPerplexityPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
         
         with patch.object(self.perplexity_server, 'perplexity_client', mock_client):
             tracker = get_global_tracker()
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             result = await self.perplexity_server.perplexity_search(query="Simple test query")
             
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             tracker.record('simple_query', duration_ms, {'server': 'perplexity', 'query_type': 'basic'})
             
             # Assert baseline compliance
@@ -84,7 +85,7 @@ class TestPerplexityPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
         
         with patch.object(self.perplexity_server, 'perplexity_client', mock_client):
             tracker = get_global_tracker()
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             result = await self.perplexity_server.perplexity_deep_research(
                 topic="Complex AI research topic",
@@ -92,7 +93,7 @@ class TestPerplexityPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
                 max_tokens=2000
             )
             
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             tracker.record('complex_query', duration_ms, {'server': 'perplexity', 'query_type': 'deep_research'})
             
             # Assert baseline compliance
@@ -103,11 +104,11 @@ class TestPerplexityPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
     async def test_list_models_baseline(self):
         """Test list models meets performance baseline."""
         tracker = get_global_tracker()
-        start_time = asyncio.get_event_loop().time()
+        start_time = time.perf_counter()
         
         result = await self.perplexity_server.list_models()
         
-        duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+        duration_ms = (time.perf_counter() - start_time) * 1000
         tracker.record('simple_query', duration_ms, {'server': 'perplexity', 'operation': 'list_models'})
         
         # List models should be very fast (local operation)
@@ -142,11 +143,11 @@ class TestOpenAIPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
         
         with patch.object(self.openai_server, 'openai_client', mock_client):
             tracker = get_global_tracker()
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             result = await self.openai_server.health_check()
             
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             tracker.record('health_check', duration_ms, {'server': 'openai_structured'})
             
             # Assert baseline compliance
@@ -169,14 +170,14 @@ class TestOpenAIPerformanceBaselines(AsyncTestBase, PerformanceTestMixin):
         
         with patch.object(self.openai_server, 'openai_client', mock_client):
             tracker = get_global_tracker()
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             result = await self.openai_server.extract_data(
                 text="Sample text for data extraction testing",
                 custom_instructions="Extract key entities and facts"
             )
             
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             tracker.record('structured_extraction', duration_ms, {
                 'server': 'openai_structured',
                 'operation': 'extract_data'
@@ -211,14 +212,14 @@ def hello_world():
         
         with patch.object(self.openai_server, 'openai_client', mock_client):
             tracker = get_global_tracker()
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             result = await self.openai_server.analyze_code(
                 code=sample_code,
                 language_hint="python"
             )
             
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             tracker.record('code_analysis', duration_ms, {
                 'server': 'openai_structured',
                 'operation': 'analyze_code',
@@ -237,11 +238,11 @@ def hello_world():
         
         with patch.object(self.openai_server, 'openai_client', mock_client):
             tracker = get_global_tracker()
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.perf_counter()
             
             result = await self.openai_server.list_schemas()
             
-            duration_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
             tracker.record('simple_query', duration_ms, {
                 'server': 'openai_structured',
                 'operation': 'list_schemas'
