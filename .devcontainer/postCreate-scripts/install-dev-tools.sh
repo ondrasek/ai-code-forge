@@ -13,7 +13,7 @@ python3 -m pip install --user uv
 echo "🤖 Installing Claude CLI, OpenAI Codex and OpenCode..."
 npm install -g @anthropic-ai/claude-code
 npm install -g @openai/codex
-npm install -f opencode-ai
+npm install -g opencode-ai
 
 # Install MCP tools
 echo "🔗 Installing MCP tools..."
