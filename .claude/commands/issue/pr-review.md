@@ -83,6 +83,34 @@ Task(critic): Risk assessment using all previous findings
 </format>
 </output_template>
 
+## Examples
+
+### Automatic Detection
+```
+/issue pr-review
+```
+Automatically detects PR from current branch and analyzes all changes against the base branch.
+
+### Specific PR Number
+```
+/issue pr-review 456
+```
+Analyzes GitHub PR #456 directly, fetching all diff data and commit history from GitHub.
+
+### GitHub URL Usage
+```
+/issue pr-review https://github.com/owner/repo/pull/789
+```
+Analyzes PR from full GitHub URL, supporting cross-repository analysis.
+
+### Advanced Scenarios
+
+**Large PR Handling**: When changes exceed 100 files, the command reports size limit exceeded and provides guidance for breaking down the analysis.
+
+**Merge Conflicts**: If the target branch has merge conflicts, the command provides conflict analysis alongside standard PR review.
+
+**Missing Base Branch**: When the base branch is unavailable or deleted, the command analyzes against the closest available reference branch.
+
 <error_handling priority="MEDIUM">
 <git_errors>Handle detached HEAD, merge conflicts, missing base branch</git_errors>
 <agent_failures>Continue with available agents, report failed stages</agent_failures>
