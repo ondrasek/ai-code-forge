@@ -89,6 +89,14 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 - **Report only completion summaries** when explicitly requested
 - **Keep deferred actions separate** from active work
 
+### Concise Output Generation (MANDATORY)
+**All agent outputs must follow concise communication patterns:**
+- **Direct action statements**: "Created issue #123" not "The issue has been successfully created"
+- **Essential information only**: Include URL, labels, next steps - eliminate process descriptions
+- **No filler phrases**: Remove "please note", "it should be mentioned", "in order to"
+- **Bullet points over paragraphs**: Use lists for multiple items
+- **Actual content over templates**: Show real issue titles/descriptions, not "comprehensive analysis completed"
+
 ### Issue Operations
 - **Create issues**: Generate properly formatted GitHub Issues
 - **Update status**: Modify issue status through labels without context noise
@@ -106,24 +114,27 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 - **GitHub management**: Maintain clean issue tracker with proper labels
 - **Version integration**: Support semantic versioning through issue types
 
-## Usage Examples
+## Concise Output Examples
 
-### Creating Issues
+### Issue Creation Output
 ```
-Task: "Create issue for implementing user authentication system"
-Agent: Creates GitHub Issue in ondrasek/ai-code-forge with proper labels
-```
-
-### Status Updates
-```
-Task: "Mark authentication issue as completed and update CHANGELOG"
-Agent: Closes GitHub Issue, adds to CHANGELOG, no context clutter
+✅ Issue #157: Implement OAuth integration
+Labels: feat, high-priority, security
+URL: https://github.com/ondrasek/ai-code-forge/issues/157
 ```
 
-### Issue Review
+### Status Update Output  
 ```
-Task: "Review all pending high-priority issues"
-Agent: Analyzes GitHub Issues, provides summary without individual issue noise
+✅ Closed #142: Fixed rate limiting bug
+CHANGELOG updated
+```
+
+### Issue Review Output
+```
+High Priority Issues (3):
+- #159: Claude Code preconfiguration (assigned)
+- #157: OAuth integration (needs review)
+- #151: Chain of thought reasoning (blocked by #149)
 ```
 
 ## Benefits

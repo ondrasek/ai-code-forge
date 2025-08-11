@@ -112,37 +112,22 @@ else
     fi
 fi
 
-# 3. Generate comprehensive PR body
+# 3. Generate concise PR body with actual change content
 cat > /tmp/pr_body.md << EOF
-## Summary
+## Changes
+$(git log --pretty=format:"- %s" HEAD ^origin/$BASE_BRANCH | head -5)
 
-$(git log --pretty=format:"- %s" HEAD ^origin/$BASE_BRANCH | head -10)
-
-## Changes Made
-
-$(git diff --name-only HEAD ^origin/$BASE_BRANCH | sed 's/^/- /')
+## Files
+$(git diff --name-only HEAD ^origin/$BASE_BRANCH | head -10 | sed 's/^/- /')
 
 ## Test Plan
+- [ ] Functionality verified
+- [ ] Tests pass
+- [ ] No breaking changes
 
-- [ ] Code compiles without errors
-- [ ] Existing tests pass
-- [ ] New functionality works as expected
-- [ ] Edge cases considered and handled
-- [ ] Documentation updated if needed
+**Impact**: $(git diff --name-only HEAD ^origin/$BASE_BRANCH | wc -l) files, +$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* insertion' | grep -o '[0-9]*' || echo "0") -$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* deletion' | grep -o '[0-9]*' || echo "0") lines
 
-## Impact Assessment
-
-**Files Modified**: $(git diff --name-only HEAD ^origin/$BASE_BRANCH | wc -l)
-**Lines Changed**: +$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* insertion' | grep -o '[0-9]*' || echo "0") -$(git diff --shortstat HEAD ^origin/$BASE_BRANCH | grep -o '[0-9]* deletion' | grep -o '[0-9]*' || echo "0")
-
-## Additional Context
-
-$(if [[ "$COMMIT_COUNT" -gt "1" ]]; then echo "This PR includes $COMMIT_COUNT commits with focused changes for better reviewability."; fi)
-
----
 🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 
 PR_BODY=$(cat /tmp/pr_body.md)
@@ -293,34 +278,21 @@ curl -s --connect-timeout 5 https://api.github.com/zen && echo "✅ GitHub API r
 3. Assess impact scope (authentication, permissions, network)
 4. Execute targeted resolution strategy
 
-## Output Formats
+## Concise Output Generation (MANDATORY)
+**All agent outputs must follow concise communication patterns:**
+- **Actual change content**: Show real commits/changes, not "generated from N commits"
+- **Essential metrics only**: File count, line changes, key functionality
+- **Direct actions**: "Add reviewers → gh pr ready 123" not verbose next steps
+- **No process boilerplate**: Eliminate "WORKFLOW COMPLETED" headers and status announcements
 
 ### PR Creation Success Output
 ```
-GITHUB PR WORKFLOW COMPLETED
-============================
-
-✅ PULL REQUEST CREATED SUCCESSFULLY
-
-Repository: owner/repository-name
-Branch: feature-branch → main
-PR Number: #123
-URL: https://github.com/owner/repo/pull/123
-
-CONTENT SUMMARY:
-Title: feat: implement new feature functionality
-Body: Generated from 3 commits with comprehensive test plan
-Labels: feature, enhancement, documentation
-Assignee: @me (auto-assigned)
-Status: Draft (ready for review)
-
-NEXT STEPS:
-- Review generated content and edit if needed
-- Add reviewers: gh pr edit 123 --add-reviewer @username
-- Mark ready for review: gh pr ready 123
-- View in browser: Already opened automatically
-
-WORKFLOW STATUS: Complete - PR ready for team review
+✅ **PR #123**: https://github.com/owner/repo/pull/123
+**Title**: feat: implement OAuth integration  
+**Changes**: Add JWT middleware, fix user profile caching, update auth tests
+**Files**: 8 files (+156 -23 lines)
+**Labels**: feature, security
+**Next**: Add reviewers → gh pr ready 123
 ```
 
 ### Troubleshooting Output
