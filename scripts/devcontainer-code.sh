@@ -217,19 +217,47 @@ launch_vscode_method2() {
 
 launch_vscode_method3() {
     local container_id=$1
-    log "Method 3: VS Code with container name and folder-uri"
+    log "Method 3: VS Code with container ID direct attach"
+    
+    # Use container ID directly with attach-to-running-container approach
+    local dev_container_uri="vscode-remote://attached-container+${container_id}/workspace/${PROJECT_NAME}"
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
+        return 0
+    fi
+    
+    code --folder-uri "$dev_container_uri"
+}
+
+launch_vscode_method4() {
+    local container_id=$1
+    log "Method 4: VS Code with proper container name JSON encoding"
     
     local container_name
     container_name=$(docker ps --filter "id=$container_id" --format "{{.Names}}")
     
-    # Create hex-encoded container configuration for proper dev-container URI
-    local hex_container
-    hex_container=$(printf "$container_name" | xxd -p | tr -d '\n')
+    # Create proper JSON structure for container name approach
+    local json_config
+    json_config=$(cat <<EOF
+{
+  "containerName": "$container_name",
+  "localDocker": true,
+  "workspaceFolder": "/workspace/${PROJECT_NAME}"
+}
+EOF
+    )
     
-    local dev_container_uri="vscode-remote://dev-container+${hex_container}/workspace/${PROJECT_NAME}"
+    # Hex-encode the JSON configuration
+    local hex_encoded
+    hex_encoded=$(printf "%s" "$json_config" | xxd -p | tr -d '\n')
+    
+    local dev_container_uri="vscode-remote://dev-container+${hex_encoded}/workspace/${PROJECT_NAME}"
     
     if [[ "$DRY_RUN" == true ]]; then
         echo "DRY RUN: code --folder-uri \"$dev_container_uri\""
+        echo "JSON Config: $json_config"
+        echo "Hex Encoded: $hex_encoded"
         return 0
     fi
     
@@ -264,7 +292,8 @@ main() {
     info "Attempting to launch VS Code connected to DevContainer..."
     
     # Try different connection methods in order of likelihood to work
-    local methods=(launch_vscode_method1 launch_vscode_method2 launch_vscode_method3)
+    # Method 2 (direct container ID) usually works best, followed by JSON approaches
+    local methods=(launch_vscode_method2 launch_vscode_method1 launch_vscode_method4 launch_vscode_method3)
     local success=false
     
     for method in "${methods[@]}"; do
