@@ -41,13 +41,13 @@ set -e
 postCreateScriptsDir=$(dirname $0)/postCreate-scripts
 echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 
-"$postCreateScriptsDir/install-dev-tools.sh"
-"$postCreateScriptsDir/configure-shell.sh"
-"$postCreateScriptsDir/setup-git.sh"
-"$postCreateScriptsDir/authenticate-github.sh"
-"$postCreateScriptsDir/prepare-repository.sh"
-"$postCreateScriptsDir/initialize-worktree.sh"
-"$postCreateScriptsDir/configure-shell-environment.sh"
-"$postCreateScriptsDir/verify-installation.sh"
+"$postCreateScriptsDir/install-development-tools.sh"
+"$postCreateScriptsDir/install-zsh-and-oh-my-zsh.sh"
+"$postCreateScriptsDir/configure-git-user-and-credentials.sh"
+"$postCreateScriptsDir/setup-github-authentication.sh"
+"$postCreateScriptsDir/clone-repository-and-setup-workspace.sh"
+"$postCreateScriptsDir/configure-worktree-shell-commands.sh"
+"$postCreateScriptsDir/setup-shell-environment-variables.sh"
+"$postCreateScriptsDir/verify-all-tools-installed.sh"
 
 echo "🎉 All setup scripts completed successfully!"
