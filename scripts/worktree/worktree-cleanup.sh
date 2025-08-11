@@ -111,7 +111,7 @@ find_issue_worktree() {
 # Usage information
 show_usage() {
     cat << EOF
-Usage: $0 [command] [arguments] [--dry-run]
+Usage: $0 [command] [arguments] [--dry-run] [-y|--yes]
 
 Commands:
   list                    List all existing worktrees
@@ -123,12 +123,14 @@ Commands:
 
 Options:
   --dry-run              Show what operations would be performed without executing them
+  -y, --yes              Skip confirmation prompts (use with caution)
 
 Examples:
   $0 list
   $0 remove /workspace/worktrees/feature-branch
   $0 remove 123                    # Remove worktree for issue #123
   $0 remove-all --dry-run
+  $0 remove-all -y                 # Remove all without confirmation
   $0 prune --dry-run
 
 Location: Manages worktrees in $WORKTREE_BASE/<repository>/
@@ -278,6 +280,7 @@ remove_worktree() {
 # Remove all worktrees with confirmation
 remove_all_worktrees() {
     local dry_run="${1:-false}"
+    local skip_confirmation="${2:-false}"
     
     if [[ "$dry_run" == "true" ]]; then
         print_info "[DRY RUN] Would remove ALL worktrees in $WORKTREE_BASE"
@@ -306,7 +309,18 @@ remove_all_worktrees() {
         return 0
     fi
     
-    # Skip confirmation for automated use
+    # Confirmation prompt (unless skipped)
+    if [[ "$skip_confirmation" != "true" ]]; then
+        echo -n "Are you sure? Type 'yes' to confirm: "
+        read -r confirmation
+        
+        if [[ "$confirmation" != "yes" ]]; then
+            print_info "Operation cancelled"
+            return 0
+        fi
+    else
+        print_info "Skipping confirmation (--yes flag used)"
+    fi
     
     cd "$MAIN_REPO"
     
@@ -361,15 +375,22 @@ prune_worktrees() {
 # Main execution
 main() {
     local dry_run=false
+    local skip_confirmation=false
     local args=()
     
-    # Parse arguments and extract --dry-run flag
+    # Parse arguments and extract flags
     for arg in "$@"; do
-        if [[ "$arg" == "--dry-run" ]]; then
-            dry_run=true
-        else
-            args+=("$arg")
-        fi
+        case "$arg" in
+            "--dry-run")
+                dry_run=true
+                ;;
+            "-y"|"--yes")
+                skip_confirmation=true
+                ;;
+            *)
+                args+=("$arg")
+                ;;
+        esac
     done
     
     local command="${args[0]:-list}"
@@ -404,7 +425,7 @@ main() {
             fi
             ;;
         "remove-all")
-            remove_all_worktrees "$dry_run"
+            remove_all_worktrees "$dry_run" "$skip_confirmation"
             ;;
         "prune")
             prune_worktrees "$dry_run"
