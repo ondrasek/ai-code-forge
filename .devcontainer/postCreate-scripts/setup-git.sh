@@ -5,10 +5,7 @@ set -e
 
 echo "🔧 Setting up Git configuration..."
 
-# Load environment variables
-devcontainerDir=/tmp/.devcontainer
-eval "$(grep -v '^#' $devcontainerDir/postCreate.env.tmp | sed 's/^/export /')"
-workingCopy=/workspace/$repositoryName
+# Environment variables are loaded by postCreate.sh and exported to child processes
 
 # Set up Git configuration (if not already configured)
 if [ -z "$(git config --global user.name)" ]; then

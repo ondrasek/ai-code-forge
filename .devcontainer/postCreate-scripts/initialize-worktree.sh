@@ -5,10 +5,7 @@ set -e
 
 echo "🔧 Initializing worktree commands..."
 
-# Load environment variables
-devcontainerDir=/tmp/.devcontainer
-eval "$(grep -v '^#' $devcontainerDir/postCreate.env.tmp | sed 's/^/export /')"
-workingCopy=/workspace/$repositoryName
+# Environment variables are loaded by postCreate.sh and exported to child processes
 
 # Note: This modifies shell profiles within the DevContainer environment only.
 # The modifications are isolated to the container and do not affect the host system.

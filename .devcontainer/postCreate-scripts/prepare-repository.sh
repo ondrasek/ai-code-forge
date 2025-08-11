@@ -5,17 +5,7 @@ set -e
 
 echo "📋 Preparing repository workspace..."
 
-# Load environment variables
-devcontainerDir=/tmp/.devcontainer
-eval "$(grep -v '^#' $devcontainerDir/postCreate.env.tmp | sed 's/^/export /')"
-workingCopy=/workspace/$repositoryName
-
-echo "Configuration from initializeCommand:"
-echo "repositoryName: $repositoryName"
-echo "repositoryNameWithOwner: $repositoryNameWithOwner"
-echo "gitUserName: $gitUserName"
-echo "gitUserEmail: $gitUserEmail"
-echo "workingCopy: $workingCopy"
+# Environment variables are loaded by postCreate.sh and exported to child processes
 
 echo "📋 Cloning repository into workspace:"
 if [ -d $workingCopy/.git ]; then
@@ -27,7 +17,6 @@ else
 fi
 
 # Set up worktree directories
-worktreesDir=/workspace/worktrees/$repositoryName
 mkdir -p $worktreesDir
 git config --global -add safe.directory $worktreesDir
 

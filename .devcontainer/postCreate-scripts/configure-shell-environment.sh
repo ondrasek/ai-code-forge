@@ -5,10 +5,7 @@ set -e
 
 echo "🐚 Configuring shell environment variables..."
 
-# Load environment variables
-devcontainerDir=/tmp/.devcontainer
-eval "$(grep -v '^#' $devcontainerDir/postCreate.env.tmp | sed 's/^/export /')"
-worktreesDir=/workspace/worktrees/$repositoryName
+# Environment variables are loaded by postCreate.sh and exported to child processes
 
 # Set up shell aliases and environment for both bash and zsh
 cat >> ~/.bashrc << 'EOF'

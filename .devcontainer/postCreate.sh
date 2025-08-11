@@ -11,6 +11,19 @@ fi
 
 set -e
 
+# Load environment variables first - these must be available to all scripts
+devcontainerDir=/tmp/.devcontainer
+eval "$(grep -v '^#' $devcontainerDir/postCreate.env.tmp | sed 's/^/export /')"
+export workingCopy=/workspace/$repositoryName
+export worktreesDir=/workspace/worktrees/$repositoryName
+
+echo "Configuration from initializeCommand:"
+echo "repositoryName: $repositoryName"
+echo "repositoryNameWithOwner: $repositoryNameWithOwner"
+echo "gitUserName: $gitUserName"
+echo "gitUserEmail: $gitUserEmail"
+echo "workingCopy: $workingCopy"
+
 # Detect if we're in a container environment
 export CONTAINER_ENV=1
 
