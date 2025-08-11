@@ -156,14 +156,14 @@ detect_devcontainer() {
 # Test different VS Code connection methods
 launch_vscode_method1() {
     local container_id=$1
-    log "Method 1: VS Code --remote attached-container"
+    log "Method 1: VS Code --remote dev-container"
     
     if [[ "$DRY_RUN" == true ]]; then
-        echo "DRY RUN: code --remote attached-container+$container_id /workspace"
+        echo "DRY RUN: code --remote dev-container+$container_id /workspace"
         return 0
     fi
     
-    code --remote "attached-container+$container_id" /workspace
+    code --remote "dev-container+$container_id" /workspace
 }
 
 launch_vscode_method2() {
@@ -171,11 +171,11 @@ launch_vscode_method2() {
     log "Method 2: VS Code --folder-uri with container scheme"
     
     if [[ "$DRY_RUN" == true ]]; then
-        echo "DRY RUN: code --folder-uri \"vscode-remote://attached-container+$container_id/workspace\""
+        echo "DRY RUN: code --folder-uri \"vscode-remote://dev-container+$container_id/workspace\""
         return 0
     fi
     
-    code --folder-uri "vscode-remote://attached-container+$container_id/workspace"
+    code --folder-uri "vscode-remote://dev-container+$container_id/workspace"
 }
 
 launch_vscode_method3() {
@@ -186,11 +186,11 @@ launch_vscode_method3() {
     container_name=$(docker ps --filter "id=$container_id" --format "{{.Names}}")
     
     if [[ "$DRY_RUN" == true ]]; then
-        echo "DRY RUN: code --remote attached-container+$container_name /workspace"
+        echo "DRY RUN: code --remote dev-container+$container_name /workspace"
         return 0
     fi
     
-    code --remote "attached-container+$container_name" /workspace
+    code --remote "dev-container+$container_name" /workspace
 }
 
 # Main execution function
