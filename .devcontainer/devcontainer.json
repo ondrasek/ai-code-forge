@@ -1,16 +1,10 @@
 {
-  "name": "Claude Code Template",
-  "image": "mcr.microsoft.com/devcontainers/python",
-
+  "name": "AI Code Forge",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13-bullseye",
+  
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "latest",
-      "nodeGypDependencies": true
-    },
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "latest",
-      "installJupyterlab": false,
-      "configureGitCredentialHelper": true
+      "version": "20"
     },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
@@ -19,63 +13,75 @@
       "version": "latest",
       "enableNonRootDocker": "true"
     },
-    "ghcr.io/devcontainers/features/git:1": {
-      "version": "latest"
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true
     }
   },
-
+  
   "customizations": {
     "vscode": {
       "extensions": [
         "anthropic.claude-code",
-        "docker.docker",
-        "github.vscode-pull-request-github",
         "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-azuretools.vscode-docker",
-        "redhat.vscode-yaml",
-        "qwtel.sqlite-viewer"
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-vscode.vscode-json",
+        "GitHub.copilot",
+        "GitHub.vscode-pull-request-github",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next"
       ],
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "zsh",
-        "python.defaultInterpreterPath": "/usr/local/python/current/bin/python",
-        "python.terminal.activateEnvironment": false,
-	      "git.openRepositoryInParentFolders": "always",
-	      "terminal.integrated.defaultLocation": "editor"
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "terminal.integrated.shell.linux": "/bin/zsh",
+        "git.autofetch": true,
+        "extensions.autoUpdate": false
       }
     }
   },
-
+  
   "containerEnv": {
-    "PYTHONIOENCODING": "UTF-8"
+    "DEVCONTAINER": "true",
+    "NODE_OPTIONS": "--max-old-space-size=4096"
   },
-
-  "runArgs": [
-    "--env-file", ".env",
-    "--label", "my.repositoryName=${localWorkspaceFolderBasename}"
+  
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
-
-  "remoteEnv": {
-    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
-  },
-
-  "forwardPorts": [58023],
-  "portsAttributes": {
-    "58023": {
-      "label": "Claude Code SSE",
-      "onAutoForward": "notify"
-    }
-  },
-
-  "postCreateCommand": "/tmp/.devcontainer/postCreate.sh",
-
+  
+  "postCreateCommand": [
+    "bash",
+    "-c", 
+    "pip install --upgrade pip uv && npm install -g @devcontainers/cli && chmod +x /workspace/scripts/*.sh"
+  ],
+  
+  "postStartCommand": "echo '✅ AI Code Forge DevContainer is ready! Run: ./scripts/launch-claude.sh'",
+  
   "remoteUser": "vscode",
   "containerUser": "vscode",
   "updateRemoteUserUID": true,
-  "workspaceFolder": "/workspace",
-
-  "mounts": [
-    "source=${localWorkspaceFolder}/.devcontainer,target=/tmp/.devcontainer,type=bind,consistency=cached",
-    "source=${localWorkspaceFolderBasename},target=/workspace,type=volume"
-  ]
+  
+  "forwardPorts": [3000, 8000, 8080],
+  "portsAttributes": {
+    "3000": {
+      "label": "Development Server",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "API Server", 
+      "onAutoForward": "ignore"
+    }
+  }
 }
