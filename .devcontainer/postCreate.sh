@@ -41,7 +41,7 @@ set -e
 postCreateScriptsDir=$(dirname $0)/postCreate-scripts
 echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 
-"$postCreateScriptsDir/update-package-lists.sh"
+"$postCreateScriptsDir/update-system-packages.sh"
 "$postCreateScriptsDir/install-development-tools.sh"
 "$postCreateScriptsDir/install-zsh-and-oh-my-zsh.sh"
 "$postCreateScriptsDir/configure-git-user-and-credentials.sh"
