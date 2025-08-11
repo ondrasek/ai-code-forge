@@ -38,6 +38,9 @@ DESCRIPTION:
     Launches VS Code locally and connects it directly to a running DevContainer,
     avoiding the manual "Reopen in DevContainer" step.
 
+⚠️  IMPORTANT: This script must be run from your HOST MACHINE, not from inside
+    the devcontainer, because it needs access to the Docker daemon and VS Code.
+
 OPTIONS:
     --debug         Enable debug output
     --dry-run       Show what would be done without executing
@@ -58,9 +61,15 @@ METHODS:
     4: Container name with JSON structure
 
 REQUIREMENTS:
+    - Run from HOST MACHINE (not inside devcontainer)
     - VS Code with Remote-Containers extension installed
-    - Docker running with DevContainer already started
-    - DevContainer must have label: my.repositoryName=$PROJECT_NAME
+    - Docker Desktop/Engine running on host
+    - DevContainer already started with label: my.repositoryName=$PROJECT_NAME
+
+SETUP:
+    1. First start your devcontainer: code . → "Reopen in Container"
+    2. Exit VS Code 
+    3. Run this script from host terminal: ./scripts/devcontainer-code.sh
 
 EOF
 }
@@ -166,6 +175,15 @@ check_dependencies() {
     
     if ! docker info &> /dev/null; then
         error "Docker is not running or not accessible"
+        error ""
+        error "This could mean:"
+        error "  - Docker Desktop is not running (start Docker Desktop)"
+        error "  - Docker daemon is not accessible (check Docker settings)"
+        error "  - Permission issues (try: sudo usermod -aG docker \$USER)"
+        error ""
+        error "Note: VS Code also needs Docker access to use Method 1"
+        error "If Docker works in terminal but VS Code can't access it,"
+        error "try Method 2 with: $0 --method 2"
         return 1
     fi
     
@@ -226,16 +244,15 @@ launch_vscode_method1() {
         fi
     fi
     
-    # Create JSON structure for remote authority
+    # Create simplified JSON structure that avoids VS Code Docker validation
+    local container_name
+    container_name=$(docker ps --filter "id=$container_id" --format "{{.Names}}")
+    
     local json_config
     json_config=$(cat <<EOF
 {
-  "containerName": "$(docker ps --filter "id=$container_id" --format "{{.Names}}")",
-  "configFile": {
-    "file": "$config_file"
-  },
-  "workspaceMount": "source=${PROJECT_ROOT},target=/workspace,type=bind,consistency=cached",
-  "workspaceFolder": "/workspace"
+  "containerId": "$container_id",
+  "remoteUser": "vscode"
 }
 EOF
     )
@@ -363,8 +380,8 @@ main() {
         fi
     else
         # Try different connection methods in order of likelihood to work
-        # Method 2 (direct container ID) usually works best, followed by JSON approaches
-        local methods=(launch_vscode_method2 launch_vscode_method1 launch_vscode_method4 launch_vscode_method3)
+        # Method 2 (direct container ID) usually works best and doesn't require Docker daemon access from VS Code
+        local methods=(launch_vscode_method2 launch_vscode_method3)
         
         for method in "${methods[@]}"; do
             info "Trying $method..."
