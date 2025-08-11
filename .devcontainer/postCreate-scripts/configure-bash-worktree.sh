@@ -10,6 +10,18 @@ echo "🐚 Configuring bash worktree commands..."
 # Note: This modifies bash profile within the DevContainer environment only.
 # The modifications are isolated to the container and do not affect the host system.
 
+# Validate working copy directory and worktree script existence
+if [[ -z "$workingCopy" ]]; then
+    echo "⚠️ Working copy path not set, skipping bash worktree initialization"
+    exit 0
+elif [[ ! -d "$workingCopy" ]]; then
+    echo "⚠️ Working copy directory not found: $workingCopy, skipping bash worktree initialization"
+    exit 0
+elif [[ ! -x "$workingCopy/scripts/worktree/worktree.sh" ]]; then
+    echo "⚠️ Worktree script not found or not executable, skipping bash worktree initialization"
+    exit 0
+fi
+
 cd "$workingCopy"
 
 # Check if worktree configuration already exists to prevent duplicates
