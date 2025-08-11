@@ -287,22 +287,54 @@ Structured error responses with detailed validation information:
 
 ### Testing
 
-**Run all tests:**
+The server includes comprehensive test coverage with multiple test categories:
+
+**Install test dependencies:**
 ```bash
-OPENAI_STRUCTURED_LOG_LEVEL=none uv run python -m pytest
+uv sync --group dev
 ```
 
-**Run specific test suites:**
+**Run all server tests:**
 ```bash
-# Schema validation tests
-OPENAI_STRUCTURED_LOG_LEVEL=none uv run python -m pytest tests/test_schemas.py -v
-
-# Client tests (requires API key mocking)
-OPENAI_STRUCTURED_LOG_LEVEL=none uv run python -m pytest tests/test_client.py -v
-
-# Server tests (requires environment setup)
-OPENAI_STRUCTURED_LOG_LEVEL=none uv run python -m pytest tests/test_server.py -v
+OPENAI_STRUCTURED_LOG_LEVEL=none uv run pytest tests/
 ```
+
+**Run specific test categories:**
+```bash
+# Core functionality tests
+uv run pytest tests/test_schemas.py -v       # Schema validation
+uv run pytest tests/test_client.py -v       # Client operations
+uv run pytest tests/test_server.py -v       # Server functionality
+
+# MCP framework compliance tests  
+uv run pytest tests/test_protocol_compliance.py -v  # Protocol validation
+uv run pytest tests/test_error_handling.py -v       # Error simulation
+
+# Framework-wide tests (from repository root)
+pytest tests/benchmark/           # Performance baselines
+pytest tests/integration/         # Cross-server workflows  
+pytest tests/load/                # Load and stress testing
+```
+
+**Test Categories:**
+- **Unit Tests** - Individual component validation (schemas, client, server)
+- **Protocol Compliance** - MCP specification adherence testing
+- **Error Handling** - Failure scenario simulation and recovery
+- **Performance Baselines** - Response time and throughput validation
+- **Integration Tests** - Cross-server coordination with Perplexity MCP
+- **Load Tests** - Concurrent connection and resource exhaustion testing
+
+**Performance Testing:**
+```bash
+# Set performance test environment (affects baseline thresholds)
+export PERFORMANCE_TEST_ENV=local  # or ci, production
+
+# Run performance-sensitive tests
+pytest tests/test_protocol_compliance.py -v
+```
+
+**Test Environment:**
+Tests use obviously fake API keys and mock responses to prevent accidental API calls. See [Testing Framework Documentation](../tests/README.md) for detailed information.
 
 ### Project Structure
 
