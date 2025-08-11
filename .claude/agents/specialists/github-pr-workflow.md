@@ -125,7 +125,7 @@ $(git log --pretty=format:"- %s" HEAD ^origin/$BASE_BRANCH | head -5)
 $(git diff --name-only HEAD ^origin/$BASE_BRANCH | head -10 | sed 's/^/- /')
 
 ## Related Issues
-$(for issue_num in $(echo $RELATED_ISSUES | tr ' ' '\n' | sort -u | head -5); do
+$(for issue_num in $(echo $RELATED_ISSUES | tr ' ' '\n' | sort -u); do
     if [[ -n "$issue_num" ]]; then
         ISSUE_TITLE=$(gh issue view "$issue_num" --repo ondrasek/ai-code-forge --json title --jq '.title' 2>/dev/null || echo "")
         echo "- Relates to #$issue_num: $ISSUE_TITLE"
@@ -185,7 +185,7 @@ if [[ "$CURRENT_BRANCH" =~ issue-([0-9]+) ]]; then
     
     # Add PR creation status comment with cross-references (append-only)
     CROSS_REFS=""
-    for issue_num in $(echo $RELATED_ISSUES | tr ' ' '\n' | sort -u | grep -v "^$ISSUE_NUMBER$" | head -5); do
+    for issue_num in $(echo $RELATED_ISSUES | tr ' ' '\n' | sort -u | grep -v "^$ISSUE_NUMBER$"); do
         if [[ -n "$issue_num" ]]; then
             CROSS_REFS="$CROSS_REFS\n- Related to #$issue_num"
         fi

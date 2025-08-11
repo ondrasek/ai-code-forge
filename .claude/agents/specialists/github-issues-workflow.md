@@ -253,7 +253,7 @@ When creating or updating issues, automatically analyze existing issues for rela
    - **Implementation dependencies** (critical relevance - 95%+)
    - **Timeline coordination needs** (planning relevance - 75%+)
 5. **MANDATORY**: Add cross-references to "Related Issues" section with specific relationship type and technical context
-6. **MANDATORY**: Limit to 5 most relevant issues to prevent spam while ensuring comprehensive coverage
+6. **MANDATORY**: Include ALL relevant issues that meet >70% relevance threshold for comprehensive coverage
 
 **Relationship Types**:
 - `Depends on #XX` - Blocking dependency
@@ -318,7 +318,7 @@ Add to "External References" section:
 - **Bidirectional Linking**: When adding cross-reference, also update related issues with back-references
 - **Source Verification**: Validate URLs are accessible and current
 - **Update Frequency**: Re-check external sources monthly for link rot
-- **Spam Prevention**: Limit to 5 most relevant cross-references and 3-5 best external sources
+- **Comprehensive Coverage**: Include ALL relevant cross-references and external sources that meet relevance threshold
 - **Label Restriction**: NEVER create new labels - only use existing repository labels
 - **Cross-Reference Format**: Use format "Related to #XX: [specific technical reason]"
 
