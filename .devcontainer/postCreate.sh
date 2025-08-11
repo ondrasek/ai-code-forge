@@ -58,6 +58,9 @@ mkdir -p ~/.claude
 echo "🐚 Setting up zsh shell environment..."
 sudo apt-get update && sudo apt-get install -y zsh
 
+# Set zsh as default shell
+sudo chsh -s $(which zsh) $USER
+
 # Install Oh My Zsh for better zsh experience - Secure git clone method
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo "🎨 Installing Oh My Zsh via secure git clone..."
@@ -68,9 +71,6 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo 'export ZSH="$HOME/.oh-my-zsh"' >> "$HOME/.zshrc"
     echo 'source $ZSH/oh-my-zsh.sh' >> "$HOME/.zshrc"
 fi
-
-# Set zsh as default shell
-sudo chsh -s $(which zsh) $USER
 
 # Set up Git configuration (if not already configured)
 if [ -z "$(git config --global user.name)" ]; then
@@ -113,52 +113,6 @@ worktreesDir=/workspace/worktrees/$repositoryName
 mkdir -p $worktreesDir
 git config --global -add safe.directory $worktreesDir
 
-# Set up shell aliases and environment for both bash and zsh
-echo "🐚 Configuring shell environment..."
-cat >> ~/.bashrc << 'EOF'
-
-# Environment variables for Claude Code
-export PYTHONIOENCODING=UTF-8
-
-# Add local bin to PATH
-export PATH="$HOME/.local/bin:$PATH"
-EOF
-
-# ...thsi time with variable substitution
-cat >> ~/.bashrc << EOF
-# Devcontainer folder structure
-export REPOSITORY_NAME=$repositoryName
-export WORKING_COPY=$workingCopy
-export WORKTREES=$worktreesDir
-
-# Go to workspace
-cd /workspace/$repositoryName
-EOF
-
-# Configure zsh with same environment
-cat >> ~/.zshrc << 'EOF'
-
-# Environment variables for Claude Code
-export PYTHONIOENCODING=UTF-8
-
-# Add local bin to PATH
-export PATH="$HOME/.local/bin:$PATH"
-
-# Go to workspace
-cd /workspace/$repositoryName
-EOF
-
-# ...this time with variable substitution
-cat >> ~/.zshrc << EOF
-# Devcontainer folder structure
-export REPOSITORY_NAME=$repositoryName
-export WORKING_COPY=$workingCopy
-export WORKTREES=$worktreesDir
-
-# Go to workspace
-cd /workspace/$repositoryName
-EOF
-
 # Initialize worktree commands for both shells
 # Note: This modifies shell profiles within the DevContainer environment only.
 # The modifications are isolated to the container and do not affect the host system.
@@ -199,6 +153,49 @@ else
     
     cd -
 fi
+
+# Set up shell aliases and environment for both bash and zsh
+echo "🐚 Configuring shell environment..."
+cat >> ~/.bashrc << 'EOF'
+
+# Environment variables for Claude Code
+export PYTHONIOENCODING=UTF-8
+
+# Add local bin to PATH
+export PATH="$HOME/.local/bin:$PATH"
+EOF
+
+# ...this time with variable substitution
+cat >> ~/.bashrc << EOF
+# Devcontainer folder structure
+export REPOSITORY_NAME=$repositoryName
+export WORKING_COPY=$workingCopy
+export WORKTREES=$worktreesDir
+
+# Go to workspace
+cd /workspace/$repositoryName
+EOF
+
+# Configure zsh with same environment
+cat >> ~/.zshrc << 'EOF'
+
+# Environment variables for Claude Code
+export PYTHONIOENCODING=UTF-8
+
+# Add local bin to PATH
+export PATH="$HOME/.local/bin:$PATH"
+EOF
+
+# ...this time with variable substitution
+cat >> ~/.zshrc << EOF
+# Devcontainer folder structure
+export REPOSITORY_NAME=$repositoryName
+export WORKING_COPY=$workingCopy
+export WORKTREES=$worktreesDir
+
+# Go to workspace
+cd /workspace/$repositoryName
+EOF
 
 # Verify installations
 echo "✅ Verifying installations..."
