@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# DevContainer Setup Script - Replicates Codespace Environment
-# This script sets up the exact same environment as the GitHub Codespace
+# Fix workspace permissions
+sudo chown -R vscode:vscode /workspace
 
 # Load environment variables first - these must be available to all scripts
 devcontainerDir=/tmp/.devcontainer
@@ -42,9 +42,9 @@ echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 "$postCreateScriptsDir/configure-shell.sh"
 "$postCreateScriptsDir/setup-git.sh"
 "$postCreateScriptsDir/authenticate-github.sh"
+"$postCreateScriptsDir/configure-shell-environment.sh"
 "$postCreateScriptsDir/prepare-repository.sh"
 "$postCreateScriptsDir/initialize-worktree.sh"
-"$postCreateScriptsDir/configure-shell-environment.sh"
 "$postCreateScriptsDir/verify-installation.sh"
 
 echo "🎉 All setup scripts completed successfully!"

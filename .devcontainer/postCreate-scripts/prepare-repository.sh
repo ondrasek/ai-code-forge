@@ -3,16 +3,17 @@
 # Prepare repository workspace
 set -e
 
-echo "📋 Preparing repository workspace..."
-
 # Environment variables are loaded by postCreate.sh and exported to child processes
+echo -n "📋 Cloning repository into workspace: "
+mkdir -p $workingCopy
 
-echo "📋 Cloning repository into workspace:"
 if [ -d $workingCopy/.git ]; then
+  echo "syncing $workingCopy"
   cd $workingCopy
   gh repo sync
   cd -
 else
+  echo "cloning into $workingCopy"
   gh repo clone $repositoryNameWithOwner $workingCopy
 fi
 
