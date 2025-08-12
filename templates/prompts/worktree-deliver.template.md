@@ -49,18 +49,48 @@ Use the Bash tool to execute these GitHub CLI commands to understand the full is
 - Identify optimal implementation approach
 - Note any conflicts between research and project constraints
 
+### 4. Document Research Findings and Enable Agent Collaboration
+**Create shared analysis directory**: `analysis/issue-[ISSUE_NUMBER]/`
+
+**CRITICAL**: This directory serves as the **central information hub** for ALL agents working on this issue. Every agent MUST:
+- **READ existing files** before starting their work to understand prior analysis
+- **UPDATE files** with their findings and decisions
+- **REFERENCE other agents' work** to avoid duplication and build upon insights
+
+Document all research findings and analysis in this directory:
+- `research-findings.md` - Key external research discoveries, API documentation, best practices, security considerations
+- `technical-analysis.md` - Technical feasibility, implementation approaches, trade-offs, architecture decisions
+- `decision-rationale.md` - Why specific approaches were chosen, conflicts resolved, agent consensus
+- `implementation-notes.md` - Detailed implementation plan, file changes, dependencies, progress tracking
+- `agent-collaboration.md` - Cross-agent findings, handoffs, and shared insights
+
+**Agent Collaboration Protocol**:
+1. **ALWAYS** read existing analysis files before Task() invocation
+2. **ALWAYS** update relevant files with your agent's findings
+3. **EXPLICITLY** reference other agents' work when building upon their analysis
+4. Use agent-collaboration.md to document cross-agent insights and decision handoffs
+
+*Extract issue number from {{ISSUE_CONTEXT}} and create appropriate directory*
+
 ## Development Flow (After Homework is Complete)
 
 **Only start implementing after you've gathered all context above:**
 
 ### Implementation Loop
-1. **Start coding** with your research-backed approach
-2. **Task(researcher)** for specific technical details as you encounter them
-3. **Task(test-strategist)** for comprehensive test design
-4. **Task(code-cleaner)** for improvements and completion
-5. **Continuous validation** with **Task(critic)** and **Task(performance-optimizer)**
-6. **Documentation updates** following researched standards
-7. **Task(git-workflow)** for proper git operations
+1. **Read analysis directory** `analysis/issue-[ISSUE_NUMBER]/` to understand all prior research and decisions
+2. **Start coding** with your research-backed approach
+3. **Task(researcher)** for specific technical details - ensure agents read and update analysis files
+4. **Update analysis files** in `analysis/issue-[ISSUE_NUMBER]/` with ALL new findings, decisions, and implementation progress
+5. **Task(test-strategist)** - direct agents to use analysis directory for test planning and coordination
+6. **Task(code-cleaner)** - ensure agents read implementation-notes.md for context before improvements
+7. **Continuous validation** with **Task(critic)** and **Task(performance-optimizer)** - all agents must reference shared analysis
+8. **Documentation updates** following researched standards, with findings stored in analysis directory
+9. **Task(git-workflow)** for proper git operations
+
+**Inter-Agent Communication**: Every Task() call should instruct agents to:
+- Read existing `analysis/issue-[ISSUE_NUMBER]/` files FIRST
+- Update relevant analysis files with their contributions
+- Reference other agents' work when building upon their findings
 
 ### Quality Gates
 Before finishing, ensure:
@@ -69,24 +99,29 @@ Before finishing, ensure:
 - ✅ Tests written using researched methodologies
 - ✅ Documentation updated to researched standards
 - ✅ Code follows project patterns and principles
+- ✅ Analysis directory `analysis/issue-[ISSUE_NUMBER]/` contains complete research documentation
+- ✅ All agents have updated analysis files with their findings and decisions
+- ✅ Cross-agent insights are documented in `agent-collaboration.md`
+- ✅ Implementation progress is tracked in `implementation-notes.md`
+- ✅ No conflicting information exists between agent outputs in analysis directory
 
 ## Agent Usage Guidelines
 
 ### Primary Agents (Use Heavily)
-- **Task(researcher)** - Your main external knowledge source. Research everything: APIs, best practices, security, performance, testing approaches
-- **Task(context)** - Always use first to understand codebase
-- **Task(stack-advisor)** - Load technology-specific guidelines before any file modifications
+- **Task(researcher)** - Your main external knowledge source. **INSTRUCT**: Read `analysis/issue-[ISSUE_NUMBER]/research-findings.md` first, then research everything: APIs, best practices, security, performance, testing approaches. Update research-findings.md with all discoveries.
+- **Task(context)** - Always use first to understand codebase. **INSTRUCT**: Read `analysis/issue-[ISSUE_NUMBER]/technical-analysis.md` to understand prior context analysis.
+- **Task(stack-advisor)** - Load technology-specific guidelines before any file modifications. **INSTRUCT**: Update `technical-analysis.md` with technology stack insights.
 
 ### Supporting Agents  
-- **Task(options-analyzer)** - Compare implementation approaches
-- **Task(patterns)** - Find existing code patterns to follow
-- **Task(principles)** - Validate architectural decisions
-- **Task(test-strategist)** - Design comprehensive testing
-- **Task(code-cleaner)** - Improve code quality and completion
-- **Task(critic)** - Review implementation for issues
-- **Task(performance-optimizer)** - Optimize performance when needed
-- **Task(constraint-solver)** - Resolve conflicting requirements
-- **Task(git-workflow)** - Handle git operations
+- **Task(options-analyzer)** - **INSTRUCT**: Read `decision-rationale.md` for prior decisions, compare implementation approaches, update with analysis
+- **Task(patterns)** - **INSTRUCT**: Read `technical-analysis.md` for existing patterns, update with new pattern discoveries
+- **Task(principles)** - **INSTRUCT**: Read all analysis files to understand architectural context, update `decision-rationale.md` with principle validations
+- **Task(test-strategist)** - **INSTRUCT**: Read `implementation-notes.md` for testing context, update with comprehensive test design
+- **Task(code-cleaner)** - **INSTRUCT**: Read `implementation-notes.md` for improvement context, update with code quality insights
+- **Task(critic)** - **INSTRUCT**: Read all analysis files for complete review context, update `agent-collaboration.md` with critical findings
+- **Task(performance-optimizer)** - **INSTRUCT**: Read `technical-analysis.md` for performance context, update with optimization insights
+- **Task(constraint-solver)** - **INSTRUCT**: Read `decision-rationale.md` for constraint context, update with conflict resolutions
+- **Task(git-workflow)** - **INSTRUCT**: Handle git operations, ensure analysis directory is committed with changes
 
 ## Only Ask Questions After Complete Homework
 
