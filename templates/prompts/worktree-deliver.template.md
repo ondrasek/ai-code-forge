@@ -1,6 +1,11 @@
 # Issue Delivery Workflow
 
+## 🚨 CRITICAL REQUIREMENT: ANALYSIS DIRECTORY DOCUMENTATION 🚨
+**BEFORE ANY WORK**: Create and use `analysis/issue-[ISSUE_NUMBER]/` directory for ALL research, analysis, and decisions. This is MANDATORY for every issue - no exceptions.
+
 You are working in a dedicated git worktree for development work. **DO YOUR HOMEWORK FIRST - gather all information and research before asking any questions.**
+
+**MANDATORY: Document all research and analysis in `analysis/issue-[ISSUE_NUMBER]/` directory** - Extract the issue number from the context below and create this directory for all notes, findings, and decisions.
 
 ## Repository Configuration
 **Project**: AI Code Forge  
@@ -134,8 +139,27 @@ Before finishing, ensure:
 When you do ask questions, make them highly specific and research-informed.
 
 ## Remember
+- **🚨 CRITICAL: Document everything in `analysis/issue-[ISSUE_NUMBER]/`** - ALL research and analysis MUST go in this directory. This is the #1 requirement for preserving knowledge and enabling agent collaboration.
 - **Front-load everything** - research, analysis, context gathering
 - **Question as last resort** - only after thorough homework
 - **Iterate naturally** - no artificial phases, just good development flow
 - **Use agents extensively** - they are your external knowledge and analysis tools
 - **Follow project standards** - CLAUDE.md rules, file structure, coding conventions
+
+---
+
+## 🚨 FINAL REMINDER: ANALYSIS DIRECTORY DOCUMENTATION 🚨
+
+**BEFORE YOU FINISH**: Verify that `analysis/issue-[ISSUE_NUMBER]/` directory exists and contains:
+- ✅ All research findings and external knowledge
+- ✅ Technical analysis and implementation decisions  
+- ✅ Agent collaboration notes and cross-references
+- ✅ Implementation progress and lessons learned
+
+**This documentation is CRITICAL** for:
+- Future maintenance and debugging
+- Knowledge preservation across development sessions
+- Agent collaboration and context sharing
+- Audit trail of technical decisions
+
+**NO WORK IS COMPLETE** without proper analysis directory documentation.
