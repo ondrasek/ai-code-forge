@@ -411,9 +411,10 @@ launch_claude_with_prompt() {
         print_info "[DRY RUN] Would change directory to: $worktree_path"
         print_info "[DRY RUN] Would create prompt file: $prompt_file"
         print_info "[DRY RUN] Would display prompt and launch instructions"
-        print_info "[DRY RUN] Custom prompt preview (first 200 chars):"
-        echo "$custom_prompt" | head -c 200
-        echo "..."
+        print_info "[DRY RUN] Full custom prompt content:"
+        print_info "=============================================="
+        echo "$custom_prompt"
+        print_info "=============================================="
         return 0
     fi
     
