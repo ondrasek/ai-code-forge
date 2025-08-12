@@ -34,77 +34,95 @@ IMPORTANT: You have access to the complete repository configuration including:
 
 ## Workflow Instructions with Agent Integration
 
-**Phase 1: Deep Research & Context Analysis**
-1. **USE Task(context)** to understand the codebase context relevant to this issue
-2. **MANDATORY: USE Task(researcher)** - Research current industry standards and best practices for the problem domain
-3. **MANDATORY: USE Task(researcher)** - Investigate latest API documentation, method signatures, and framework versions
-4. **MANDATORY: USE Task(researcher)** - Search for similar implementations, case studies, and lessons learned in the community
-5. **MANDATORY: USE Task(researcher)** - Research security implications, vulnerability patterns, and mitigation strategies
-6. **MANDATORY: USE Task(researcher)** - Investigate performance characteristics, scalability considerations, and optimization techniques
-7. **USE Task(researcher)** - Research testing methodologies, validation approaches, and quality assurance patterns
-8. **USE Task(researcher)** - Find documentation standards, API design principles, and maintainability patterns
-9. **USE Task(stack-advisor)** to load technology-specific guidelines for the affected stack
-10. Review CLAUDE.md operational rules and file structure requirements
-11. **Synthesis**: Cross-reference all external research findings with internal project standards
-12. **Validation**: Challenge issue requirements against researched best practices
-13. Ask clarifying questions if research reveals gaps or conflicts
-14. **Recommendation**: Suggest improvements based on comprehensive research findings
-15. **Scope Refinement**: Confirm scope and acceptance criteria enhanced by external knowledge
+**Phase 1: Research-Informed Analysis & Synthesis** 
+*Note: Complete GitHub issue intelligence and comprehensive external research completed in Phase 0 (Steps 1-17)*
 
-**Phase 2: Research-Driven Architecture & Planning**
-1. **MANDATORY: USE Task(researcher)** - Research multiple implementation approaches, architectural patterns, and framework-specific idioms
-2. **MANDATORY: USE Task(researcher)** - Investigate industry-standard testing methodologies, test automation patterns, and quality gates
-3. **MANDATORY: USE Task(researcher)** - Research CI/CD best practices, deployment strategies, and release management for this feature type
-4. **MANDATORY: USE Task(researcher)** - Find comprehensive documentation templates, API design principles, and maintenance patterns
-5. **MANDATORY: USE Task(researcher)** - Research monitoring, observability, and debugging approaches for production readiness
-6. **USE Task(researcher)** - Investigate dependency management, version compatibility, and upgrade migration strategies
-7. **USE Task(researcher)** - Research accessibility standards, internationalization patterns, and user experience best practices (if applicable)
-8. **USE Task(options-analyzer)** to systematically compare researched implementation approaches and trade-offs
-9. **USE Task(patterns)** to identify existing internal code patterns that align with researched best practices
-10. **USE Task(principles)** to validate architectural decisions against SOLID principles and researched design patterns
-11. **Architecture Design**: Create detailed implementation plan synthesizing external best practices with internal standards
-12. **File Impact Analysis**: Identify files needing changes (respecting .claude/file structure rules and researched organization patterns)
-13. **Testing Strategy**: Use **Task(test-strategist)** to develop comprehensive testing approach based on researched methodologies
-14. **Documentation Planning**: Plan documentation updates incorporating researched documentation standards and project requirements
-15. **Risk Assessment**: Identify potential implementation risks based on research findings and community experiences
+1. **Research Synthesis**: Analyze and synthesize all Phase 0 findings: GitHub issue data (Steps 1-6), git repository intelligence (Steps 7-9), and external research (Steps 10-17) into coherent implementation strategy
 
-**Phase 3: Research-Validated Implementation**
-1. **MANDATORY: USE Task(researcher)** - Look up specific implementation details, current syntax, and working code examples for the chosen approach
-2. **MANDATORY: USE Task(researcher)** - Verify current API specifications, method signatures, and parameter requirements before any code changes
-3. **MANDATORY: USE Task(researcher)** - Research comprehensive error handling patterns, edge cases, and community-reported gotchas
-4. **USE Task(researcher)** - Investigate debugging techniques, logging strategies, and troubleshooting approaches for this implementation type
-5. **USE Task(researcher)** - Find performance optimization patterns, memory management considerations, and efficiency best practices
-6. **USE Task(stack-advisor)** before modifying any files to ensure proper technology guidelines and researched patterns align
-7. **Implementation Phase**: Implement solution incrementally, validating each step against researched best practices
-8. **Continuous Validation**: **USE Task(researcher)** for real-time lookup of specific technical details as implementation progresses
-9. **Quality Integration**: Follow project coding standards enhanced with researched industry practices and style guides
-10. **Testing Implementation**: Write comprehensive tests - **USE Task(test-strategist)** with research-backed testing approaches and coverage strategies
-11. **Error Handling**: Implement robust error handling based on researched patterns and community experiences
-12. **Performance Validation**: Apply researched performance patterns and validation techniques
-13. **Code Quality**: **USE Task(code-cleaner)** for code quality improvements following researched clean code principles
-14. **Documentation Creation**: Update documentation according to project structure and researched documentation standards
-15. **Version Control**: **USE Task(git-workflow)** for proper git operations following researched commit message conventions
-16. **Integration Preparation**: Prepare for code review using researched code review best practices and checklists
+2. **Constraint Validation**: Validate synthesized research findings against {{CLAUDE_MD}} operational rules, project standards, and technical constraints identified in Phase 0
 
-**Phase 4: Comprehensive Research-Backed Quality Assurance**
-1. **MANDATORY: USE Task(researcher)** - Research comprehensive quality assurance frameworks, code review checklists, and industry-standard QA practices
-2. **MANDATORY: USE Task(researcher)** - Investigate security assessment methodologies, vulnerability scanning approaches, and security code review practices
-3. **MANDATORY: USE Task(researcher)** - Research monitoring, alerting, and observability patterns for production systems
-4. **MANDATORY: USE Task(researcher)** - Find performance benchmarking methodologies, load testing approaches, and optimization validation techniques
-5. **MANDATORY: USE Task(researcher)** - Research deployment best practices, rollback strategies, and production readiness criteria
-6. **USE Task(researcher)** - Investigate compliance requirements, audit trails, and regulatory considerations (if applicable)
-7. **USE Task(researcher)** - Research accessibility testing, usability validation, and user experience quality assurance
-8. **USE Task(researcher)** - Find maintenance considerations, support documentation patterns, and operational runbooks
-9. **Critical Review**: **USE Task(critic)** to systematically review implementation against research-informed quality criteria
-10. **Performance Analysis**: **USE Task(performance-optimizer)** guided by researched optimization patterns and benchmarking approaches
-11. **Constraint Resolution**: **USE Task(constraint-solver)** for any conflicting requirements using researched resolution strategies
-12. **Pattern Validation**: **USE Task(patterns)** to validate code patterns against researched best practices and identify improvement opportunities
-13. **Security Assessment**: Apply researched security validation techniques and vulnerability assessment approaches
-14. **Final Quality Pass**: **USE Task(code-cleaner)** for final code quality improvements following researched clean code principles
-15. **Production Readiness**: Validate against researched production readiness checklists and deployment criteria
-16. **Documentation Validation**: Ensure documentation meets researched industry standards and usability requirements
-17. **Integration Testing**: Perform final integration testing using researched testing methodologies
-18. **PR Preparation**: Prepare for PR submission following researched code review best practices and submission guidelines
+3. **USE Task(principles)** to validate the research-informed architectural approach against SOLID principles and software engineering best practices
+
+4. **Conflict Resolution**: Identify and resolve conflicts between Phase 0 research recommendations, project standards, and operational constraints using engineering judgment
+
+5. **Implementation Refinement**: Refine preliminary implementation options from Phase 0 Step 21 based on principles validation and constraint analysis
+
+6. **MINIMAL TARGETED QUESTIONS**: Ask only highly specific, research-informed questions about business requirements or preferences that cannot be determined through research or reasonable engineering assumptions
+
+7. **Research-Backed Recommendations**: Present final implementation approach recommendations fully supported by Phase 0 research findings with clear rationale and trade-offs
+
+8. **Scope Confirmation**: Confirm implementation scope and acceptance criteria incorporating all research insights and validated against project constraints
+
+**Phase 2: Research-Informed Planning & Architecture**
+*Note: Core research foundation established in Phase 0 (Steps 1-17), this phase applies research findings to create detailed implementation plan*
+
+1. **USE Task(options-analyzer)** to systematically evaluate and compare implementation approaches identified in Phase 0 research, with detailed trade-off analysis based on researched criteria
+
+2. **USE Task(patterns)** to identify existing internal code patterns that align with Phase 0 researched best practices and industry standards
+
+3. **USE Task(stack-advisor)** to apply technology-specific architectural guidelines and framework conventions based on Phase 0 research findings (Step 16)
+
+4. **Detailed Architecture Design**: Create comprehensive implementation plan incorporating ALL Phase 0 research insights: security considerations (Step 14), performance implications (Step 15), and quality assurance approaches (Step 17)
+
+5. **File Structure Planning**: Identify specific files requiring changes following {{CLAUDE_MD}} file structure rules, informed by Phase 0 codebase analysis (Step 10)
+
+6. **USE Task(test-strategist)** to design comprehensive testing strategy based on Phase 0 research on testing methodologies and CI/CD best practices (Step 17)
+
+7. **Documentation Planning**: Plan documentation updates using Phase 0 researched documentation standards and API design patterns (Step 17)
+
+8. **Risk Assessment**: Identify implementation risks based on Phase 0 research findings including security vulnerabilities (Step 14) and performance bottlenecks (Step 15)
+
+9. **Dependencies & Sequencing**: Map implementation dependencies and execution sequence based on researched deployment strategies and technical constraints
+
+10. **Architecture Validation**: Validate complete implementation plan against ALL Phase 0 research findings and project constraints with final approval checkpoint
+
+**Phase 3: Research-Guided Implementation**
+*Note: Implementation patterns and architectural approaches established in Phase 0 (Steps 10-17), minimal additional research needed*
+
+1. **USE Task(stack-advisor)** before file modifications to ensure implementation aligns with Phase 0 research findings and technology-specific guidelines (Step 16)
+
+2. **Systematic Implementation**: Execute solution step-by-step following Phase 2 architecture plan, continuously referencing Phase 0 research findings for implementation decisions
+
+3. **Targeted Research**: **USE Task(researcher)** ONLY for specific technical syntax, method signatures, or edge cases not covered in comprehensive Phase 0 research (Steps 11-17)
+
+4. **Quality Integration**: Implement code following project standards enhanced with Phase 0 researched industry practices and architectural patterns
+
+5. **Testing Implementation**: Write comprehensive test suite using Phase 0 research-backed testing methodologies and CI/CD patterns (Step 17)
+
+6. **Error Handling**: Implement robust error handling based on Phase 0 researched error patterns, community experiences, and security considerations (Steps 13-14)
+
+7. **USE Task(code-cleaner)** for final code quality improvements following Phase 0 researched clean code principles and maintainability standards
+
+8. **Documentation Updates**: Update all documentation following Phase 0 researched documentation standards, API design patterns, and maintenance considerations (Step 17)
+
+9. **USE Task(git-workflow)** for proper version control operations and commit management following project standards
+
+10. **Integration Preparation**: Prepare code for review and integration using Phase 0 researched deployment strategies and best practices (Step 17)
+
+**Phase 4: Research-Validated Quality Assurance**
+*Note: QA methodologies, security frameworks, and validation approaches established in Phase 0 (Steps 13-17)*
+
+1. **USE Task(critic)** to comprehensively review implementation against Phase 0 research-established quality criteria, industry standards, and architectural best practices
+
+2. **USE Task(performance-optimizer)** when performance considerations are relevant, guided by Phase 0 performance research findings and scalability patterns (Step 15)
+
+3. **USE Task(constraint-solver)** for any conflicting requirements using Phase 0 researched resolution strategies and engineering trade-off analysis
+
+4. **USE Task(patterns)** to validate implemented code patterns against Phase 0 researched industry best practices and architectural guidelines
+
+5. **Comprehensive Security Assessment**: Apply Phase 0 researched security validation techniques, vulnerability assessment frameworks, and compliance requirements (Step 14)
+
+6. **USE Task(code-cleaner)** for final code quality improvements following Phase 0 researched clean code principles, maintainability standards, and industry conventions
+
+7. **Production Readiness Validation**: Validate implementation against Phase 0 researched production readiness criteria, deployment standards, and operational requirements
+
+8. **Minimal Additional Research**: **USE Task(researcher)** ONLY for specific deployment configurations or monitoring details not comprehensively covered in Phase 0 research
+
+9. **Comprehensive Testing Validation**: Execute full testing suite using Phase 0 researched testing methodologies, quality gates, and validation approaches (Step 17)
+
+10. **Documentation Standards Compliance**: Ensure all documentation meets Phase 0 researched industry standards, API documentation patterns, and maintenance requirements
+
+11. **Final Research-Validated Review**: Conduct comprehensive implementation review against ALL Phase 0 research findings, project constraints, and industry best practices with complete validation checkpoint
 
 ## Research-Driven Development Approach
 
@@ -249,23 +267,104 @@ This workflow emphasizes **external research** to ensure implementations follow 
 
 **Ready to begin the research-driven development workflow?** 
 
-**Mandatory Starting Sequence (Must Complete Before Any Implementation):**
-1. **Task(context)** - Understand the complete codebase context, project constraints, and technical environment
-2. **CRITICAL: Task(researcher)** - Immediately research current industry standards, best practices, and architectural approaches for the problem domain
-3. **CRITICAL: Task(researcher)** - Investigate latest API documentation, framework versions, and technical specifications
-4. **CRITICAL: Task(researcher)** - Research similar implementations, case studies, and community solutions for comparable problems
-5. **CRITICAL: Task(researcher)** - Verify security considerations, vulnerability patterns, and compliance requirements
-6. **CRITICAL: Task(researcher)** - Investigate performance implications, scalability considerations, and optimization opportunities
-7. **Task(researcher)** - Research testing methodologies, quality assurance practices, and validation approaches
-8. **Task(researcher)** - Find deployment considerations, operational requirements, and maintenance implications
+## PHASE 0: COMPREHENSIVE INFORMATION GATHERING (MANDATORY - NO USER QUESTIONS YET)
 
-**Research-First Philosophy Reminder**: 
-- **Never implement based solely on issue descriptions** - they may be incomplete, outdated, or technically infeasible
-- **Always validate technical feasibility** through current documentation and community experience
-- **Research multiple approaches** before committing to implementation strategy
-- **Investigate failure modes** and edge cases through community knowledge
-- **Consider long-term implications** through research on maintainability and evolution patterns
-- **Validate against current standards** - ensure implementation follows latest industry best practices
-- **Learn from community wisdom** - leverage collective experience to avoid common mistakes
+**CRITICAL**: Execute ALL 17 steps below before asking any questions to the user. Front-load complete GitHub data gathering and comprehensive external research to eliminate most user interactions.
 
-**Quality Gate**: Do not proceed with implementation until comprehensive research has validated the approach, confirmed technical feasibility, and identified optimal implementation strategies based on current industry knowledge.
+### GitHub CLI Integration - Complete Issue Intelligence (Steps 1-6):
+
+1. **Use Bash tool with gh CLI** to fetch complete issue details with full JSON metadata:
+   ```bash
+   gh issue view [ISSUE_NUMBER_FROM_CONTEXT] --json title,body,state,labels,comments,assignees,milestone,createdAt,updatedAt --jq '.'
+   ```
+   *Extract issue number from {{ISSUE_CONTEXT}} and substitute above - captures ALL issue metadata*
+
+2. **Use Bash tool with gh CLI** to get all issue comments and threaded discussions:
+   ```bash
+   gh issue view [ISSUE_NUMBER_FROM_CONTEXT] --comments
+   ```
+   *Captures complete conversation history and stakeholder input*
+
+3. **Use Bash tool with gh CLI** to discover related issues with comprehensive filtering:
+   ```bash
+   gh issue list --search "is:issue label:bug,enhancement,feature" --limit 20 --json number,title,state,labels,assignees,milestone
+   ```
+   *Maps issue ecosystem and identifies potential dependencies/conflicts*
+
+4. **Use Bash tool with gh CLI** to search for related issues by keywords from current issue:
+   ```bash
+   gh issue list --search "[EXTRACT_KEY_TERMS_FROM_ISSUE_TITLE]" --limit 10 --json number,title,state
+   ```
+   *Dynamic search based on current issue context*
+
+5. **Use Bash tool with gh CLI** to check repository metadata and technical context:
+   ```bash
+   gh repo view --json name,description,topics,languages,defaultBranch,hasIssues,hasProjects,hasWiki
+   ```
+   *Captures complete repository technical environment*
+
+6. **Use Bash tool with gh CLI** to analyze recent repository activity and patterns:
+   ```bash
+   gh pr list --state merged --limit 10 --json number,title,mergedAt,labels
+   ```
+   *Understands recent development patterns and team workflow*
+
+### Git Repository Intelligence - Commit and Branch Analysis (Steps 7-9):
+
+7. **Use Bash tool with git CLI** to search for commits related to current issue:
+   ```bash
+   git log --grep="issue\|fix\|feat\|#[0-9]" --oneline -15
+   ```
+   *Identifies related development history and implementation patterns*
+
+8. **Use Bash tool with git CLI** to analyze branch patterns and naming conventions:
+   ```bash
+   git branch -a --format="%(refname:short) %(committerdate:relative)" | head -20
+   ```
+   *Understands team branching strategy and active development areas*
+
+9. **Use Bash tool with git CLI** to check for related file changes in recent commits:
+   ```bash
+   git log --name-only --oneline -10
+   ```
+   *Maps recent file modification patterns relevant to current issue*
+
+### Comprehensive External Research - Full Domain Analysis (Steps 10-17):
+
+10. **Task(context)** - Parse {{ISSUE_CONTEXT}}, {{CLAUDE_CONFIG}}, and {{CLAUDE_MD}} to understand complete codebase context, project constraints, and operational rules
+
+11. **Task(researcher)** - Based on Steps 1-9 GitHub and git intelligence, research current industry standards, best practices, and architectural approaches for the specific problem domain identified in the issue
+
+12. **Task(researcher)** - Investigate latest API documentation, framework versions, breaking changes, and technical specifications for ALL technologies identified in the codebase and issue requirements
+
+13. **Task(researcher)** - Research similar GitHub issues, Stack Overflow discussions, implementation case studies, and community solutions in the broader development ecosystem
+
+14. **Task(researcher)** - Analyze security considerations, vulnerability patterns, OWASP guidelines, and compliance requirements specifically relevant to this implementation type
+
+15. **Task(researcher)** - Investigate performance implications, scalability bottlenecks, optimization opportunities, and benchmarking approaches for the identified solution domain
+
+16. **Task(stack-advisor)** - Load and apply technology-specific guidelines, framework conventions, and architectural patterns based on comprehensive research findings from Steps 11-15
+
+17. **Task(researcher)** - Research comprehensive quality assurance approaches including: testing methodologies, CI/CD integration patterns, documentation standards, error handling strategies, deployment considerations, and operational monitoring for this specific implementation type
+
+### Analysis & Synthesis - Research-Informed Decision Making (Still No User Questions):
+
+18. **Cross-Reference Analysis**: Systematically correlate GitHub issue data (Steps 1-6), git repository intelligence (Steps 7-9), and external research findings (Steps 10-17) to identify patterns, conflicts, and implementation insights
+
+19. **Technical Feasibility Assessment**: Evaluate implementation complexity, resource requirements, and technical constraints based on comprehensive research findings rather than assumptions
+
+20. **Gap & Risk Analysis**: Identify potential implementation gaps, security risks, performance bottlenecks, or architectural conflicts not explicitly addressed in the original issue description
+
+21. **Solution Synthesis**: Combine all research findings into 2-3 preliminary implementation approach options with trade-off analysis based on industry research and project constraints
+
+22. **Constraint Validation**: Validate synthesized approach options against {{CLAUDE_MD}} operational rules, project standards, and technical limitations identified through research
+
+23. **Research-Informed Questions**: **ONLY NOW** - if critical information remains genuinely unclear after completing ALL 22 previous steps of comprehensive GitHub data gathering AND external research - ask highly targeted, research-informed questions that cannot be resolved through additional research
+
+### Transition to Development Phases:
+
+After completing comprehensive information gathering (Steps 1-23), proceed with the structured development phases (1-4). Every decision in subsequent phases should reference and build upon the complete research foundation established in Phase 0.
+
+**CRITICAL SUCCESS RULE**: Complete ALL GitHub CLI data collection, git repository analysis, and comprehensive external research FIRST (Steps 1-17). This front-loaded approach eliminates 80-90% of typical user questions by gathering complete context before any user interaction. Only ask questions about genuinely ambiguous requirements that cannot be resolved through research or reasonable engineering judgment.
+
+**RESEARCH-FIRST PHILOSOPHY**: Most development questions ("What framework should we use?", "How should this be structured?", "What are the security considerations?") should be answered through Phase 0 research rather than user consultation. User questions should focus on business requirements and preferences, not technical implementation details that can be researched.
