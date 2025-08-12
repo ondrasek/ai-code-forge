@@ -56,7 +56,8 @@ IMPORTANT: You have access to the complete repository configuration including:
 2. **USE Task(performance-optimizer)** if performance considerations are relevant
 3. **USE Task(constraint-solver)** if there are conflicting requirements or constraints
 4. **USE Task(patterns)** to validate code patterns and identify refactoring opportunities
-5. Run final quality checks and prepare for PR submission
+5. **USE Task(code-cleaner)** for final code quality improvements and completion
+6. Run final quality checks and prepare for PR submission
 
 ## Your Role & Capabilities
 - **Interactive Mode**: Wait for user input between phases

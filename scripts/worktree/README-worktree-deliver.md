@@ -107,10 +107,13 @@ The script includes comprehensive error handling:
 
 ## Security Considerations
 
-- Uses existing worktree security validations
-- Temporary prompt files are created in worktree scope only
-- No sensitive information exposed in prompts
-- Respects existing repository permissions and configurations
+- **Input Validation**: Identifiers are validated to prevent path traversal attacks
+- **Secure File Creation**: Temporary files created with restrictive permissions (077)
+- **Path Sanitization**: User input sanitized before use in file system operations
+- **Length Limits**: Identifiers limited to 100 characters to prevent buffer issues
+- **Worktree Isolation**: All operations contained within dedicated worktree scope
+- **No Sensitive Data**: Prompts contain only issue context, no credentials or secrets
+- **Permission Respect**: Maintains existing repository access controls
 
 ## Examples of Generated Prompts
 

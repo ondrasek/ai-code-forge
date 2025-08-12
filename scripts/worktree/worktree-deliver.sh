@@ -60,7 +60,7 @@ NOTES:
 EOF
 }
 
-# Get repository info
+# Get repository info.
 get_repo_info() {
     local repo_name=""
     local repo_full_name=""
@@ -91,9 +91,31 @@ get_repo_info() {
     echo "$repo_name|$repo_full_name"
 }
 
-# Extract issue number from identifier
+# Validate identifier to prevent path traversal attacks.
+validate_identifier() {
+    local identifier="$1"
+    
+    # Check for path traversal attempts
+    if [[ "$identifier" == *".."* ]] || [[ "$identifier" =~ ^/ ]] || [[ "$identifier" =~ /$ ]]; then
+        print_error "Invalid identifier: contains unsafe characters"
+        return 1
+    fi
+    
+    # Check for excessive length
+    if [[ ${#identifier} -gt 100 ]]; then
+        print_error "Identifier too long (max 100 characters)"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Extract issue number from identifier.
 extract_issue_number() {
     local identifier="$1"
+    
+    # Validate input first
+    validate_identifier "$identifier" || return 1
     
     # Remove # prefix if present
     local clean_id="${identifier#\#}"
@@ -113,7 +135,7 @@ extract_issue_number() {
     return 1
 }
 
-# Fetch issue details from GitHub using gh CLI
+# Fetch issue details from GitHub using gh CLI.
 fetch_issue_details() {
     local issue_num="$1"
     local repo_full_name="$2"
@@ -157,7 +179,7 @@ fetch_issue_details() {
     fi
 }
 
-# Load and process template for Claude Code prompt
+# Load and process template for Claude Code prompt.
 create_issue_prompt() {
     local identifier="$1"
     local issue_details="$2"
@@ -223,7 +245,7 @@ $body"
     echo "$template_content"
 }
 
-# Create worktree - fail if already exists
+# Create worktree - fail if already exists.
 setup_worktree() {
     local identifier="$1"
     local dry_run="${2:-false}"
@@ -239,7 +261,6 @@ setup_worktree() {
     # Check various possible worktree directories
     local possible_paths=(
         "$base_dir/$clean_id"
-        "$base_dir/issue-$clean_id"
     )
     
     if [[ "$clean_id" =~ ^[0-9]+$ ]]; then
@@ -277,7 +298,7 @@ setup_worktree() {
     fi
 }
 
-# Find worktree directory path
+# Find worktree directory path.
 find_worktree_path() {
     local identifier="$1"
     
@@ -333,7 +354,7 @@ find_worktree_path() {
     fi
 }
 
-# Launch Claude Code with custom prompt
+# Launch Claude Code with custom prompt.
 launch_claude_with_prompt() {
     local worktree_path="$1"
     local custom_prompt="$2"
@@ -356,7 +377,7 @@ launch_claude_with_prompt() {
         fi
     fi
     
-    # Create temporary prompt file
+    # Create temporary prompt file with secure permissions
     local prompt_file="$worktree_path/.claude-delivery-prompt.md"
     
     if [[ "$dry_run" == "true" ]]; then
@@ -370,8 +391,8 @@ launch_claude_with_prompt() {
         return 0
     fi
     
-    # Write prompt to file with error handling
-    if ! echo "$custom_prompt" > "$prompt_file"; then
+    # Write prompt to file with error handling and secure permissions
+    if ! (umask 077; echo "$custom_prompt" > "$prompt_file"); then
         print_error "Failed to create prompt file: $prompt_file"
         return 1
     fi
@@ -428,7 +449,7 @@ launch_claude_with_prompt() {
     # Cleanup is handled by trap
 }
 
-# Cleanup function for prompt file and directory restoration
+# Cleanup function for prompt file and directory restoration.
 cleanup_prompt_file() {
     local prompt_file="$1"
     local original_dir="$2"
@@ -442,7 +463,7 @@ cleanup_prompt_file() {
     fi
 }
 
-# Main function
+# Main function.
 main() {
     local identifier=""
     local dry_run=false
@@ -480,6 +501,11 @@ main() {
     if [[ -z "$identifier" ]]; then
         print_error "Missing issue number or branch name"
         show_usage
+        exit 1
+    fi
+    
+    # Validate identifier for security
+    if ! validate_identifier "$identifier"; then
         exit 1
     fi
     
@@ -532,5 +558,5 @@ main() {
     launch_claude_with_prompt "$worktree_path" "$custom_prompt" "$dry_run"
 }
 
-# Execute main function
+# Execute main function.
 main "$@"
