@@ -32,6 +32,7 @@ COMMANDS:
     init [--shell SHELL]                 Generate shell-specific configuration for eval
     create <branch-name> [issue-number]  Create a new worktree
     create --from-issue <issue-number>   Create worktree from GitHub issue
+    deliver <issue-number|branch-name>   Create worktree and launch Claude Code with issue context
     path <issue-number|main>             Output worktree directory path
     launch <issue-number|branch-name>    Launch Claude Code in specified worktree
     list [issue-number]                  List all worktrees or specific issue worktree
@@ -51,6 +52,8 @@ EXAMPLES:
     ./worktree.sh create feature/new-api
     ./worktree.sh create feature/fix-123 123
     ./worktree.sh create --from-issue 456
+    ./worktree.sh deliver 123            # Create worktree for issue #123 and launch Claude Code with context
+    ./worktree.sh deliver feature/fix-456 # Create worktree for branch and launch
     ./worktree.sh path 123               # Output path for issue #123
     ./worktree.sh path main              # Output path for main branch
     cd \$(./worktree.sh path 123)         # Change to issue #123 worktree
@@ -101,6 +104,13 @@ main() {
                 exit 1
             fi
             exec "$SCRIPT_DIR/worktree-create.sh" "$@"
+            ;;
+        deliver)
+            if [[ ! -f "$SCRIPT_DIR/worktree-deliver.sh" ]]; then
+                print_error "worktree-deliver.sh not found in $SCRIPT_DIR"
+                exit 1
+            fi
+            exec "$SCRIPT_DIR/worktree-deliver.sh" "$@"
             ;;
         path)
             if [[ ! -f "$SCRIPT_DIR/worktree-path.sh" ]]; then

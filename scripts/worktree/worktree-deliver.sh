@@ -113,42 +113,56 @@ extract_issue_number() {
     return 1
 }
 
-# Fetch issue details from GitHub
+# Fetch issue details from GitHub using gh CLI
 fetch_issue_details() {
     local issue_num="$1"
     local repo_full_name="$2"
     local dry_run="${3:-false}"
     
     if [[ "$dry_run" == "true" ]]; then
-        print_info "[DRY RUN] Would fetch issue #$issue_num details from GitHub"
+        print_info "[DRY RUN] Would fetch issue #$issue_num details from GitHub using gh CLI"
         echo "title:Sample Issue Title|body:This is a sample issue description for testing.|state:open|labels:bug,enhancement"
         return 0
     fi
     
-    # Check if GitHub CLI is available
+    # GitHub CLI is required for this script
     if ! command -v gh >/dev/null 2>&1; then
-        print_warning "GitHub CLI not available - issue context will be limited"
-        echo "title:Issue #$issue_num|body:GitHub CLI not available for detailed context.|state:unknown|labels:"
-        return 0
+        print_error "GitHub CLI (gh) is required but not installed"
+        print_info "Install it with: https://cli.github.com/"
+        return 1
     fi
+    
+    # Verify gh is authenticated
+    if ! gh auth status >/dev/null 2>&1; then
+        print_error "GitHub CLI is not authenticated"
+        print_info "Run 'gh auth login' to authenticate"
+        return 1
+    fi
+    
+    print_info "Fetching issue #$issue_num details from GitHub..."
     
     # Fetch issue details
     local issue_data
     if issue_data=$(gh issue view "$issue_num" --repo "$repo_full_name" --json title,body,state,labels --jq 'if .title then "title:\(.title)|body:\(.body // "")|state:\(.state)|labels:\([.labels[].name] | join(","))" else empty end' 2>/dev/null); then
+        print_success "Issue #$issue_num details retrieved successfully"
         echo "$issue_data"
         return 0
     else
-        print_warning "Could not fetch issue #$issue_num details (may not exist or access denied)"
-        echo "title:Issue #$issue_num|body:Unable to fetch issue details from GitHub.|state:unknown|labels:"
-        return 0
+        print_error "Could not fetch issue #$issue_num details"
+        print_info "Please verify:"
+        print_info "  - Issue number $issue_num exists"
+        print_info "  - You have access to repository $repo_full_name"
+        print_info "  - GitHub CLI authentication is working"
+        return 1
     fi
 }
 
-# Create custom prompt for Claude Code
+# Create custom prompt for Claude Code with repository context
 create_issue_prompt() {
     local identifier="$1"
     local issue_details="$2"
     local is_issue_mode="$3"
+    local worktree_path="$4"
     
     # Parse issue details
     local title body state labels
@@ -160,30 +174,59 @@ create_issue_prompt() {
         labels="${labels#labels:}"
     fi
     
+    # Include repository configuration context
+    local claude_config=""
+    local claude_md=""
+    
+    # Try to read CLAUDE.md for project context
+    if [[ -f "$MAIN_REPO/CLAUDE.md" ]]; then
+        claude_md="Available: Repository-specific operational rules and file structure guidelines are configured in CLAUDE.md."
+    fi
+    
+    # Try to read .claude/settings.json for configuration
+    if [[ -f "$MAIN_REPO/.claude/settings.json" ]]; then
+        claude_config="Available: Claude Code is configured with repository-specific settings (model, permissions, cleanup policies)."
+    fi
+    
     cat << EOF
 # Issue Delivery Workflow
 
-You are working in a dedicated git worktree for development work. Your task is to help refine and implement the following:
+You are working in a dedicated git worktree for development work with full repository context and configuration.
+
+## Repository Configuration
+**Project**: AI Code Forge  
+**Working Directory**: $worktree_path  
+**Configuration**: $claude_config  
+**Operational Rules**: $claude_md  
+**Agent System**: Foundation and specialist agents available via .claude/agents/  
+**Commands**: Custom commands available via .claude/commands/  
+
+IMPORTANT: You have access to the complete repository configuration including:
+- CLAUDE.md with mandatory operational rules
+- .claude/settings.json with model and permission configuration  
+- Specialized agents for different development tasks
+- Custom slash commands for workflow automation
+- File structure guidelines for proper organization
+
+## Development Context
 
 EOF
 
     if [[ "$is_issue_mode" == "true" && -n "$title" ]]; then
         cat << EOF
-## GitHub Issue Context
-**Issue**: $identifier
-**Title**: $title
-**State**: $state
-**Labels**: ${labels:-none}
+**GitHub Issue**: #$identifier  
+**Title**: $title  
+**State**: $state  
+**Labels**: ${labels:-none}  
 
-**Description**:
+**Issue Description**:
 $body
 
 EOF
     else
         cat << EOF
-## Branch Context
-**Branch/Identifier**: $identifier
-**Development Focus**: Work on features and improvements for this branch
+**Branch/Identifier**: $identifier  
+**Development Focus**: Feature/improvement work for this branch
 
 EOF
     fi
@@ -192,40 +235,72 @@ EOF
 ## Workflow Instructions
 
 **Phase 1: Issue Analysis & Refinement**
-1. Analyze the issue/requirements thoroughly
-2. Ask clarifying questions if anything is unclear
-3. Suggest improvements or refinements to the requirements
-4. Confirm scope and acceptance criteria
+1. Review CLAUDE.md operational rules and file structure requirements
+2. Analyze the issue/requirements against project standards
+3. Ask clarifying questions if anything is unclear
+4. Suggest improvements or refinements to the requirements
+5. Confirm scope and acceptance criteria
 
 **Phase 2: Implementation Planning**
-1. Create detailed implementation plan
-2. Identify files that need changes
-3. Consider testing strategy
-4. Plan documentation updates
+1. Create detailed implementation plan following file structure guidelines
+2. Identify files that need changes (respect .claude/file structure rules)
+3. Consider testing strategy and approach
+4. Plan documentation updates according to project standards
+5. Use appropriate agents/commands if needed
 
 **Phase 3: Interactive Implementation**
 1. Implement the solution step by step
-2. Write tests as needed (TDD approach when appropriate)
-3. Update documentation
-4. Prepare for code review
+2. Follow project coding standards and conventions
+3. Write tests as needed (TDD approach when appropriate)
+4. Update documentation according to project structure
+5. Prepare for code review and integration
 
-## Your Role
-- Stay in **interactive mode** - wait for user input between phases
-- Ask for confirmation before proceeding to implementation
-- Suggest next steps and wait for user guidance
-- Focus on high-quality, well-tested solutions
+## Your Role & Capabilities
+- **Interactive Mode**: Wait for user input between phases
+- **Repository Awareness**: Leverage all available configuration and rules
+- **Quality Focus**: Follow project standards and best practices
+- **Agent Coordination**: Use specialized agents when beneficial
+- **Command Integration**: Utilize custom commands for workflow efficiency
 
-## Current Working Directory
-You are now working in the dedicated worktree for this issue. All file operations will be isolated from the main repository until ready to merge.
+## Current Working Environment
+- **Isolation**: All work isolated in dedicated worktree until ready to merge
+- **Full Access**: Complete repository context and configuration available
+- **Git Integration**: Standard git workflow with worktree-specific branching
 
-**Ready to begin?** Let's start with analyzing the requirements and refining the scope.
+**Ready to begin?** Let's start by analyzing the requirements within the context of the AI Code Forge project standards and operational rules.
 EOF
 }
 
-# Create or use existing worktree
+# Create worktree - fail if already exists
 setup_worktree() {
     local identifier="$1"
     local dry_run="${2:-false}"
+    
+    # Check if worktree already exists first
+    local repo_info
+    repo_info=$(get_repo_info) || return 1
+    local repo_name="${repo_info%|*}"
+    
+    local base_dir="$WORKTREE_BASE/$repo_name"
+    local clean_id="${identifier#\#}"
+    
+    # Check various possible worktree directories
+    local possible_paths=(
+        "$base_dir/$clean_id"
+        "$base_dir/issue-$clean_id"
+    )
+    
+    if [[ "$clean_id" =~ ^[0-9]+$ ]]; then
+        possible_paths+=("$base_dir/issue-$clean_id")
+    fi
+    
+    for path in "${possible_paths[@]}"; do
+        if [[ -d "$path" ]]; then
+            print_error "Worktree already exists for $identifier at: $path"
+            print_info "Use 'worktree.sh remove $identifier' to remove it first, or work in the existing worktree"
+            return 1
+        fi
+    done
     
     local create_script="$SCRIPT_DIR/worktree-create.sh"
     if [[ ! -f "$create_script" ]]; then
@@ -233,18 +308,19 @@ setup_worktree() {
         return 1
     fi
     
-    print_info "Setting up worktree for: $identifier"
+    print_info "Creating new worktree for: $identifier"
     
     if [[ "$dry_run" == "true" ]]; then
         print_info "[DRY RUN] Would execute: $create_script \"$identifier\" --dry-run"
         return 0
     fi
     
-    # Execute worktree creation (it handles existing worktrees gracefully)
+    # Execute worktree creation
     if "$create_script" "$identifier"; then
+        print_success "New worktree created successfully"
         return 0
     else
-        print_error "Failed to setup worktree for $identifier"
+        print_error "Failed to create worktree for $identifier"
         return 1
     fi
 }
@@ -492,11 +568,11 @@ main() {
         
         # Create custom prompt with issue context
         local custom_prompt
-        custom_prompt=$(create_issue_prompt "$identifier" "$issue_details" "$is_issue_mode")
+        custom_prompt=$(create_issue_prompt "$identifier" "$issue_details" "$is_issue_mode" "$worktree_path")
     else
         print_info "Branch-based workflow: $identifier"
         local custom_prompt
-        custom_prompt=$(create_issue_prompt "$identifier" "" "false")
+        custom_prompt=$(create_issue_prompt "$identifier" "" "false" "$worktree_path")
     fi
     
     # Launch Claude Code with custom prompt
