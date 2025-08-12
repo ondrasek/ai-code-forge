@@ -496,6 +496,10 @@ create_git_worktree() {
         branch_was_created=false
     fi
 
+    # Clean up any stale worktree registrations first
+    print_info "Cleaning up stale worktree registrations..."
+    git worktree prune 2>/dev/null || true
+    
     # Create worktree with proper shell safety
     local cmd_args=()
     if $branch_exists; then
@@ -507,6 +511,7 @@ create_git_worktree() {
 
     # Execute with array expansion to prevent injection
     if [[ "$dry_run" == "true" ]]; then
+        print_info "[DRY RUN] Would execute: git worktree prune"
         print_info "[DRY RUN] Would execute: ${cmd_args[*]}"
     else
         if ! git "${cmd_args[@]:1}"; then  # Remove 'git' from array since we're calling git directly

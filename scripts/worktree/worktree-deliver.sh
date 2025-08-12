@@ -398,7 +398,8 @@ launch_claude_with_prompt() {
     fi
     
     # Trap to ensure cleanup on exit/interruption
-    trap 'cleanup_prompt_file "$prompt_file" "$original_dir"' EXIT INT TERM
+    # Variables are expanded immediately when trap is set
+    trap "cleanup_prompt_file '$prompt_file' '$original_dir'" EXIT INT TERM
     
     print_success "Worktree ready: $worktree_path"
     print_success "Issue context prepared: $prompt_file"
