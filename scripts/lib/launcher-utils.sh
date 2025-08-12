@@ -41,7 +41,7 @@ validate_env_file() {
     # Check file permissions - should not be world-readable for security
     if [[ -r "$env_file" ]]; then
         local perms
-        perms=$(stat -c "%a" "$env_file" 2>/dev/null || stat -f "%A" "$env_file" 2>/dev/null)
+        perms=$(stat -c "%a" "$env_file" 2>/dev/null || stat -f "%OLp" "$env_file" 2>/dev/null || echo "644")
         if [[ "${perms: -1}" -gt 4 ]]; then
             echo "⚠️  Warning: $env_file is world-readable. Consider running: chmod 640 $env_file"
         fi
@@ -51,7 +51,7 @@ validate_env_file() {
     local size
     size=$(wc -c < "$env_file" 2>/dev/null || echo 0)
     if [[ $size -gt 100000 ]]; then  # 100KB limit
-        echo "❌ Error: $env_file is too large (${size} bytes). Maximum 100KB allowed."
+        echo "❌ Error: $env_file is too large (${size} bytes). Maximum 100KB allowed." >&2
         return 1
     fi
 
