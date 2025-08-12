@@ -231,6 +231,7 @@ remove_worktree() {
         print_info "[DRY RUN] Would change to directory: $MAIN_REPO"
         print_info "[DRY RUN] Would check git worktree registration"
         print_info "[DRY RUN] Would execute: git worktree remove -- $validated_path"
+        print_info "[DRY RUN] Would retry with: git worktree remove --force -- $validated_path (if locked)"
         print_info "[DRY RUN] Would remove directory if git command fails: $validated_path"
         return 0
     fi
@@ -246,9 +247,10 @@ remove_worktree() {
     fi
     
     # Remove from git worktree management with proper safety
-    local cleanup_args=("worktree" "remove" "--" "$validated_path")
-    if git "${cleanup_args[@]}" 2>/dev/null; then
+    if git worktree remove -- "$validated_path" 2>/dev/null; then
         print_success "Git worktree removed successfully"
+    elif git worktree remove --force -- "$validated_path" 2>/dev/null; then
+        print_success "Git worktree force removed successfully (was locked)"
     else
         print_warning "Failed to remove git worktree (may already be removed)"
         
@@ -329,7 +331,7 @@ remove_all_worktrees() {
         local path="${line#worktree }"
         if [[ "$path" =~ ^$WORKTREE_BASE/ ]]; then
             print_info "Removing: $path"
-            remove_worktree "$path"
+            remove_worktree "$path" "$dry_run"
         fi
     done
     
