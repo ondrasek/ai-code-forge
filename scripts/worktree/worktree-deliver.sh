@@ -383,7 +383,7 @@ launch_claude_with_prompt() {
     if [[ "$dry_run" == "true" ]]; then
         print_info "[DRY RUN] Would change directory to: $worktree_path"
         print_info "[DRY RUN] Would create prompt file: $prompt_file"
-        print_info "[DRY RUN] Would display prompt and launch instructions"
+        print_info "[DRY RUN] Would launch Claude Code with command: $claude_command \"<prompt-content>\""
         print_info "[DRY RUN] Full custom prompt content:"
         print_info "=============================================="
         echo "$custom_prompt"
@@ -404,47 +404,26 @@ launch_claude_with_prompt() {
     print_success "Issue context prepared: $prompt_file"
     print_info ""
     print_info "=============================================="
-    print_info "READY TO LAUNCH CLAUDE CODE"
+    print_info "LAUNCHING CLAUDE CODE WITH CUSTOM PROMPT"
     print_info "=============================================="
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. Change to the worktree directory:"
-    print_info "   cd '$worktree_path'"
-    print_info ""
-    print_info "2. Launch Claude Code:"
-    print_info "   $claude_command"
-    print_info ""
-    print_info "3. Copy and paste the following prompt:"
-    print_info ""
-    print_info "=============================================="
-    cat "$prompt_file"
-    print_info "=============================================="
-    print_info ""
-    print_warning "Claude Code will be in INTERACTIVE mode - provide guidance for next steps"
     print_info ""
     
-    # Offer to launch automatically or let user control
-    print_info "Launch Claude Code now? [y/N] (or press Ctrl+C to exit)"
-    read -r -n 1 response
-    echo
+    # Change to worktree directory
+    cd "$worktree_path"
     
-    if [[ "$response" =~ ^[Yy]$ ]]; then
-        print_info "Launching Claude Code in worktree directory..."
-        cd "$worktree_path"
-        
-        # Launch Claude Code normally (not with exec - allows proper return)
-        "$claude_command" || {
-            local exit_code=$?
-            print_error "Claude Code exited with code: $exit_code"
-            cd "$original_dir"
-            return $exit_code
-        }
-        
+    print_info "Starting Claude Code with issue-focused prompt..."
+    
+    # Launch Claude Code with the prompt as command line argument
+    # Claude Code accepts the prompt directly as an argument
+    "$claude_command" "$(cat "$prompt_file")" || {
+        local exit_code=$?
+        print_error "Claude Code exited with code: $exit_code"
         cd "$original_dir"
-        print_success "Claude Code session completed"
-    else
-        print_info "Setup completed. You can launch Claude Code manually using the instructions above."
-    fi
+        return $exit_code
+    }
+    
+    cd "$original_dir"
+    print_success "Claude Code session completed"
     
     # Cleanup is handled by trap
 }
