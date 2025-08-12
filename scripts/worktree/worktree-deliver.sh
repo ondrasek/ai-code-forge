@@ -157,12 +157,19 @@ fetch_issue_details() {
     fi
 }
 
-# Create custom prompt for Claude Code with repository context
+# Load and process template for Claude Code prompt
 create_issue_prompt() {
     local identifier="$1"
     local issue_details="$2"
     local is_issue_mode="$3"
     local worktree_path="$4"
+    
+    # Load template file
+    local template_file="$MAIN_REPO/templates/prompts/worktree-deliver.template.md"
+    if [[ ! -f "$template_file" ]]; then
+        print_error "Template file not found: $template_file"
+        return 1
+    fi
     
     # Parse issue details
     local title body state labels
@@ -175,8 +182,8 @@ create_issue_prompt() {
     fi
     
     # Include repository configuration context
-    local claude_config=""
-    local claude_md=""
+    local claude_config="Not configured"
+    local claude_md="Not available"
     
     # Try to read CLAUDE.md for project context
     if [[ -f "$MAIN_REPO/CLAUDE.md" ]]; then
@@ -188,87 +195,32 @@ create_issue_prompt() {
         claude_config="Available: Claude Code is configured with repository-specific settings (model, permissions, cleanup policies)."
     fi
     
-    cat << EOF
-# Issue Delivery Workflow
-
-You are working in a dedicated git worktree for development work with full repository context and configuration.
-
-## Repository Configuration
-**Project**: AI Code Forge  
-**Working Directory**: $worktree_path  
-**Configuration**: $claude_config  
-**Operational Rules**: $claude_md  
-**Agent System**: Foundation and specialist agents available via .claude/agents/  
-**Commands**: Custom commands available via .claude/commands/  
-
-IMPORTANT: You have access to the complete repository configuration including:
-- CLAUDE.md with mandatory operational rules
-- .claude/settings.json with model and permission configuration  
-- Specialized agents for different development tasks
-- Custom slash commands for workflow automation
-- File structure guidelines for proper organization
-
-## Development Context
-
-EOF
-
+    # Create issue context section
+    local issue_context=""
     if [[ "$is_issue_mode" == "true" && -n "$title" ]]; then
-        cat << EOF
-**GitHub Issue**: #$identifier  
+        issue_context="**GitHub Issue**: #$identifier  
 **Title**: $title  
 **State**: $state  
 **Labels**: ${labels:-none}  
 
 **Issue Description**:
-$body
-
-EOF
+$body"
     else
-        cat << EOF
-**Branch/Identifier**: $identifier  
-**Development Focus**: Feature/improvement work for this branch
-
-EOF
+        issue_context="**Branch/Identifier**: $identifier  
+**Development Focus**: Feature/improvement work for this branch"
     fi
-
-    cat << EOF
-## Workflow Instructions
-
-**Phase 1: Issue Analysis & Refinement**
-1. Review CLAUDE.md operational rules and file structure requirements
-2. Analyze the issue/requirements against project standards
-3. Ask clarifying questions if anything is unclear
-4. Suggest improvements or refinements to the requirements
-5. Confirm scope and acceptance criteria
-
-**Phase 2: Implementation Planning**
-1. Create detailed implementation plan following file structure guidelines
-2. Identify files that need changes (respect .claude/file structure rules)
-3. Consider testing strategy and approach
-4. Plan documentation updates according to project standards
-5. Use appropriate agents/commands if needed
-
-**Phase 3: Interactive Implementation**
-1. Implement the solution step by step
-2. Follow project coding standards and conventions
-3. Write tests as needed (TDD approach when appropriate)
-4. Update documentation according to project structure
-5. Prepare for code review and integration
-
-## Your Role & Capabilities
-- **Interactive Mode**: Wait for user input between phases
-- **Repository Awareness**: Leverage all available configuration and rules
-- **Quality Focus**: Follow project standards and best practices
-- **Agent Coordination**: Use specialized agents when beneficial
-- **Command Integration**: Utilize custom commands for workflow efficiency
-
-## Current Working Environment
-- **Isolation**: All work isolated in dedicated worktree until ready to merge
-- **Full Access**: Complete repository context and configuration available
-- **Git Integration**: Standard git workflow with worktree-specific branching
-
-**Ready to begin?** Let's start by analyzing the requirements within the context of the AI Code Forge project standards and operational rules.
-EOF
+    
+    # Load template and substitute variables
+    local template_content
+    template_content=$(cat "$template_file")
+    
+    # Perform substitutions
+    template_content="${template_content//\{\{WORKTREE_PATH\}\}/$worktree_path}"
+    template_content="${template_content//\{\{CLAUDE_CONFIG\}\}/$claude_config}"
+    template_content="${template_content//\{\{CLAUDE_MD\}\}/$claude_md}"
+    template_content="${template_content//\{\{ISSUE_CONTEXT\}\}/$issue_context}"
+    
+    echo "$template_content"
 }
 
 # Create worktree - fail if already exists
