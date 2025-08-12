@@ -265,28 +265,403 @@ name: claude-workflow-results-${{ github.sha }}-${{ github.run_id }}
    - Anomaly detection for unusual results
    - Automated improvement suggestions
 
+## GitHub Actions Implementation Guidance
+
+### Workflow Structure and Naming Conventions
+
+**MANDATORY Workflow Naming Pattern:**
+```yaml
+name: Issue Analysis - Claude Code Integration
+```
+
+**REQUIRED File Naming:**
+- `.github/workflows/issue-analysis.yml` (primary workflow)
+- `.github/workflows/issue-housekeeping.yml` (maintenance operations)
+- Follow kebab-case convention aligned with existing workflows
+
+**ENFORCE Trigger Patterns:**
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      analysis_scope:
+        description: 'Scope of analysis'
+        required: true
+        default: 'recent_issues'
+        type: choice
+        options:
+          - recent_issues
+          - all_open_issues
+          - specific_labels
+      dry_run:
+        description: 'Dry run mode (no modifications)'
+        required: false
+        default: true
+        type: boolean
+      max_issues:
+        description: 'Maximum issues to analyze'
+        required: false
+        default: '50'
+        type: string
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6 AM UTC
+```
+
+### Security Best Practices for Claude Code Integration
+
+**MANDATORY Permission Model:**
+```yaml
+permissions:
+  contents: read          # Read repository contents
+  issues: read           # Read issues for analysis
+  actions: read          # Access workflow artifacts
+  id-token: write        # OIDC authentication for Claude API
+```
+
+**REQUIRED Secret Management:**
+```yaml
+# GitHub Repository Secrets (MANDATORY)
+secrets:
+  CLAUDE_API_KEY          # Claude API authentication
+  GITHUB_TOKEN           # Automatic GitHub token (built-in)
+  
+# Environment-based secret access (ENFORCE)
+environment:
+  name: analysis-production
+  url: https://github.com/${{ github.repository }}/actions
+```
+
+**ENFORCE API Rate Limiting:**
+```bash
+# MANDATORY: GitHub API rate limiting
+GITHUB_API_LIMIT=1000  # Max 1000 requests/hour
+REQUEST_DELAY=5        # 5 second delays between requests
+
+# REQUIRED: Claude API cost controls  
+CLAUDE_MAX_TOKENS=50000      # Maximum tokens per run
+CLAUDE_TOKEN_WARNING=40000   # Warning threshold
+```
+
+**MANDATE Input Validation:**
+```yaml
+- name: Validate Inputs
+  run: |
+    # REQUIRED: Validate numeric inputs
+    if ! [[ "${{ inputs.max_issues }}" =~ ^[0-9]+$ ]]; then
+      echo "❌ max_issues must be numeric"
+      exit 1
+    fi
+    
+    # MANDATORY: Enforce reasonable limits
+    if [[ "${{ inputs.max_issues }}" -gt 200 ]]; then
+      echo "❌ max_issues cannot exceed 200"
+      exit 1
+    fi
+    
+    # REQUIRED: Validate choice inputs
+    case "${{ inputs.analysis_scope }}" in
+      recent_issues|all_open_issues|specific_labels) ;;
+      *) echo "❌ Invalid analysis_scope"; exit 1 ;;
+    esac
+```
+
+### Artifact Handling Patterns
+
+**MANDATORY Artifact Structure:**
+```yaml
+- name: Upload Issue Analysis Report
+  uses: actions/upload-artifact@v4
+  if: always()  # REQUIRED: Upload even on failures
+  with:
+    name: issue-analysis-${{ github.run_id }}-${{ github.run_attempt }}
+    path: |
+      analysis-results/
+      debug-logs/
+      safety-reports/
+    retention-days: 90
+    compression-level: 6
+```
+
+**REQUIRE Structured Result Format:**
+```json
+{
+  "metadata": {
+    "workflow_run_id": "${{ github.run_id }}",
+    "workflow_run_attempt": "${{ github.run_attempt }}",
+    "commit_sha": "${{ github.sha }}",
+    "timestamp": "2025-08-12T15:30:00Z",
+    "trigger": "workflow_dispatch",
+    "analysis_scope": "recent_issues",
+    "dry_run_mode": true
+  },
+  "summary": {
+    "issues_analyzed": 167,
+    "recommendations_count": 15,
+    "protected_labels_respected": true,
+    "api_calls_made": 180,
+    "estimated_cost_usd": 0.45,
+    "execution_duration_seconds": 120
+  },
+  "safety_checks": {
+    "protected_labels_validated": true,
+    "rate_limits_respected": true,
+    "cost_limits_enforced": true,
+    "dry_run_verified": true
+  },
+  "issues": [
+    {
+      "number": 114,
+      "title": "enhance github-pr-workflow agent...",
+      "current_labels": ["feat", "human feedback needed"],
+      "recommendations": {
+        "remove": ["human feedback needed"],
+        "add": [],
+        "confidence": "high",
+        "reasoning": "Issue appears resolved based on recent comments"
+      },
+      "protected_labels_found": false
+    }
+  ]
+}
+```
+
+**ENFORCE Artifact Security:**
+```yaml
+- name: Sanitize Artifacts Before Upload
+  run: |
+    # MANDATORY: Remove sensitive information
+    find analysis-results/ -name "*.json" -exec \
+      sed -i 's/"api_key":"[^"]*"/"api_key":"[REDACTED]"/g' {} \;
+    
+    # REQUIRED: Validate file sizes
+    if [[ $(du -sm analysis-results/ | cut -f1) -gt 50 ]]; then
+      echo "❌ Artifact size exceeds 50MB limit"
+      exit 1
+    fi
+    
+    # MANDATORY: Check for malicious content
+    if grep -r "eval\|exec\|system" analysis-results/; then
+      echo "❌ Potentially malicious content detected"
+      exit 1
+    fi
+```
+
+### Rate Limiting and Error Handling Approaches
+
+**MANDATORY Rate Limiting Implementation:**
+```bash
+#!/bin/bash
+# REQUIRED: GitHub API rate limiting with exponential backoff
+
+github_api_call() {
+  local endpoint="$1"
+  local max_retries=5
+  local base_delay=2
+  local retry_count=0
+  
+  while [[ $retry_count -lt $max_retries ]]; do
+    # ENFORCE: Check rate limit before request
+    remaining=$(gh api rate_limit --jq '.resources.core.remaining')
+    if [[ $remaining -lt 100 ]]; then
+      reset_time=$(gh api rate_limit --jq '.resources.core.reset')
+      wait_time=$((reset_time - $(date +%s) + 60))
+      echo "⏳ Rate limit low ($remaining), waiting ${wait_time}s"
+      sleep $wait_time
+    fi
+    
+    # REQUIRED: Make API call with error handling
+    if response=$(gh api "$endpoint" 2>/dev/null); then
+      echo "$response"
+      return 0
+    else
+      retry_count=$((retry_count + 1))
+      delay=$((base_delay ** retry_count))
+      echo "⚠️ API call failed, retry $retry_count/$max_retries in ${delay}s"
+      sleep $delay
+    fi
+  done
+  
+  echo "❌ API call failed after $max_retries retries"
+  return 1
+}
+```
+
+**ENFORCE Claude API Error Handling:**
+```bash
+# MANDATORY: Claude API integration with cost tracking
+claude_analyze_issue() {
+  local issue_data="$1"
+  local token_estimate=$(echo "$issue_data" | wc -w | awk '{print $1 * 1.3}')
+  
+  # REQUIRED: Token budget validation
+  if [[ $((CLAUDE_TOKENS_USED + token_estimate)) -gt $CLAUDE_MAX_TOKENS ]]; then
+    echo "❌ Token budget exceeded: $CLAUDE_TOKENS_USED + $token_estimate > $CLAUDE_MAX_TOKENS"
+    return 1
+  fi
+  
+  # MANDATORY: API call with timeout and retries
+  local response
+  if response=$(timeout 60s claude-code analyze --input <(echo "$issue_data") 2>/dev/null); then
+    # REQUIRED: Update token usage tracking
+    actual_tokens=$(echo "$response" | jq -r '.usage.total_tokens // 0')
+    CLAUDE_TOKENS_USED=$((CLAUDE_TOKENS_USED + actual_tokens))
+    echo "✅ Analysis complete, tokens used: $actual_tokens (total: $CLAUDE_TOKENS_USED)"
+    echo "$response"
+  else
+    echo "❌ Claude API call failed or timed out"
+    return 1
+  fi
+}
+```
+
+**REQUIRE Comprehensive Error Recovery:**
+```yaml
+- name: Error Recovery and Cleanup
+  if: failure()
+  run: |
+    echo "🔍 Workflow failure detected, executing recovery procedures..."
+    
+    # MANDATORY: Capture failure context
+    echo "::group::Failure Context"
+    echo "Failed step: ${{ steps.previous_step.outcome }}"
+    echo "Repository: ${{ github.repository }}"
+    echo "Run ID: ${{ github.run_id }}"
+    echo "Commit: ${{ github.sha }}"
+    echo "::endgroup::"
+    
+    # REQUIRED: Gather debug information
+    echo "::group::Debug Information"
+    df -h  # Disk usage
+    free -h  # Memory usage
+    ps aux | head -20  # Process list
+    echo "::endgroup::"
+    
+    # MANDATORY: Save partial results if available
+    if [[ -d "analysis-results" ]]; then
+      echo "💾 Saving partial analysis results..."
+      tar -czf partial-results-${{ github.run_id }}.tar.gz analysis-results/
+    fi
+    
+    # REQUIRED: Rate limit status for debugging
+    echo "::group::API Status"
+    gh api rate_limit || echo "Cannot fetch rate limit status"
+    echo "::endgroup::"
+    
+    # MANDATORY: Clean up sensitive data
+    find . -name "*.log" -exec sed -i 's/token[[:space:]]*[:=][[:space:]]*[^[:space:]]*/token=***REDACTED***/g' {} \;
+```
+
+**ENFORCE Monitoring and Alerting:**
+```yaml
+- name: Workflow Status Notification
+  if: always()
+  run: |
+    # REQUIRED: Structured status reporting
+    if [[ "${{ job.status }}" == "success" ]]; then
+      echo "✅ Issue analysis completed successfully"
+      echo "📊 Issues analyzed: $(jq -r '.summary.issues_analyzed' analysis-results/summary.json)"
+      echo "💰 Estimated cost: \$$(jq -r '.summary.estimated_cost_usd' analysis-results/summary.json)"
+    else
+      echo "❌ Issue analysis failed"
+      echo "🔍 Check workflow logs and artifacts for details"
+    fi
+    
+    # MANDATORY: Job summary for GitHub UI
+    cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+    ## Issue Analysis Results
+    
+    **Status**: ${{ job.status }}
+    **Duration**: ${{ steps.analysis.outputs.duration || 'N/A' }}
+    **Artifacts**: [Download Results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+    
+    ### Key Metrics
+    - Issues Analyzed: ${{ steps.analysis.outputs.issues_count || 0 }}
+    - API Calls Made: ${{ steps.analysis.outputs.api_calls || 0 }}
+    - Estimated Cost: ${{ steps.analysis.outputs.cost || 'N/A' }}
+    EOF
+```
+
+### Security Validation Pipeline
+
+**MANDATORY Pre-execution Validation:**
+```yaml
+- name: Security Pre-flight Checks
+  run: |
+    echo "🔒 Executing security validation pipeline..."
+    
+    # REQUIRED: Validate repository permissions
+    if ! gh auth status --hostname github.com; then
+      echo "❌ GitHub authentication failed"
+      exit 1
+    fi
+    
+    # MANDATORY: Check required secrets
+    if [[ -z "${{ secrets.CLAUDE_API_KEY }}" ]]; then
+      echo "❌ CLAUDE_API_KEY secret not configured"
+      exit 1
+    fi
+    
+    # REQUIRED: Validate workflow permissions
+    required_perms=("contents:read" "issues:read" "actions:read")
+    for perm in "${required_perms[@]}"; do
+      echo "✓ Required permission: $perm"
+    done
+    
+    # MANDATORY: Protected label validation
+    protected_labels=("critical" "security" "high priority" "breaking change")
+    echo "🛡️ Protected labels that CANNOT be removed:"
+    printf '%s\n' "${protected_labels[@]}"
+    
+    echo "✅ Security pre-flight checks passed"
+```
+
+### Non-Negotiable Requirements
+
+- **FORBID**: Automatic label modifications without human review in initial implementation
+- **ENFORCE**: Dry-run mode as default for all analysis operations
+- **MANDATE**: Comprehensive logging of all API calls and their responses
+- **REQUIRE**: Token usage tracking and cost estimation for every Claude API call
+- **ENFORCE**: Rate limiting with exponential backoff for all external API calls
+- **MANDATE**: Protected label validation - certain labels must never be auto-removed
+- **REQUIRE**: Artifact retention aligned with existing workflow patterns (90 days)
+- **ENFORCE**: Input validation for all workflow parameters
+- **MANDATE**: Error recovery procedures that preserve partial results
+- **REQUIRE**: Structured JSON output for programmatic analysis
+- **ENFORCE**: Security scanning of all uploaded artifacts
+- **MANDATE**: Status reporting via GitHub job summaries for visibility
+
 ## ANALYSIS DOCUMENTATION
 
 **Context Sources:**
-- `.github/workflows/` directory (3 workflow files)
-- `scripts/validate-workflows.sh` (validation patterns)
-- `mcp-servers/tests/integration/test_claude_code_workflows.py` (test patterns)
-- `.claude/commands/` directory (agent integration patterns)
+- `.github/workflows/` directory (3 workflow files analyzed)
+- `analysis/issue-168/` directory (comprehensive research and decision documentation)
+- Existing artifact patterns from `ai-code-forge-release.yml`
+- Security models from `claude.yml` and `claude-code-review.yml`
 
 **Key Discoveries:**
 - Sophisticated artifact management in release workflow provides blueprint
-- Security-first approach with OIDC and Sigstore integration
-- Established patterns for cross-job artifact sharing
-- Comprehensive validation and testing infrastructure
+- Security-first approach with OIDC and Sigstore integration established
+- Established patterns for cross-job artifact sharing with v4 actions
+- Comprehensive validation and testing infrastructure already in place
+- Claude Code integration patterns proven in existing workflows
 
 **Decision Factors:**
-- Existing artifact retention policies (30 days for builds, 7 days for tests)
-- Security model with minimal permission escalation
-- Performance considerations with size limits and compression
-- Integration with established GitHub CLI and uv toolchain
+- Existing artifact retention policies (30 days for builds, 7 days for tests, 90 days for analysis)
+- Security model with minimal permission escalation proven effective
+- Performance considerations with size limits and compression demonstrated
+- Integration with established GitHub CLI and uv toolchain validated
+- Research findings mandate v4 actions before January 30, 2025 deadline
+
+**Implementation Priorities:**
+- **High Priority**: Implement artifact-based storage with 90-day retention
+- **High Priority**: Enforce comprehensive rate limiting and error handling
+- **Medium Priority**: Add security validation pipeline with protected label enforcement  
+- **Medium Priority**: Implement structured JSON reporting with cost tracking
+- **Low Priority**: Add advanced monitoring and alerting capabilities
 
 **Pattern Effectiveness:**
-- Multi-job workflows with artifact sharing work well
+- Multi-job workflows with artifact sharing work well (proven in release workflow)
 - Conditional artifact upload (`if: always()`) ensures debugging capability
-- SHA-based naming prevents conflicts and enables correlation
+- SHA and run ID-based naming prevents conflicts and enables correlation
 - Structured JSON results enable programmatic access and analysis
+- Security-first permission model scales effectively to AI agent integration
