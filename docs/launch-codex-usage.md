@@ -8,7 +8,7 @@
 
 ### Core Features
 - **Enhanced CLI Interface** - Comprehensive command-line options mirroring launch-claude.sh
-- **Session-Based Logging** - Organized logging to `.support/logs/codex/[SESSION]/` directories
+- **Session-Based Logging** - Organized logging to `.acf/logs/codex/[SESSION]/` directories
 - **Environment Auto-Detection** - Automatic detection of devcontainer/codespace environments
 - **Secure Configuration** - Safe .env file loading with validation and masking
 - **Multiple Authentication Modes** - ChatGPT subscription or API key authentication
@@ -184,7 +184,7 @@ The script automatically detects and configures for:
 
 ### Log Directory Structure
 ```
-.support/logs/codex/
+.acf/logs/codex/
 ├── 20250812-143022/           # Session timestamp
 │   ├── session-20250812-143022.log      # Main session log
 │   ├── codex-20250812-143022.log        # Codex-specific output

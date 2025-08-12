@@ -164,7 +164,7 @@ setup_session_logging() {
     session_timestamp=$(date +"%Y%m%d-%H%M%S")
     
     # Create tool-specific log base directory
-    local log_base_dir="$project_root/.support/logs/$tool_name"
+    local log_base_dir="$project_root/.acf/logs/$tool_name"
     local session_dir="$log_base_dir/$session_timestamp"
     mkdir -p "$session_dir"
     
@@ -244,7 +244,7 @@ find_recent_sessions() {
     local project_root="$2"
     local limit="${3:-5}"  # Default to 5 most recent sessions
     
-    local log_base_dir="$project_root/.support/logs/$tool_name"
+    local log_base_dir="$project_root/.acf/logs/$tool_name"
     
     if [[ ! -d "$log_base_dir" ]]; then
         return 1
@@ -260,7 +260,7 @@ clean_tool_logs() {
     local project_root="$2"
     local interactive="${3:-true}"
     
-    local log_base_dir="$project_root/.support/logs/$tool_name"
+    local log_base_dir="$project_root/.acf/logs/$tool_name"
     
     echo "🧹 Cleaning all $tool_name session logs..."
     
