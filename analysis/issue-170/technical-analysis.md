@@ -1,394 +1,215 @@
-# Technical Analysis: Codex CLI MCP Server Implementation
+# SITUATIONAL CONTEXT ANALYSIS - Issue #170: Codex-CLI-MCP Server Implementation
+================================================================================
 
-**Issue**: #170 - feat: implement codex-cli-mcp server for OpenAI Codex CLI integration  
-**Date**: 2025-08-13  
-**Analyst**: Technology Guidelines Agent
+## SITUATION UNDERSTANDING:
+We need to implement an MCP server that wraps the OpenAI Codex CLI tool to enable Codex capabilities within Claude Code sessions. This is a critical integration requiring understanding of existing MCP patterns, subprocess management, and the current state of OpenAI Codex.
 
-## Repository-Level Technology Analysis
+## RELEVANT CODEBASE CONTEXT:
 
-**Primary Technology**: Python (MCP server implementation)  
-**Secondary Technologies**: Subprocess Management, JSON Schema Validation, Async/Await Patterns  
-**Context**: Wrapping OpenAI Codex CLI as MCP tools within existing MCP server ecosystem
+### Key Components:
+- **Existing MCP Infrastructure**: Two production servers (openai-structured-mcp, perplexity-mcp) with established patterns
+- **FastMCP Framework**: Core MCP protocol implementation used throughout the project
+- **Centralized Configuration**: `mcp-servers/mcp-config.json` for server registration
+- **Testing Framework**: Comprehensive test infrastructure with shared base classes
+- **Logging System**: Structured logging with multiple log levels and redaction
 
-## Technology Stack Guidelines Loaded
+### Related Patterns:
+- **Server Structure**: Consistent directory layout with `src/`, `tests/`, `pyproject.toml`
+- **Client-Server Architecture**: Separate client classes for external API communication
+- **Environment Configuration**: `.env` file management with extensive configuration options
+- **Tool Definition**: `@mcp.tool()` decorator pattern for exposing functionality
+- **Error Handling**: Comprehensive error decoration with structured error responses
 
-### Python Development Standards
-**Guidelines**: `cli/src/ai_code_forge/data/acf/templates/stacks/python.md`
+### Dependencies:
+- **FastMCP >= 2.0**: Core MCP protocol implementation
+- **Python 3.13+**: Required Python version across all servers
+- **UV Package Manager**: Consistent dependency management
+- **Standard Libraries**: `asyncio`, `subprocess`, `httpx` for external communications
 
-**Key Mandatory Patterns for this Implementation**:
-- **MANDATORY**: Use uv exclusively for package management (NO pip, poetry, conda)
-- **REQUIRED**: Type hints for all functions and methods
-- **ENFORCE**: PEP 8 compliance with ruff formatting
-- **MANDATORY**: Explicit error handling - never bare except clauses
-- **REQUIRED**: Context managers for resource management
-- **ENFORCE**: pathlib for all file operations
-- **MANDATORY**: Dataclasses for data structures
-- **REQUIRE**: Test coverage minimum 80%
+### Constraints:
+- **OpenAI Codex API Deprecation**: Legacy Codex API was deprecated March 2023
+- **New Codex CLI Tool**: Current implementation is a standalone CLI tool (April 2025 release)
+- **Authentication Model**: Requires OpenAI API key or ChatGPT Plus/Pro/Team account
+- **Process Management**: Need robust subprocess handling for CLI tool execution
+- **Security Requirements**: Input sanitization and credential protection
 
-## Technology-Specific Implementation Guidelines
+## HISTORICAL CONTEXT:
 
-### 1. Python MCP Server Development Patterns
+### Past Decisions:
+- **MCP Standardization**: Project adopted FastMCP as the standard framework
+- **Centralized Configuration**: Moved from `.mcp.json` to `mcp-servers/mcp-config.json`
+- **Testing Infrastructure**: Comprehensive test suite with performance baselines
+- **Logging Standards**: Multi-level logging with structured format and security redaction
 
-Based on existing implementations (`openai-structured-mcp`, `perplexity-mcp`):
+### Evolution:
+- **Server Maturity**: Two production-ready MCP servers with proven patterns
+- **Testing Framework**: Evolved from basic tests to comprehensive test categories (unit, integration, performance, load)
+- **Configuration Management**: Enhanced from basic config to extensive environment variable support
+- **Error Handling**: Improved from simple error messages to structured error responses
 
-**MANDATORY Architecture Pattern**:
+### Lessons Learned:
+- **External API Fragility**: Need robust error handling and graceful degradation
+- **Configuration Complexity**: Extensive environment variables needed for production deployment
+- **Testing Importance**: Comprehensive test coverage critical for MCP protocol compliance
+- **Process Management**: Proper subprocess handling essential for CLI tool integrations
+
+### Success Patterns:
+- **Client Abstraction**: Separate client classes for external service communication
+- **Environment-based Configuration**: Flexible configuration through environment variables
+- **Structured Tool Responses**: JSON-formatted responses following MCP protocol
+- **Performance Monitoring**: Baseline performance testing and monitoring
+
+## SITUATIONAL RECOMMENDATIONS:
+
+### Suggested Approach:
+1. **Follow Established Patterns**: Use existing MCP server templates as foundation
+2. **Subprocess Architecture**: Implement robust CLI wrapper with proper process management
+3. **Authentication Strategy**: Support both API key and ChatGPT account authentication
+4. **Error Translation**: Convert CLI exit codes to structured MCP error responses
+5. **Session Management**: Handle stateful Codex interactions appropriately
+
+### Key Considerations:
+- **CLI Tool Availability**: Verify Codex CLI installation and version compatibility
+- **Performance Impact**: CLI subprocess calls may be slower than direct API calls
+- **Resource Management**: Implement proper timeouts and process cleanup
+- **Security**: Prevent command injection and credential leakage
+- **Model Access**: Different models available based on authentication method
+
+### Implementation Notes:
 ```python
+# Recommended architecture pattern
 from fastmcp import FastMCP
-from .client import CodexClient
-from .utils.logging import setup_logging, get_logger, debug_decorator
+import asyncio.subprocess
 
-mcp = FastMCP("Codex CLI Server")
+class CodexCLIClient:
+    async def execute_command(self, command: str, args: list) -> dict:
+        # Subprocess execution with timeout
+        # Output parsing and error handling
+        # Return structured response
 
-@mcp.tool(annotations={...})
-@debug_decorator
-async def codex_query(prompt: str, ...) -> str:
-    # Implementation follows existing pattern
+@mcp.tool()
+async def codex_query(prompt: str, context: Optional[str] = None):
+    # Tool implementation following existing patterns
+    # Structured error handling
+    # Performance logging
 ```
 
-**ENFORCE Consistent Structure**:
-- `src/codex_cli_mcp/server.py` - Main FastMCP server
-- `src/codex_cli_mcp/client.py` - Subprocess wrapper for Codex CLI
-- `src/codex_cli_mcp/utils/logging.py` - Consistent logging patterns
-- `src/codex_cli_mcp/schemas.py` - JSON schema definitions (if needed)
+### Testing Strategy:
+- **Mock CLI Tool**: Create mock Codex CLI for testing without external dependencies
+- **Subprocess Testing**: Test timeout handling and error conditions
+- **Integration Testing**: Verify MCP protocol compliance
+- **Performance Testing**: Ensure CLI calls meet performance baselines
+- **Error Scenario Testing**: Test all possible CLI failure modes
 
-### 2. Subprocess Management and Process Control
+## IMPACT ANALYSIS:
 
-**MANDATORY Subprocess Security Patterns**:
+### Affected Systems:
+- **MCP Configuration**: New server entry in `mcp-config.json`
+- **Claude Code Integration**: New tools available in Claude Code sessions
+- **Testing Infrastructure**: New test categories for subprocess management
+- **Documentation**: New setup and usage documentation required
+
+### Risk Assessment:
+- **External Dependency Risk**: Codex CLI availability and version changes
+- **Performance Risk**: CLI subprocess calls may introduce latency
+- **Security Risk**: Subprocess execution requires careful input sanitization
+- **Authentication Risk**: Multiple auth methods increase complexity
+- **Compatibility Risk**: Node.js requirement conflicts with Python-based servers
+
+### Documentation Needs:
+- **Installation Guide**: Codex CLI installation and configuration
+- **Authentication Setup**: Both API key and ChatGPT account methods
+- **Tool Usage**: Examples of each MCP tool
+- **Troubleshooting**: Common issues and solutions
+- **Security Guidelines**: Best practices for credential handling
+
+### Migration Requirements:
+- **New Dependencies**: Codex CLI installation requirement
+- **Environment Variables**: New configuration options needed
+- **Testing Updates**: New test categories and mock infrastructure
+- **Configuration Migration**: Update existing MCP configurations
+
+## ANALYSIS DOCUMENTATION:
+
+### Context Sources:
+- **MCP Server Templates**: `/mcp-servers/openai-structured-mcp/`, `/mcp-servers/perplexity-mcp/`
+- **Configuration Files**: `/mcp-servers/mcp-config.json`, `/mcp-servers/README.md`
+- **Testing Infrastructure**: `/mcp-servers/tests/` (shared utilities and base classes)
+- **GitHub Issue**: [#170 feat: implement codex-cli-mcp server](https://github.com/ondrasek/ai-code-forge/issues/170)
+- **External Research**: OpenAI Codex CLI documentation and deprecation timeline
+
+### Key Discoveries:
+- **Architecture Pattern Maturity**: Established patterns provide clear implementation path
+- **Codex Status Change**: API deprecated, but new CLI tool available (critical context)
+- **Dual Authentication**: Both API key and ChatGPT account authentication supported
+- **Subprocess Requirements**: Need robust process management unlike existing API-based servers
+- **Testing Framework**: Comprehensive test infrastructure ready for new server type
+
+### Decision Factors:
+- **Technical Feasibility**: Existing MCP patterns support CLI wrapper architecture
+- **External Tool Dependency**: Codex CLI must be installed and maintained separately
+- **Authentication Complexity**: Multiple auth methods require careful implementation
+- **Performance Considerations**: CLI calls may impact response times vs. direct API
+- **Security Requirements**: Subprocess execution introduces additional security concerns
+
+## CRITICAL TECHNICAL CHALLENGES:
+
+### Process Management:
+- **Timeout Handling**: Codex operations can be long-running, need appropriate timeouts
+- **Resource Cleanup**: Ensure proper process termination and resource management
+- **Session State**: Handle conversational interactions across multiple CLI calls
+- **Error Translation**: Map CLI exit codes and stderr to structured MCP errors
+
+### Authentication Complexity:
+- **Dual Methods**: Support both OPENAI_API_KEY and ChatGPT account authentication
+- **Model Access**: Different models available based on authentication method
+- **Credential Security**: Prevent exposure in logs, subprocess arguments, or error messages
+
+### Integration Concerns:
+- **Installation Dependency**: Codex CLI requires Node.js 22+, but servers are Python-based
+- **Version Compatibility**: Track Codex CLI version changes and API compatibility
+- **Platform Support**: Codex officially supports macOS/Linux, experimental Windows support
+- **Performance Expectations**: CLI calls may be slower than direct API calls
+
+### Recommended Implementation Priority:
+
+**High Priority**: Basic CLI wrapper infrastructure and core tools
+- Core subprocess management with timeout handling
+- `codex_query` tool for basic Codex interaction
+- Authentication handling and error translation
+- Basic test coverage with mock CLI tool
+
+**Medium Priority**: Advanced tools and configuration
+- `codex_generate`, `codex_review`, `codex_refactor` tools
+- Enhanced error handling and recovery
+- Comprehensive configuration options
+- Integration tests with real CLI tool
+
+**Low Priority**: Optimization and advanced features
+- Performance optimization and caching
+- Advanced session state management
+- Enhanced logging and monitoring
+- Advanced CLI argument handling
+
+### Security Implementation Notes:
+
+**Input Sanitization**:
 ```python
-import asyncio
-import subprocess
-from pathlib import Path
-from typing import Optional
+import shlex
+import re
 
-async def execute_codex_command(
-    args: list[str], 
-    timeout: float = 60.0,
-    cwd: Optional[Path] = None
-) -> subprocess.CompletedProcess:
-    """Execute Codex CLI with proper security and timeout handling."""
-    try:
-        # ENFORCE input sanitization
-        sanitized_args = [str(arg) for arg in args if is_safe_arg(arg)]
-        
-        # MANDATORY timeout and security
-        process = await asyncio.create_subprocess_exec(
-            *sanitized_args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=cwd
-        )
-        
-        stdout, stderr = await asyncio.wait_for(
-            process.communicate(), 
-            timeout=timeout
-        )
-        
-        return subprocess.CompletedProcess(
-            args=sanitized_args,
-            returncode=process.returncode,
-            stdout=stdout,
-            stderr=stderr
-        )
-        
-    except asyncio.TimeoutError:
-        process.kill()
-        await process.wait()
-        raise TimeoutError(f"Codex CLI command timed out after {timeout}s")
+def sanitize_cli_input(user_input: str) -> str:
+    # Remove shell metacharacters
+    # Validate against injection patterns
+    # Return safe input for CLI execution
 ```
 
-### 3. Async/Await Patterns for MCP Servers
-
-**MANDATORY Async Tool Implementation**:
+**Credential Protection**:
 ```python
-@mcp.tool(annotations={
-    "title": "Codex Query",
-    "description": "Execute Codex CLI query with structured output",
-    "readOnlyHint": True,
-    "openWorldHint": False
-})
-@debug_decorator
-async def codex_query(
-    prompt: str,
-    context: Optional[str] = None,
-    model: Optional[str] = None,
-    timeout: float = 60.0
-) -> str:
-    """Execute Codex CLI query with proper async handling."""
-    logger.info(f"Codex query request: {len(prompt)} characters")
-    
-    try:
-        result = await codex_client.query(
-            prompt=prompt,
-            context=context,
-            model=model,
-            timeout=timeout
-        )
-        
-        if result.returncode != 0:
-            error_msg = result.stderr.decode()
-            logger.error(f"Codex CLI error: {error_msg}")
-            return f"Codex CLI failed: {error_msg}"
-        
-        # Parse and structure output
-        output = result.stdout.decode()
-        logger.info("Codex query completed successfully")
-        return output
-        
-    except Exception as e:
-        error_msg = f"Error during Codex query: {str(e)}"
-        logger.error(error_msg)
-        return error_msg
+def redact_credentials_from_logs(message: str) -> str:
+    # Remove API keys, tokens from log messages
+    # Sanitize subprocess arguments
+    # Protect stderr/stdout from credential leakage
 ```
 
-### 4. Error Handling and Logging Best Practices
-
-**MANDATORY Error Handling Pattern** (from existing MCP servers):
-```python
-# Initialize logging with environment configuration
-try:
-    logger = setup_logging(
-        log_level=os.getenv("CODEX_CLI_LOG_LEVEL", "INFO"),
-        logger_name="codex_cli_mcp"
-    )
-except (ValueError, OSError, PermissionError) as e:
-    import sys
-    print(f"FATAL: Logging configuration error: {e}", file=sys.stderr)
-    sys.exit(1)
-
-# ENFORCE structured error responses
-def handle_cli_error(result: subprocess.CompletedProcess, operation: str) -> str:
-    """Convert CLI errors to structured MCP responses."""
-    if result.returncode == 0:
-        return result.stdout.decode()
-    
-    stderr_output = result.stderr.decode()
-    logger.error(f"Codex CLI {operation} failed: {stderr_output}")
-    
-    # MANDATORY: Filter sensitive information from logs
-    filtered_error = filter_sensitive_info(stderr_output)
-    return f"Error in {operation}: {filtered_error}"
-```
-
-### 5. Security Patterns for Credential Handling
-
-**MANDATORY Secure Authentication**:
-```python
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-class CodexClient:
-    def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OPENAI_API_KEY environment variable required")
-        
-        # ENFORCE: Never log credentials
-        logger.info("Codex client initialized")
-        # FORBIDDEN: logger.debug(f"Using API key: {self.api_key}")
-
-    async def execute_with_auth(self, args: list[str]) -> subprocess.CompletedProcess:
-        """Execute Codex CLI with secure credential handling."""
-        env = os.environ.copy()
-        env["OPENAI_API_KEY"] = self.api_key
-        
-        # ENFORCE input sanitization
-        if not all(self.is_safe_arg(arg) for arg in args):
-            raise ValueError("Unsafe command arguments detected")
-        
-        return await execute_codex_command(args, env=env)
-
-    def is_safe_arg(self, arg: str) -> bool:
-        """Validate command line arguments for safety."""
-        # MANDATORY: Prevent command injection
-        dangerous_chars = [";", "&", "|", "`", "$", "(", ")", "<", ">"]
-        return not any(char in str(arg) for char in dangerous_chars)
-```
-
-### 6. Testing Patterns for Subprocess-Based Integrations
-
-**MANDATORY Testing Structure**:
-```python
-import pytest
-import asyncio
-from unittest.mock import Mock, patch
-from codex_cli_mcp.client import CodexClient
-
-@pytest.mark.asyncio
-async def test_codex_query_success():
-    """Test successful Codex CLI execution."""
-    mock_process = Mock()
-    mock_process.returncode = 0
-    mock_process.stdout = b"Generated code output"
-    mock_process.stderr = b""
-    
-    with patch('asyncio.create_subprocess_exec') as mock_exec:
-        mock_exec.return_value.communicate.return_value = (b"output", b"")
-        mock_exec.return_value.returncode = 0
-        
-        client = CodexClient()
-        result = await client.query("test prompt")
-        
-        assert "Generated code output" in result
-
-@pytest.mark.asyncio
-async def test_codex_query_timeout():
-    """Test timeout handling."""
-    with patch('asyncio.wait_for', side_effect=asyncio.TimeoutError):
-        client = CodexClient()
-        
-        with pytest.raises(TimeoutError):
-            await client.query("test prompt", timeout=1.0)
-```
-
-### 7. JSON Schema and Type Validation
-
-**MANDATORY Type Definitions**:
-```python
-from dataclasses import dataclass
-from typing import Optional, Dict, Any
-import jsonschema
-
-@dataclass
-class CodexRequest:
-    prompt: str
-    context: Optional[str] = None
-    model: Optional[str] = None
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-
-@dataclass
-class CodexResponse:
-    content: str
-    success: bool
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = None
-
-# ENFORCE JSON schema validation
-CODEX_REQUEST_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "prompt": {"type": "string", "minLength": 1},
-        "context": {"type": "string"},
-        "model": {"type": "string"},
-        "temperature": {"type": "number", "minimum": 0, "maximum": 2}
-    },
-    "required": ["prompt"]
-}
-
-def validate_request(data: dict) -> None:
-    """Validate request against schema."""
-    try:
-        jsonschema.validate(data, CODEX_REQUEST_SCHEMA)
-    except jsonschema.ValidationError as e:
-        raise ValueError(f"Invalid request format: {e.message}")
-```
-
-### 8. Configuration Management Patterns
-
-**MANDATORY Configuration Structure**:
-```python
-import os
-from dataclasses import dataclass
-from pathlib import Path
-
-@dataclass
-class CodexConfig:
-    api_key: str
-    log_level: str = "INFO"
-    log_path: Optional[Path] = None
-    timeout: float = 60.0
-    max_tokens: int = 2048
-    default_model: str = "gpt-4"
-
-def load_config() -> CodexConfig:
-    """Load configuration from environment."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY environment variable required")
-    
-    return CodexConfig(
-        api_key=api_key,
-        log_level=os.getenv("CODEX_CLI_LOG_LEVEL", "INFO"),
-        log_path=Path(path) if (path := os.getenv("CODEX_CLI_LOG_PATH")) else None,
-        timeout=float(os.getenv("CODEX_CLI_TIMEOUT", "60.0")),
-        max_tokens=int(os.getenv("CODEX_CLI_MAX_TOKENS", "2048")),
-        default_model=os.getenv("CODEX_CLI_DEFAULT_MODEL", "gpt-4")
-    )
-```
-
-## Integration with Existing MCP Infrastructure
-
-### Project Structure Consistency
-**ENFORCE** alignment with existing MCP servers:
-```
-mcp-servers/codex-cli-mcp/
-├── src/codex_cli_mcp/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── server.py          # FastMCP server definition
-│   ├── client.py          # Codex CLI subprocess wrapper
-│   ├── schemas.py         # JSON schemas and validation
-│   └── utils/
-│       ├── __init__.py
-│       └── logging.py     # Consistent logging setup
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_server.py
-│   ├── test_client.py
-│   ├── test_error_handling.py
-│   └── test_security.py
-├── pyproject.toml         # uv-managed dependencies
-├── README.md
-└── uv.lock
-```
-
-### Required Dependencies
-**MANDATORY** (following existing patterns):
-```toml
-[project]
-dependencies = [
-    "fastmcp>=2.0",
-    "httpx",
-    "python-dotenv",
-    "pydantic>=2.0",
-    "jsonschema>=4.0"
-]
-
-[tool.uv]
-dev-dependencies = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.24",
-    "pytest-mock>=3.12",
-    "pytest-cov>=4.0",
-    "psutil>=5.9.0"
-]
-```
-
-## Critical Implementation Considerations
-
-### Security Risks to Address
-1. **Command Injection**: Strict input sanitization for CLI arguments
-2. **Credential Exposure**: Never log API keys or sensitive data
-3. **Process Isolation**: Proper subprocess cleanup and resource management
-4. **Output Filtering**: Sanitize CLI outputs before returning to user
-
-### Performance Considerations
-1. **Timeout Management**: Configurable timeouts for different operations
-2. **Resource Cleanup**: Proper subprocess termination and cleanup
-3. **Async Efficiency**: Non-blocking subprocess execution
-4. **Memory Management**: Handle large CLI outputs appropriately
-
-### Testing Strategy
-1. **Unit Tests**: Mock subprocess calls for isolated testing
-2. **Integration Tests**: Test with actual Codex CLI (if available)
-3. **Security Tests**: Validate input sanitization and credential handling
-4. **Performance Tests**: Timeout and resource usage validation
-
-## Conclusion
-
-This implementation must follow existing MCP server patterns while adding robust subprocess management and security measures specific to CLI tool wrapping. The Python stack guidelines mandate uv usage, comprehensive type hints, and 80% test coverage. Security considerations are paramount when wrapping external CLI tools with API access.
-
-**Next Steps**: Create the MCP server following this technical analysis and existing implementation patterns.
+This analysis provides the foundation for implementing a robust, secure MCP server that wraps the OpenAI Codex CLI tool while following established project patterns and addressing the unique challenges of subprocess-based MCP servers.
