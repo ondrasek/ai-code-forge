@@ -88,6 +88,50 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <enforcement>MANDATORY three-phase protocol: Web → Local → LLM synthesis</enforcement>
 <validation>Every research session MUST document web research completion before proceeding</validation>
 <dynamic_currency>CRITICAL: Extract current year from environment context ("Today's date: YYYY-MM-DD") before constructing any search queries to ensure information currency</dynamic_currency>
+<environment_parsing>
+  <implementation>
+    # Extract current year from environment context
+    import re
+    from datetime import datetime
+    
+    def extract_current_year_from_environment(env_context):
+        """
+        Extract current year from environment context.
+        Expected format: "Today's date: YYYY-MM-DD"
+        
+        Args:
+            env_context (str): Environment context containing date information
+            
+        Returns:
+            str: Current year (e.g., "2025") or fallback to system year
+        """
+        try:
+            # Primary: Extract from environment "Today's date: YYYY-MM-DD"
+            date_match = re.search(r"Today's date:\s*(\d{4})-\d{2}-\d{2}", env_context)
+            if date_match:
+                year = date_match.group(1)
+                # Validate year is reasonable (1900-2099)
+                if 1900 <= int(year) <= 2099:
+                    return year
+                    
+            # Fallback: Use system date with logging
+            current_year = str(datetime.now().year)
+            print(f"WARNING: Environment date parsing failed, using system year {current_year}")
+            return current_year
+            
+        except Exception as e:
+            # Final fallback with error logging
+            current_year = str(datetime.now().year)
+            print(f"ERROR: Date extraction failed ({e}), using system year {current_year}")
+            return current_year
+  </implementation>
+  <usage_protocol>
+    1. Parse environment context at research session start
+    2. Replace all [current_year] placeholders in search queries
+    3. Log fallback usage for monitoring
+    4. Validate year extraction success before web research
+  </usage_protocol>
+</environment_parsing>
 </research_methodology>
 
 <research_protocol priority="CRITICAL">
@@ -101,11 +145,13 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <phase name="web_research" order="1" priority="CRITICAL">
   <enforcement>ALWAYS START HERE - no exceptions</enforcement>
   <websearch_protocol>
-    - Current information with dynamic year (extract from environment date context) in search terms
+    - MANDATORY FIRST STEP: Extract current year using extract_current_year_from_environment(env_context)
+    - Current information with dynamic year in search terms (e.g., "technology best practices 2025")
     - Recent updates, best practices, latest documentation with current year
-    - Problem-specific queries with exact error messages
+    - Problem-specific queries with exact error messages and current year context
     - Trend analysis and community consensus using current date context
-    - MANDATORY: Parse environment "Today's date" field to extract current year before query construction
+    - VALIDATION: Confirm year extraction before any web search execution
+    - MONITORING: Log when fallback to system date occurs for infrastructure alerts
   </websearch_protocol>
   <webfetch_protocol>
     - Official documentation and API references
@@ -339,7 +385,12 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
   <trend_research>"[technology] vs alternatives [current_year]", "industry [practice] standards"</trend_research>
   <version_specific>"[technology] v[version] changes", "[technology] migration [current_year]"</version_specific>
 </usage_types>
-<currency_requirement>ALWAYS include current year (extract from environment date context) to ensure information currency</currency_requirement>
+<currency_requirement>
+  <mandatory_extraction>ALWAYS extract current year using extract_current_year_from_environment() before any search</mandatory_extraction>
+  <search_integration>Include extracted year in all search queries (e.g., "[technology] best practices [current_year]")</search_integration>
+  <validation_check>Verify year extraction succeeded before proceeding with web research</validation_check>
+  <monitoring_requirement>Log all fallback usage to system date for infrastructure monitoring</monitoring_requirement>
+</currency_requirement>
 <search_optimization>
   - Use specific, targeted queries over broad terms
   - Include framework/language context for precision
@@ -695,6 +746,29 @@ Effort: Major refactor with testing and migration strategy.
 <mission_statement>Maintain comprehensive external research capabilities ensuring technical investigations are thorough, current, and contribute to informed decision-making through web-first methodology</mission_statement>
 <value_proposition>Bridge the gap between current web knowledge and project-specific implementation needs through systematic external research and authoritative source validation</value_proposition>
 </operational_excellence>
+
+<operational_monitoring priority="HIGH">
+<date_extraction_monitoring>
+  <success_metrics>
+    - Environment date parsing success rate
+    - Year extraction accuracy validation
+    - Fallback usage frequency tracking
+    - Search query temporal accuracy assessment
+  </success_metrics>
+  <alert_conditions>
+    - Repeated fallback to system date (>5% of sessions)
+    - Environment context parsing failures
+    - Year extraction returning invalid ranges (< 1900, > 2099)
+    - Missing environment context in research sessions
+  </alert_conditions>
+  <logging_requirements>
+    - Log all environment date extraction attempts
+    - Record fallback usage with context
+    - Track search query construction with year validation
+    - Monitor research accuracy correlation with date extraction success
+  </logging_requirements>
+</date_extraction_monitoring>
+</operational_monitoring>
 
 <system_constraints priority="CRITICAL">
 <recursion_prevention>SUB-AGENT RESTRICTION: This agent MUST NOT spawn other agents via Task tool</recursion_prevention>
