@@ -36,7 +36,7 @@ LOAD_ENV="true"
 
 # Log directory configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_BASE_DIR="$PROJECT_ROOT/.acf/logs/claude-code"
 
 # Auto-detect environment function
@@ -209,7 +209,7 @@ FEATURES:
     - Default model set to sonnet for optimal performance
     - Support for -c (continue) and -r (resume) flags with optional session ID
     - Automatic MCP configuration loading from centralized config
-      (.support/mcp-servers/mcp-config.json or legacy .mcp.json)
+      (mcp-servers/mcp-config.json or legacy .mcp.json)
     - Automatic master prompt loading from $MASTER_PROMPT_FILE
     - Session-based logging to .acf/logs/[SESSION]/ directory with timestamped folders
     - All log files include timestamps in their filenames (e.g. debug-20250802-085436.log)
@@ -319,7 +319,7 @@ troubleshoot_mcp() {
 
     # Also check for MCP configuration files
     local mcp_configs=()
-    for mcp_config in "$PROJECT_ROOT/.mcp.json" "$PROJECT_ROOT/.support/mcp-servers/mcp-config.json"; do
+    for mcp_config in "$PROJECT_ROOT/.mcp.json" "$PROJECT_ROOT/mcp-servers/mcp-config.json"; do
         if [[ -f "$mcp_config" ]]; then
             mcp_configs+=("$mcp_config")
         fi
@@ -715,7 +715,7 @@ build_claude_command() {
     local mcp_config_found=""
     local mcp_config_locations=(
         "$PROJECT_ROOT/.mcp.json"                           # Project root (legacy)
-        "$PROJECT_ROOT/.support/mcp-servers/mcp-config.json" # Centralized config
+        "$PROJECT_ROOT/mcp-servers/mcp-config.json"         # Centralized config
     )
 
     for mcp_config in "${mcp_config_locations[@]}"; do

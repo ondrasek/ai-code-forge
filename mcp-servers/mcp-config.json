@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "openai-structured": {
+      "command": "uv",
+      "args": ["run", "--directory", "mcp-servers/openai-structured-mcp", "openai-structured-mcp"],
+      "env": {
+        "OPENAI_API_KEY": "",
+        "MCP_LOG_LEVEL": "info"
+      },
+      "disabled": false,
+      "alwaysAllow": ["*"],
+      "description": "OpenAI structured output MCP server for reliable JSON responses with schema validation"
+    },
+    "perplexity": {
+      "command": "uv",
+      "args": ["run", "--directory", "mcp-servers/perplexity-mcp", "perplexity-mcp"],
+      "env": {
+        "PERPLEXITY_API_KEY": "",
+        "MCP_LOG_LEVEL": "info"
+      },
+      "disabled": false,
+      "alwaysAllow": ["*"],
+      "description": "Perplexity MCP server for real-time web research and current information access"
+    }
+  }
+}
