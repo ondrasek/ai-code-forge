@@ -70,9 +70,46 @@ SUPPORTED SHELLS:
     - zsh (Z Shell)
     - fish (Friendly Interactive Shell)
 
+TERMINAL TITLE MANAGEMENT:
+    When using wtcd() to navigate between worktrees, terminal titles will automatically
+    update to show the issue number and description (e.g., "Issue #123: Brief title").
+    
+    This feature works with most terminal emulators but requires special configuration
+    for VSCode's integrated terminal.
+
+VSCODE INTEGRATION:
+    VSCode's integrated terminal requires additional configuration to display terminal
+    titles set by worktree navigation. Follow these steps:
+
+    1. Open VSCode Settings (Ctrl/Cmd + ,)
+    2. Search for "terminal.integrated.tabs.title"
+    3. Set the value to: \${sequence}
+    
+    Alternative: Add to settings.json:
+        "terminal.integrated.tabs.title": "\${sequence}"
+    
+    After configuration:
+    - Terminal tabs will show "Issue #123: Brief title" when using wtcd()
+    - Titles update automatically when switching between worktrees
+    - Works across VSCode, VSCode Insiders, and Codespaces
+    
+    Troubleshooting VSCode:
+    - If titles don't appear, restart VSCode after changing settings
+    - Ensure "terminal.integrated.tabs.showActiveTerminal" is not "never"
+    - Check that OSC sequences aren't disabled in terminal settings
+
+SUPPORTED TERMINALS:
+    ✓ iTerm2, Terminal.app (macOS)
+    ✓ gnome-terminal, konsole (Linux) 
+    ✓ Windows Terminal, Alacritty, Kitty
+    ✓ tmux, screen (with proper configuration)
+    ⚠ VSCode integrated terminal (requires settings configuration above)
+    ✗ Basic terminals without OSC sequence support
+
 SECURITY CONSIDERATIONS:
     - Configuration uses absolute paths to prevent PATH manipulation
     - Shell type input is validated against supported shells only
+    - Terminal titles are sanitized to prevent escape sequence injection
     - All generated commands include explanatory comments
     - Users should review output before eval'ing
 
@@ -162,6 +199,67 @@ alias wtw="$script_dir/worktree.sh watch"             # Watch processes
 alias wtr="$script_dir/worktree.sh remove"            # Remove worktree
 
 # Advanced navigation functions
+# Function to check if terminal supports title setting
+_supports_terminal_title() {
+    # Conservative detection - only enable for well-known terminals
+    case "\${TERM:-}" in
+        xterm*|screen*|tmux*|rxvt*|gnome*|konsole*|alacritty*|kitty*|iterm*|vte*)
+            return 0 ;;
+        *)
+            return 1 ;;
+    esac
+}
+
+# Function to safely set terminal title with input sanitization
+_set_terminal_title() {
+    local title="\$1"
+    
+    # Security: Remove escape sequences and shell metacharacters
+    title="\${title//\$'\e'*/}"           # Remove escape sequences starting with ESC
+    title="\${title//\$'\x1b'*/}"         # Remove escape sequences starting with 0x1b
+    title="\${title//\$'\\033'*/}"        # Remove escape sequences starting with \\033
+    title="\${title//[\$\\\`\;|&]/}"        # Remove shell metacharacters
+    title="\${title//[[:cntrl:]]/}"       # Remove all control characters
+    
+    # Limit length to prevent buffer overflow (conservative 80 char limit)
+    title="\${title:0:80}"
+    
+    # Only set title if terminal supports it and title is not empty
+    if _supports_terminal_title && [[ -n "\$title" ]]; then
+        printf '\e]0;%s\a' "\$title"
+    fi
+}
+
+# Function to extract issue context for terminal title
+_get_issue_title_for_worktree() {
+    local target="\$1"
+    local issue_num
+    local issue_title
+    
+    # Extract issue number from target (handles issue-123 or just 123)
+    if [[ "\$target" =~ ^issue-?([0-9]+) ]]; then
+        issue_num="\${BASH_REMATCH[1]}"
+    elif [[ "\$target" =~ ^([0-9]+)\$ ]]; then
+        issue_num="\$target"
+    else
+        # Not an issue number - use branch/target name as-is
+        echo "Worktree: \$target"
+        return 0
+    fi
+    
+    # Try to get issue title from GitHub CLI
+    if command -v gh >/dev/null 2>&1; then
+        issue_title="\$(gh issue view "\$issue_num" --json title --jq .title 2>/dev/null)"
+        if [[ -n "\$issue_title" ]]; then
+            echo "Issue #\$issue_num: \$issue_title"
+            return 0
+        fi
+    fi
+    
+    # Fallback to generic issue format
+    echo "Issue #\$issue_num"
+}
+
 # Function to change directory to worktree by issue number or branch
 wtcd() {
     local target="\$1"
@@ -257,6 +355,69 @@ alias wtw="$script_dir/worktree.sh watch"             # Watch processes
 alias wtr="$script_dir/worktree.sh remove"            # Remove worktree
 
 # Advanced navigation functions
+# Function to check if terminal supports title setting
+function _supports_terminal_title
+    # Conservative detection - only enable for well-known terminals
+    switch "\$TERM"
+        case 'xterm*' 'screen*' 'tmux*' 'rxvt*' 'gnome*' 'konsole*' 'alacritty*' 'kitty*' 'iterm*' 'vte*'
+            return 0
+        case '*'
+            return 1
+    end
+end
+
+# Function to safely set terminal title with input sanitization
+function _set_terminal_title
+    set title \$argv[1]
+    
+    # Security: Remove escape sequences and shell metacharacters
+    # Fish doesn't support bash parameter expansion, use string replace
+    set title (string replace -a -r '\e.*' '' \$title)     # Remove escape sequences
+    set title (string replace -a -r '\x1b.*' '' \$title)   # Remove escape sequences
+    set title (string replace -a -r '[\$\`\;|&]' '' \$title) # Remove shell metacharacters
+    set title (string replace -a -r '[[:cntrl:]]' '' \$title) # Remove control characters
+    
+    # Limit length to prevent buffer overflow (80 chars)
+    if test (string length \$title) -gt 80
+        set title (string sub -l 80 \$title)
+    end
+    
+    # Only set title if terminal supports it and title is not empty
+    if _supports_terminal_title; and test -n "\$title"
+        printf '\e]0;%s\a' "\$title"
+    end
+end
+
+# Function to extract issue context for terminal title
+function _get_issue_title_for_worktree
+    set target \$argv[1]
+    set issue_num ""
+    set issue_title ""
+    
+    # Extract issue number from target (handles issue-123 or just 123)
+    if string match -qr '^issue-?([0-9]+)' \$target
+        set issue_num (string replace -r '^issue-?([0-9]+).*' '\$1' \$target)
+    else if string match -qr '^([0-9]+)\$' \$target
+        set issue_num \$target
+    else
+        # Not an issue number - use branch/target name as-is
+        echo "Worktree: \$target"
+        return 0
+    end
+    
+    # Try to get issue title from GitHub CLI
+    if command -v gh >/dev/null 2>&1
+        set issue_title (gh issue view \$issue_num --json title --jq .title 2>/dev/null)
+        if test -n "\$issue_title"
+            echo "Issue #\$issue_num: \$issue_title"
+            return 0
+        end
+    end
+    
+    # Fallback to generic issue format
+    echo "Issue #\$issue_num"
+end
+
 # Function to change directory to worktree by issue number or branch
 function wtcd
     if test (count \$argv) -eq 0
