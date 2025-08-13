@@ -377,8 +377,17 @@ launch_claude_with_prompt() {
         fi
     fi
     
-    # Create temporary prompt file with secure permissions
-    local prompt_file="$worktree_path/.claude-delivery-prompt.md"
+    # Create prompt file in .acf directory at repository root with secure permissions
+    local acf_dir="$worktree_path/.acf"
+    local prompt_file="$acf_dir/worktree-delivery-prompt-$(date +%Y%m%d-%H%M%S).md"
+    
+    # Ensure .acf directory exists
+    if [[ ! -d "$acf_dir" ]]; then
+        mkdir -p "$acf_dir" || {
+            print_error "Failed to create .acf directory: $acf_dir"
+            return 1
+        }
+    fi
     
     if [[ "$dry_run" == "true" ]]; then
         print_info "[DRY RUN] Would change directory to: $worktree_path"
@@ -411,6 +420,12 @@ launch_claude_with_prompt() {
     
     # Change to worktree directory
     cd "$worktree_path"
+    
+    # Update terminal title with issue context
+    if [[ -f "$SCRIPT_DIR/worktree-title.sh" ]]; then
+        source "$SCRIPT_DIR/worktree-title.sh"
+        update_title_from_context "$(basename "$worktree_path")"
+    fi
     
     print_info "Starting Claude Code with issue-focused prompt..."
     

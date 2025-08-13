@@ -55,3 +55,6 @@ tmp/
 temp/
 *.tmp
 sandbox/
+
+# ACF generated files
+.acf/

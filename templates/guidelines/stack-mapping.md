@@ -124,6 +124,21 @@
   <key_patterns>Docker configuration files</key_patterns>
   <enforcement>DETECT Docker projects using any indicator pattern</enforcement>
 </docker_projects>
+
+<bash_shell_projects priority="LOW">
+  <file_indicators>
+    <pattern>*.sh</pattern>
+    <pattern>*.bash</pattern>
+    <pattern>launch-*.sh</pattern>
+    <pattern>install.sh</pattern>
+    <pattern>deploy.sh</pattern>
+    <pattern>build.sh</pattern>
+    <pattern>test.sh</pattern>
+  </file_indicators>
+  <stack_file>@.support/stacks/bash.md</stack_file>
+  <key_patterns>Shell/Bash scripts, automation scripts</key_patterns>
+  <enforcement>DETECT Shell/Bash projects using any indicator pattern</enforcement>
+</bash_shell_projects>
 </file_extension_mapping>
 
 <detection_algorithm priority="LOW">
