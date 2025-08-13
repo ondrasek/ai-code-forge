@@ -1,361 +1,174 @@
-# Git Worktree Integration Technical Analysis
-**Issue #177: Fix worktree launch command**
+# Issue 177: Technical Analysis - Worktree Launch "main" Branch Support
 
-## Repository Analysis: Shell Script + Git Integration
-Technologies Detected:
-- Primary: Shell Script (Bash) - worktree management scripts
-- Secondary: Git - worktree operations and command integration
-- Integration: Python CLI tool integration points
+## Problem Analysis
 
-## Critical Security Assessment
+The `worktree-launch.sh` script currently fails when users specify "main" as a branch argument. The issue occurs in the `find_worktree_dir()` function which only searches worktree directories by name, not by the actual git branch checked out in each worktree.
 
-### EXCELLENT Security Practices Found
-The existing `worktree-create.sh` demonstrates **production-grade security patterns**:
+### Current Implementation Issues
 
-1. **Path Traversal Prevention**: Multiple validation layers including:
-   - URL decoding checks (`%2e`, `%2f` patterns)
-   - Canonical path validation with `realpath -m`
-   - Security boundary enforcement
-   - Symlink detection at multiple levels
+1. **Directory Name Search Only**: The script searches for directories named "main" rather than worktrees containing the main branch
+2. **No Git Branch Resolution**: Missing `git worktree list --porcelain` integration to find which worktree has "main" checked out
+3. **Inconsistent with Other Scripts**: `worktree-list.sh` already has branch resolution logic that should be reused
 
-2. **Input Sanitization**: Comprehensive branch name validation:
-   - Character restrictions (alphanumeric, hyphens, underscores, slashes)
-   - Length limits (100 characters)
-   - Git-sensitive name prevention (`HEAD`, `refs`, etc.)
-   - Repository name validation with security tests
+### Root Cause
 
-3. **Race Condition Prevention**: 
-   - Create-then-validate pattern for directories
-   - TOCTOU (Time-Of-Check-Time-Of-Use) mitigation
-
-## Git Worktree Best Practices Analysis
-
-### Strong Patterns in Current Implementation
-
-#### 1. **Robust Branch Detection**
-```bash
-# Multiple pattern matching for issue branches
-local patterns=(
-    "issue-$issue_num-*"
-    "issue/$issue_num-*" 
-    "feature/issue-$issue_num-*"
-)
-```
-**Assessment**: Excellent coverage of common naming conventions.
-
-#### 2. **Safe Git Command Execution**
-```bash
-local cmd_args=("git" "worktree" "add" "--" "$worktree_path" "$branch")
-# Array expansion prevents injection
-git "${cmd_args[@]:1}"
-```
-**Assessment**: Proper use of array expansion and `--` separator for safety.
-
-#### 3. **Comprehensive Error Handling**
-```bash
-set -euo pipefail  # Fail fast on errors
-# Cleanup on failure with proper error propagation
-```
-**Assessment**: Industry-standard error handling practices.
-
-### Areas Requiring Enhancement
-
-#### 1. **Git Command Output Parsing**
-**CRITICAL NEED**: Reliable parsing of `git worktree list` output for the launch command.
-
-**Current Challenge**: The `git worktree list` command output format:
-```
-/workspace/worktrees/repo/issue-123  abc1234 [issue-123-fix-bug]
-```
-
-**Recommended Parser Pattern**:
-```bash
-parse_worktree_list() {
-    local target_branch="$1"
-    
-    # Use porcelain format for consistent parsing
-    git worktree list --porcelain | while IFS= read -r line; do
-        case "$line" in
-            "worktree "*)
-                current_path="${line#worktree }"
-                ;;
-            "branch refs/heads/"*)
-                current_branch="${line#branch refs/heads/}"
-                if [[ "$current_branch" == "$target_branch" ]]; then
-                    echo "$current_path"
-                    return 0
-                fi
-                ;;
-        esac
-    done
-}
-```
-
-#### 2. **Branch Name Normalization**
-**ISSUE**: Inconsistent branch/issue number matching between scripts.
-
-**Recommended Pattern**:
-```bash
-normalize_branch_input() {
-    local input="$1"
-    
-    # Handle pure numbers -> issue branch lookup
-    if [[ "$input" =~ ^[0-9]+$ ]]; then
-        find_issue_branch "$input" || echo "issue-$input-*"
-    else
-        echo "$input"
-    fi
-}
-```
-
-## Shell Script Standards Assessment
-
-### Excellent Practices Found
-
-#### 1. **Script Structure**
-```bash
-#!/bin/bash
-set -euo pipefail  # Strict mode
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-```
-**Assessment**: Perfect strict mode and reliable script directory detection.
-
-#### 2. **Argument Parsing**
-```bash
-# Safe array manipulation for --dry-run removal
-for i in "${!args[@]}"; do
-    if [[ "${args[i]}" == "--dry-run" ]]; then
-        dry_run=true
-        unset 'args[i]'
-    fi
-done
-```
-**Assessment**: Robust argument handling with array safety.
-
-#### 3. **Error Messaging**
-```bash
-print_error() { echo -e "${RED}ERROR:${NC} $1" >&2; }
-print_success() { echo -e "${GREEN}SUCCESS:${NC} $1"; }
-```
-**Assessment**: Consistent, colored output with proper stderr routing.
-
-### Areas for Enhancement
-
-#### 1. **Function Documentation**
-**MISSING**: Comprehensive function documentation standards.
-
-**Recommended Pattern**:
-```bash
-# parse_worktree_list - Find worktree path for branch
-# Args: $1 - branch name to search for
-# Returns: worktree path on stdout, exit 0 on success
-# Example: path=$(parse_worktree_list "issue-123-fix")
-parse_worktree_list() {
-    # implementation
-}
-```
-
-#### 2. **Testing Integration**
-**NEED**: Unit testing framework for shell functions.
-
-**Recommended Pattern**:
-```bash
-# test_branch_validation.sh
-test_validate_branch_name() {
-    assert_success validate_branch_name "feature/test"
-    assert_failure validate_branch_name "../evil"
-    assert_failure validate_branch_name "feature with spaces"
-}
-```
-
-## Architecture Guidelines
-
-### Git Integration Patterns
-
-#### 1. **Worktree State Management**
-**CRITICAL**: Centralized state tracking for worktree-branch relationships.
+The `find_worktree_dir()` function in `worktree-launch.sh` (lines 86-137) only performs directory name matching:
 
 ```bash
-# Recommended centralized lookup function
-get_worktree_for_branch() {
-    local branch="$1"
-    git worktree list --porcelain | awk -v branch="$branch" '
-        /^worktree / { path = substr($0, 10) }
-        /^branch refs\/heads\// { 
-            if (substr($0, 20) == branch) { 
-                print path; exit 0 
-            } 
-        }'
-}
-```
-
-#### 2. **Branch Discovery Strategy**
-**PATTERN**: Multi-level branch matching for robust discovery.
-
-```bash
-find_branch_worktree() {
-    local input="$1"
-    
-    # 1. Direct branch name match
-    if path=$(get_worktree_for_branch "$input"); then
-        echo "$path"; return 0
-    fi
-    
-    # 2. Issue number -> branch pattern matching
-    if [[ "$input" =~ ^[0-9]+$ ]]; then
-        local issue_branch
-        if issue_branch=$(find_issue_branch "$input"); then
-            get_worktree_for_branch "$issue_branch"
-            return $?
-        fi
-    fi
-    
-    return 1
-}
-```
-
-### Cross-Platform Compatibility
-
-#### Current Status: **LINUX-FOCUSED**
-The scripts currently assume Linux/Unix environment with:
-- GNU `realpath` command
-- Bash 4+ features
-- Unix path conventions
-
-#### Enhancement Recommendations:
-
-1. **Portable Path Handling**:
-```bash
-# Cross-platform realpath alternative
-portable_realpath() {
-    local path="$1"
-    if command -v realpath >/dev/null 2>&1; then
-        realpath -m "$path"
-    else
-        # Fallback for macOS/BSD
-        python3 -c "import os; print(os.path.abspath('$path'))"
-    fi
-}
-```
-
-2. **Shell Compatibility Detection**:
-```bash
-# Detect bash version and features
-if [[ ${BASH_VERSION%%.*} -lt 4 ]]; then
-    echo "ERROR: Bash 4+ required for associative arrays" >&2
-    exit 1
+# Current problematic logic:
+local target_dir="$base_dir/$clean_id"
+if [[ -d "$target_dir" ]]; then
+    echo "$target_dir"
+    return 0
 fi
 ```
 
-## Performance Considerations
+It lacks the git worktree branch resolution that exists in `worktree-list.sh`.
 
-### Current Implementation: **WELL-OPTIMIZED**
+## Technical Architecture Analysis
 
-#### Strengths:
-- Minimal git command calls
-- Efficient pattern matching
-- Proper subprocess handling
-- Array-based argument processing
+### Current Worktree Scripts Structure
 
-#### Optimization Opportunities:
+1. **`worktree.sh`**: Main dispatcher that routes commands to specific scripts
+2. **`worktree-launch.sh`**: Launches Claude Code in specified worktree (THE PROBLEM SCRIPT)
+3. **`worktree-create.sh`**: Creates new worktrees with comprehensive validation
+4. **`worktree-list.sh`**: Lists worktrees with branch resolution (HAS SOLUTION PATTERN)
+5. **`worktree-path.sh`**: Outputs worktree paths (SECURITY-FOCUSED, LIMITED TO ISSUE NUMBERS)
 
-1. **Caching Git Information**:
-```bash
-# Cache expensive git operations
-declare -A BRANCH_CACHE
-get_cached_branch_info() {
-    local key="$1"
-    if [[ -z "${BRANCH_CACHE[$key]:-}" ]]; then
-        BRANCH_CACHE[$key]=$(expensive_git_operation "$key")
-    fi
-    echo "${BRANCH_CACHE[$key]}"
-}
-```
+### Git Worktree Integration Patterns
 
-2. **Parallel Branch Discovery**:
-```bash
-# Use background processes for multiple pattern searches
-find_all_issue_branches() {
-    local issue="$1"
-    local patterns=("issue-$issue-*" "issue/$issue-*")
-    
-    for pattern in "${patterns[@]}"; do
-        git branch --list "$pattern" &
-    done
-    wait
-}
-```
-
-## Error Recovery Patterns
-
-### Current Implementation: **COMPREHENSIVE**
-
-The existing error handling includes:
-- Cleanup on failure
-- Partial state recovery
-- User feedback with actionable guidance
-
-### Enhancement Recommendation:
+From `worktree-list.sh`, the proven pattern for branch resolution:
 
 ```bash
-# Transactional worktree operations
-create_worktree_transaction() {
-    local branch="$1" path="$2"
-    local transaction_id="$$-$(date +%s)"
-    local rollback_file="/tmp/worktree-rollback-$transaction_id"
-    
-    # Record operations for rollback
-    echo "CREATED_PATH:$path" >> "$rollback_file"
-    
-    # Setup rollback trap
-    trap "rollback_transaction '$rollback_file'" ERR
-    
-    # Perform operations...
-    
-    # Success - remove rollback file
-    rm -f "$rollback_file"
-    trap - ERR
-}
+# Working pattern from worktree-list.sh lines 59-70:
+worktree_path=$(git worktree list --porcelain | awk -v branch="$branch_name" '
+    /^worktree / { path = substr($0, 10) }
+    /^branch refs\/heads\// && substr($0, 19) == branch { print path; exit }
+')
 ```
 
-## Integration Recommendations
+### Current Git Worktree State
 
-### For the Launch Command Fix:
+From `git worktree list --porcelain`:
+```
+worktree /workspace/ai-code-forge
+HEAD 83736745449deae4457aa0ab33cdbf01eb8d285d
+branch refs/heads/main
 
-1. **Implement Robust Branch-to-Worktree Resolution**:
-   - Use `git worktree list --porcelain` for consistent parsing
-   - Support both branch names and issue numbers
-   - Implement fuzzy matching for partial branch names
+worktree /workspace/worktrees/ai-code-forge/issue-172
+HEAD de2325a2eba410fda067366594ef0c7a77c3b204
+branch refs/heads/issue-172-fix-researcher-agent
 
-2. **Add Comprehensive Error Handling**:
-   - Clear error messages for missing worktrees
-   - Suggestions for creating missing worktrees
-   - Validation of Claude Code availability
+worktree /workspace/worktrees/ai-code-forge/issue-173
+HEAD 1c11bdfd4564a07283b6b202d217048a114a5c0c
+branch refs/heads/issue-173-feat-implement-terminal
 
-3. **Enhance User Experience**:
-   - Tab completion support for branch names
-   - Interactive selection for ambiguous matches
-   - Progress indicators for slow operations
+worktree /workspace/worktrees/ai-code-forge/issue-177
+HEAD 83736745449deae4457aa0ab33cdbf01eb8d285d
+branch refs/heads/issue-177-fix-worktree-launch
+```
 
-### Security Validation Checklist
+**Key Finding**: The main branch is checked out at `/workspace/ai-code-forge` (the primary repo), not in `/workspace/worktrees/ai-code-forge/main`.
 
-- ✅ Path traversal prevention
-- ✅ Input sanitization  
-- ✅ Symlink detection
-- ✅ Command injection prevention
-- ✅ Race condition mitigation
-- ⚠️  **NEED**: Privilege escalation checks
-- ⚠️  **NEED**: Environment variable sanitization
+## Security Analysis
 
-## Conclusion
+### Current Security Measures
+- Input sanitization in `validate_branch_name()` 
+- Path traversal prevention
+- Symlink validation with `validate_no_symlinks()`
+- Canonical path validation
 
-The existing worktree management system demonstrates **exceptional security practices** and **professional-grade shell scripting**. The primary enhancement needed is **reliable git worktree list parsing** for the launch command, which should follow the same security-conscious patterns established in the create script.
+### Security Considerations for Branch Resolution
+- **Input Validation**: Must validate branch names before git operations
+- **Path Security**: Resolved paths must stay within security boundaries
+- **Command Injection**: Git commands must use proper argument arrays
+- **Race Conditions**: Branch resolution should be atomic
 
-**Priority Recommendations**:
-1. **High**: Implement porcelain-format git worktree list parsing
-2. **High**: Add comprehensive branch-to-worktree resolution
-3. **Medium**: Enhance cross-platform compatibility 
-4. **Medium**: Add unit testing framework for shell functions
-5. **Low**: Implement performance caching for git operations
+## Implementation Strategy
 
-The codebase shows no security concerns and follows industry best practices throughout.
+### Approach 1: Extend Current Architecture (RECOMMENDED)
+
+**Modify `worktree-launch.sh` to add branch resolution capability:**
+
+1. **Add Branch Detection Logic**: Distinguish between directory paths and branch names
+2. **Integrate Git Worktree Resolution**: Use `git worktree list --porcelain` for branch lookups
+3. **Maintain Backward Compatibility**: Preserve existing directory path behavior
+4. **Security**: Validate branch names and resolved paths
+
+### Approach 2: Unify with worktree-path.sh
+
+**Extend `worktree-path.sh` to support branch names, then use it from `worktree-launch.sh`:**
+
+Pros:
+- Centralized path resolution logic
+- Consistent behavior across scripts
+
+Cons:
+- `worktree-path.sh` is intentionally security-restricted to issue numbers only
+- Would require significant security architecture changes
+
+## Technical Constraints
+
+### Existing Patterns to Preserve
+1. **Error Handling**: Consistent colored output and error messages
+2. **Security**: All existing input validation and path security
+3. **Dry Run Support**: `--dry-run` flag functionality
+4. **Claude Command Detection**: Fallback to `launch-claude.sh` script
+
+### Git Version Dependencies
+- Requires Git 2.5+ for `git worktree` functionality
+- `--porcelain` flag requires Git 2.7+
+
+### Edge Cases to Handle
+1. **Multiple Main Worktrees**: Main branch in multiple worktrees (should error or pick primary)
+2. **Detached HEAD**: Worktrees in detached HEAD state
+3. **Missing Main**: No worktree has main branch checked out
+4. **Bare Repositories**: Bare worktrees without branches
+
+## Implementation Plan
+
+### Phase 1: Core Branch Resolution (HIGH PRIORITY)
+- Add `find_worktree_by_branch()` function using proven `worktree-list.sh` pattern
+- Modify `find_worktree_dir()` to detect branch vs directory arguments
+- Implement branch-to-path resolution with security validation
+
+### Phase 2: Edge Case Handling (MEDIUM PRIORITY)
+- Handle detached HEAD scenarios
+- Implement multiple worktree conflict resolution
+- Add comprehensive error messages
+
+### Phase 3: Testing & Documentation (MEDIUM PRIORITY)
+- Create test cases for branch resolution
+- Update help text and examples
+- Validate backward compatibility
+
+### Phase 4: Integration (LOW PRIORITY)
+- Consider unifying branch resolution across all worktree scripts
+- Performance optimization for large worktree sets
+
+## Expected Outcomes
+
+### Success Metrics
+- `./worktree-launch.sh main` successfully launches Claude in main branch worktree
+- All existing functionality preserved
+- Clear error messages for edge cases
+- Security boundaries maintained
+
+### Performance Impact
+- Minimal: One additional `git worktree list --porcelain` call for branch arguments
+- Negligible overhead for existing directory path arguments
+
+## Risk Assessment
+
+### Low Risk
+- Backward compatibility impact (existing directory paths still work)
+- Performance degradation (single git command addition)
+
+### Medium Risk
+- Security vulnerabilities from branch name injection
+- Edge case handling for complex worktree configurations
+
+### Mitigation Strategies
+- Comprehensive input validation using existing patterns
+- Extensive testing with various worktree configurations
+- Security review of all git command executions
