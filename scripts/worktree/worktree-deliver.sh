@@ -386,7 +386,10 @@ launch_claude_with_prompt() {
     local issue_num
     if issue_num=$(extract_issue_number "${identifier:-}"); then
         # Create prompt in analysis/issue-XYZ directory to avoid merge conflicts
-        prompt_dir="$MAIN_REPO/analysis/issue-$issue_num"
+        # Pad issue number to 3 digits for consistent alphabetical sorting
+        local padded_issue_num
+        padded_issue_num=$(printf "%03d" "$issue_num")
+        prompt_dir="$MAIN_REPO/analysis/issue-$padded_issue_num"
         prompt_file="$prompt_dir/worktree-delivery-prompt-$(date +%Y%m%d-%H%M%S).md"
         print_info "Using analysis directory for issue #$issue_num: $prompt_dir"
     else
