@@ -70,9 +70,46 @@ SUPPORTED SHELLS:
     - zsh (Z Shell)
     - fish (Friendly Interactive Shell)
 
+TERMINAL TITLE MANAGEMENT:
+    When using wtcd() to navigate between worktrees, terminal titles will automatically
+    update to show the issue number and description (e.g., "Issue #123: Brief title").
+    
+    This feature works with most terminal emulators but requires special configuration
+    for VSCode's integrated terminal.
+
+VSCODE INTEGRATION:
+    VSCode's integrated terminal requires additional configuration to display terminal
+    titles set by worktree navigation. Follow these steps:
+
+    1. Open VSCode Settings (Ctrl/Cmd + ,)
+    2. Search for "terminal.integrated.tabs.title"
+    3. Set the value to: \${sequence}
+    
+    Alternative: Add to settings.json:
+        "terminal.integrated.tabs.title": "\${sequence}"
+    
+    After configuration:
+    - Terminal tabs will show "Issue #123: Brief title" when using wtcd()
+    - Titles update automatically when switching between worktrees
+    - Works across VSCode, VSCode Insiders, and Codespaces
+    
+    Troubleshooting VSCode:
+    - If titles don't appear, restart VSCode after changing settings
+    - Ensure "terminal.integrated.tabs.showActiveTerminal" is not "never"
+    - Check that OSC sequences aren't disabled in terminal settings
+
+SUPPORTED TERMINALS:
+    ✓ iTerm2, Terminal.app (macOS)
+    ✓ gnome-terminal, konsole (Linux) 
+    ✓ Windows Terminal, Alacritty, Kitty
+    ✓ tmux, screen (with proper configuration)
+    ⚠ VSCode integrated terminal (requires settings configuration above)
+    ✗ Basic terminals without OSC sequence support
+
 SECURITY CONSIDERATIONS:
     - Configuration uses absolute paths to prevent PATH manipulation
     - Shell type input is validated against supported shells only
+    - Terminal titles are sanitized to prevent escape sequence injection
     - All generated commands include explanatory comments
     - Users should review output before eval'ing
 
@@ -181,7 +218,7 @@ _set_terminal_title() {
     title="\${title//\$'\e'*/}"           # Remove escape sequences starting with ESC
     title="\${title//\$'\x1b'*/}"         # Remove escape sequences starting with 0x1b
     title="\${title//\$'\\033'*/}"        # Remove escape sequences starting with \\033
-    title="\${title//[\$\`\;|&]/}"        # Remove shell metacharacters
+    title="\${title//[\$\\\`\;|&]/}"        # Remove shell metacharacters
     title="\${title//[[:cntrl:]]/}"       # Remove all control characters
     
     # Limit length to prevent buffer overflow (conservative 80 char limit)
