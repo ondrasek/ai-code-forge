@@ -183,7 +183,23 @@ wtcd() {
         return 1
     fi
     
-    cd "\$worktree_path" && echo "Switched to worktree: \$worktree_path"
+    if cd "\$worktree_path"; then
+        echo "Switched to worktree: \$worktree_path"
+        
+        # Update terminal title with issue context
+        if [[ -f "$script_dir/worktree-title.sh" ]]; then
+            source "$script_dir/worktree-title.sh"
+            # Try to extract issue number from target or use auto-detection
+            if [[ "\$target" =~ ^[0-9]+\$ ]]; then
+                update_terminal_title "\$target" "\$(basename "\$worktree_path")"
+            else
+                update_title_from_context "\$(basename "\$worktree_path")"
+            fi
+        fi
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Function to launch Claude Code in specific worktree
@@ -261,7 +277,23 @@ function wtcd
         return 1
     end
     
-    cd "\$worktree_path"; and echo "Switched to worktree: \$worktree_path"
+    if cd "\$worktree_path"
+        echo "Switched to worktree: \$worktree_path"
+        
+        # Update terminal title with issue context
+        if test -f "$script_dir/worktree-title.sh"
+            source "$script_dir/worktree-title.sh"
+            # Try to extract issue number from target or use auto-detection
+            if string match -qr '^[0-9]+\$' "\$target"
+                update_terminal_title "\$target" (basename "\$worktree_path")
+            else
+                update_title_from_context (basename "\$worktree_path")
+            end
+        end
+        return 0
+    else
+        return 1
+    end
 end
 
 # Function to launch Claude Code in specific worktree

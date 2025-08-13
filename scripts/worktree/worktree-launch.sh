@@ -209,6 +209,17 @@ main() {
     
     cd "$worktree_dir"
     
+    # Update terminal title with issue context
+    if [[ -f "$SCRIPT_DIR/worktree-title.sh" ]]; then
+        source "$SCRIPT_DIR/worktree-title.sh"
+        # Extract issue number from identifier or use auto-detection
+        if [[ "$identifier" =~ ^#?([0-9]+)$ ]]; then
+            update_terminal_title "${BASH_REMATCH[1]}" "$(basename "$worktree_dir")"
+        else
+            update_title_from_context "$(basename "$worktree_dir")"
+        fi
+    fi
+    
     if [[ "$claude_command" == "launch_script" ]]; then
         local launch_script="$SCRIPT_DIR/../launch-claude.sh"
         print_info "Using launch-claude.sh script"
