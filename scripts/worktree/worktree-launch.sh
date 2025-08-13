@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Git Worktree Launch Utility
 # Launches Claude Code in specified worktree directory
-# Usage: ./worktree-launch.sh <issue-number|branch-name> [claude-options]
+# Usage: ./worktree-launch.sh <issue-number|branch-name|directory-path> [claude-options]
 
 WORKTREE_BASE="/workspace/worktrees"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,16 +32,18 @@ DESCRIPTION:
     Automatically finds the worktree for the given issue number or branch name.
 
 USAGE:
-    $0 <issue-number|branch-name> [claude-options]
+    $0 <issue-number|branch-name|directory-path> [claude-options]
 
 ARGUMENTS:
     issue-number    Issue number (e.g., 123, #123)
-    branch-name     Full branch name (e.g., feature/add-launch, 129)
+    branch-name     Branch name (e.g., main, feature/add-launch)
+    directory-path  Directory path (e.g., issue-129, custom-dir)
     claude-options  Additional options to pass to Claude Code
 
 EXAMPLES:
     $0 123                          # Launch Claude Code in worktree for issue #123
     $0 \#129                         # Launch Claude Code in worktree for issue #129
+    $0 main                         # Launch Claude Code in worktree for main branch
     $0 feature/add-launch          # Launch Claude Code in specific branch worktree
     $0 129 --resume                # Launch with resume option
     $0 123 "help with testing"     # Launch with initial query
@@ -83,7 +85,118 @@ get_repo_name() {
     echo "$repo_name"
 }
 
-# Find worktree directory for issue number or branch name
+# Validate and sanitize branch name input for security
+validate_branch_name() {
+    local branch="$1"
+    
+    # Basic security checks - prevent injection attacks
+    if [[ "$branch" =~ \.\. ]] || [[ "$branch" =~ ^- ]] || [[ "$branch" =~ ^/ ]]; then
+        return 1
+    fi
+    
+    # Check for dangerous characters that could enable injection
+    if [[ "$branch" =~ [\;\|\&\$\`\(\)\{\}\[\]\<\>] ]]; then
+        return 1
+    fi
+    
+    # Validate against git naming rules
+    if ! git check-ref-format "refs/heads/$branch" 2>/dev/null; then
+        return 1
+    fi
+    
+    return 0
+}
+
+# Find worktree by branch name using git worktree list
+find_worktree_by_branch() {
+    local branch="$1"
+    
+    # Validate branch name for security
+    if ! validate_branch_name "$branch"; then
+        return 1
+    fi
+    
+    # Use git worktree list to find the worktree with this branch
+    local worktree_path
+    worktree_path=$(git worktree list --porcelain | awk -v branch="$branch" '
+        /^worktree / { path = substr($0, 10) }
+        /^branch refs\/heads\// && substr($0, 19) == branch { print path; exit }
+    ')
+    
+    if [[ -n "$worktree_path" ]]; then
+        echo "$worktree_path"
+        return 0
+    fi
+    
+    # Special case for HEAD (detached HEAD)
+    if [[ "$branch" == "HEAD" ]]; then
+        local detached_path
+        detached_path=$(git worktree list --porcelain | awk '
+            /^worktree / { path = substr($0, 10) }
+            /^detached$/ { print path; exit }
+        ')
+        if [[ -n "$detached_path" ]]; then
+            print_warning "Found detached HEAD worktree for '$branch'"
+            echo "$detached_path"
+            return 0
+        fi
+    fi
+    
+    # Check if branch exists but is not checked out in any worktree
+    if git show-ref --verify --quiet "refs/heads/$branch"; then
+        print_warning "Branch '$branch' exists but is not checked out in any worktree"
+        print_info "Available worktrees:"
+        git worktree list --porcelain | awk '
+            /^worktree / { path = substr($0, 10) }
+            /^branch refs\/heads\// { branch = substr($0, 19) }
+            /^bare$/ { bare = 1 }
+            /^detached$/ { detached = 1 }
+            /^$/ {
+                if (bare) {
+                    printf "  %s (bare repository)\n", path
+                } else if (detached) {
+                    printf "  %s (detached HEAD)\n", path
+                } else if (branch) {
+                    printf "  %s (%s)\n", path, branch
+                }
+                branch = ""; bare = 0; detached = 0
+            }
+        ' | sed 's/^/  /'
+        return 1
+    fi
+    
+    return 1
+}
+
+# Determine if identifier is a branch name or directory path
+is_branch_identifier() {
+    local identifier="$1"
+    
+    # If it's an absolute path or contains directory separators beyond simple branch naming, treat as path
+    if [[ "$identifier" =~ ^/ ]] || [[ "$identifier" =~ \.\. ]]; then
+        return 1
+    fi
+    
+    # If it exists as a directory in the worktree base, treat as directory path
+    local repo_name
+    if repo_name=$(get_repo_name 2>/dev/null); then
+        local base_dir="$WORKTREE_BASE/$repo_name"
+        local clean_id="${identifier#\#}"
+        if [[ -d "$base_dir/$clean_id" ]]; then
+            return 1  # Directory exists, treat as path
+        fi
+    fi
+    
+    # If it passes basic branch name validation, treat as branch
+    if validate_branch_name "$identifier"; then
+        return 0
+    fi
+    
+    # Default to directory path
+    return 1
+}
+
+# Find worktree directory for issue number, branch name, or directory path
 find_worktree_dir() {
     local identifier="$1"
     local repo_name
@@ -91,13 +204,23 @@ find_worktree_dir() {
     
     local base_dir="$WORKTREE_BASE/$repo_name"
     
+    # Clean up identifier (remove # prefix if present)
+    local clean_id="${identifier#\#}"
+    
+    # First, try branch resolution if identifier looks like a branch name
+    if is_branch_identifier "$clean_id"; then
+        local branch_worktree
+        if branch_worktree=$(find_worktree_by_branch "$clean_id"); then
+            echo "$branch_worktree"
+            return 0
+        fi
+    fi
+    
+    # Fall back to directory-based resolution
     if [[ ! -d "$base_dir" ]]; then
         print_error "No worktrees found in $base_dir"
         return 1
     fi
-    
-    # Clean up identifier (remove # prefix if present)
-    local clean_id="${identifier#\#}"
     
     # Try exact match first
     local target_dir="$base_dir/$clean_id"
@@ -116,7 +239,13 @@ find_worktree_dir() {
     done < <(find "$base_dir" -mindepth 1 -maxdepth 1 -type d -print0)
     
     if [[ ${#matches[@]} -eq 0 ]]; then
-        print_error "No worktree found for identifier '$identifier'"
+        # If branch resolution was attempted but failed, provide specific error
+        if is_branch_identifier "$clean_id"; then
+            print_error "No worktree found for branch '$clean_id' and no matching directories"
+            print_info "To see all worktrees: git worktree list"
+        else
+            print_error "No worktree found for identifier '$identifier'"
+        fi
         print_info "Available worktrees:"
         if [[ -d "$base_dir" ]]; then
             ls -1 "$base_dir" | sed 's/^/  /' || true
@@ -181,8 +310,9 @@ main() {
     print_info "Worktree path: $worktree_dir"
     
     # Verify worktree directory is valid git repository
+    # Main repo has .git directory, worktrees have .git file pointing to gitdir
     if [[ ! -e "$worktree_dir/.git" ]]; then
-        print_error "Directory $worktree_dir is not a valid git worktree"
+        print_error "Directory $worktree_dir is not a valid git repository"
         exit 1
     fi
     
