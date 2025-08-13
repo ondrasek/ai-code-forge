@@ -34,7 +34,7 @@
 - **Performance Optimized**: <1ms overhead, minimal shell impact
 
 ### CLI Tool Architecture Decision
-The CLI tool (`acf/src/ai_code_forge/data/acf/scripts/worktree/`) intentionally has simplified functionality without shell integration features like `init`. This is appropriate since:
+The CLI tool (`cli/src/ai_code_forge/data/acf/scripts/worktree/`) intentionally has simplified functionality without shell integration features like `init`. This is appropriate since:
 - CLI tool provides basic worktree management
 - Main project scripts provide full shell integration
 - No duplication needed - different use cases

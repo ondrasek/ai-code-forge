@@ -8,7 +8,7 @@ on:
       - 'templates/**' 
       - 'scripts/**'
       - 'docs/**'
-      - 'acf/**'
+      - 'cli/**'
       - 'CLAUDE.md'
       - 'README.md' 
       - 'CHANGELOG.md'
@@ -20,7 +20,7 @@ on:
       - 'templates/**'
       - 'scripts/**' 
       - 'docs/**'
-      - 'acf/**'
+      - 'cli/**'
       - 'CLAUDE.md'
       - 'README.md'
       - 'CHANGELOG.md'
@@ -94,7 +94,7 @@ jobs:
             fi
             
             # Version consistency validation
-            PYPROJECT_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
+            PYPROJECT_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
             if [[ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]]; then
               echo "❌ ERROR: Tag version ($TAG_VERSION) must match pyproject.toml version ($PYPROJECT_VERSION)"
               exit 1
@@ -105,7 +105,7 @@ jobs:
           
           # Determine release type
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
+            RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
             if [[ -n "${{ inputs.version_override }}" ]]; then
               RELEASE_VERSION="${{ inputs.version_override }}"
             fi
@@ -140,44 +140,44 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('acf/pyproject.toml') }}
+          key: ${{ runner.os }}-uv-${{ hashFiles('cli/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-uv-
             
       - name: Prepare ACF package data
         run: |
           echo "=== Preparing ACF Package Data ==="
-          mkdir -p acf/src/acf/data/{claude,acf}
+          mkdir -p cli/src/ai_code_forge/data/{claude,acf}
           
           # Copy Claude Code files
           echo "Copying .claude directory..."
-          cp -r .claude/* acf/src/acf/data/claude/
+          cp -r .claude/* cli/src/ai_code_forge/data/claude/
           
           # Copy ACF-managed files
           echo "Copying templates, scripts, docs..."
-          cp -r templates scripts docs acf/src/acf/data/acf/
+          cp -r templates scripts docs cli/src/ai_code_forge/data/acf/
           
           # Copy ACF tool documentation
           echo "Copying ACF tool documentation..."
-          cp README.md CHANGELOG.md acf/src/acf/data/acf/
+          cp README.md CHANGELOG.md cli/src/ai_code_forge/data/acf/
           
           # Copy CLAUDE.md to root
           echo "Copying CLAUDE.md..."
-          cp CLAUDE.md acf/src/acf/data/
+          cp CLAUDE.md cli/src/ai_code_forge/data/
           
           echo "✅ Package data preparation complete"
           
       - name: Build ACF package
         run: |
           echo "=== Building ACF Package ==="
-          cd acf
+          cd cli
           uv build
           echo "✅ Package build complete"
           
       - name: Validate package
         run: |
           echo "=== Validating Package ==="
-          cd acf
+          cd cli
           
           # Check if artifacts were created using proper file checks
           if ls dist/*.whl >/dev/null 2>&1; then
@@ -200,7 +200,7 @@ jobs:
           
           # Test package import
           echo "Testing package import..."
-          if uv run python -c "import acf; print('✅ Package imports successfully')"; then
+          if uv run python -c "import ai_code_forge; print('✅ Package imports successfully')"; then
             echo "✅ Package validation passed"
           else
             echo "❌ Package validation failed"
@@ -210,14 +210,14 @@ jobs:
       - name: Run tests
         run: |
           echo "=== Running Tests ==="
-          cd acf
+          cd cli
           uv run pytest --verbose --tb=short
           echo "✅ Tests completed"
           
       - name: Generate checksums for GitHub release
         run: |
           echo "🔍 Generating checksums for GitHub release..."
-          cd acf/dist
+          cd cli/dist
           
           # Generate SHA256 checksums for GitHub release
           sha256sum *.whl > checksums.txt
@@ -234,15 +234,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: python-package-distributions
-          path: acf/dist/
+          path: cli/dist/
           retention-days: 30
           
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: acf-test-results-${{ github.sha }}
-          path: acf/.pytest_cache/
+          name: cli-test-results-${{ github.sha }}
+          path: cli/.pytest_cache/
           retention-days: 7
 
   create-github-release:
@@ -269,7 +269,7 @@ jobs:
         run: |
           # Determine release version
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
+            RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
             if [[ -n "${{ inputs.version_override }}" ]]; then
               RELEASE_VERSION="${{ inputs.version_override }}"
             fi
@@ -495,7 +495,7 @@ jobs:
           
           # Determine release version and set PyPI URL
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml | sed 's/version = "//; s/"//')
+            RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
           else
             RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
           fi
@@ -625,7 +625,7 @@ jobs:
           
           echo ""
           echo "💾 Installation Commands:"
-          RELEASE_VERSION=$(grep '^version = ' acf/pyproject.toml 2>/dev/null | sed 's/version = "//; s/"//' || echo "latest")
+          RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml 2>/dev/null | sed 's/version = "//; s/"//' || echo "latest")
           echo "  pip install ai-code-forge==$RELEASE_VERSION"
           echo "  uv add ai-code-forge==$RELEASE_VERSION"
           echo "  uvx ai-code-forge@$RELEASE_VERSION install"

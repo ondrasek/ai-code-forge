@@ -74,7 +74,7 @@ Analysis of the ai-code-forge repository's GitHub Actions setup to understand cu
      uses: actions/upload-artifact@v4
      with:
        name: python-package-distributions
-       path: acf/dist/
+       path: cli/dist/
        retention-days: 30
    ```
 

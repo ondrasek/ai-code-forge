@@ -1,6 +1,6 @@
 <claude_operational_rules>
 <critical_mandatory_requirements>
-MANDATORY RULE 0: Before starting work on every request: Act as experienced engineering peer conducting technical review. Ask probing questions about edge cases, alternative approaches, and potential issues. Challenge assumptions directly but constructively. Point out overlooked complexities from professional experience. If this were a production code review, would you approve it? Stop if you'd block deployment for critical risks.
+MANDATORY RULE 0: Before starting work on every request: identify gaps, risks and offer contrarian point of view. Stop if critical.
 MANDATORY RULE 1: Task(git-workflow) to commit and push after EVERY meaningful change.
 MANDATORY RULE 2: NEVER create artificial timelines, time estimates or weekly milestones.
 MANDATORY RULE 3: Follow file structure locations EXACTLY.
@@ -39,20 +39,20 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
   <commands>.claude/commands/ and subdirectories for namespaces, e.g. /issue:create is in .claude/commands/issue/create.md (ONLY location for slash commands)</commands>
   <prompts>templates/prompts/ (template prompts for distribution)</prompts>
   <guidelines>templates/guidelines/ (template guidelines for distribution)</guidelines>
-  <github_issues>GitHub Issues in ondrasek/ai-code-forge (specifications managed via GitHub)</github_issues>
+  <github_issues>GitHub Issues in {{GITHUB_OWNER}}/{{GITHUB_REPO}} (specifications managed via GitHub)</github_issues>
   <mcp_servers>mcp-servers/[mcp-name]/ (MCP server source code and integration tests)</mcp_servers>
   <analysis>analysis/[github-issue] where github-issue is a subfolder corresponding to an existing github issue</analysis>
   <scripts>scripts/ and subfolders under scripts/</scripts>
-  <cli>cli/ with source code for the ai-code-forge cli tool</cli>
+  <cli>{{CLI_DIRECTORY}}/ with source code for the {{PROJECT_NAME}} cli tool</cli>
 </locations>
 <enforcement>NEVER search elsewhere for these file types</enforcement>
 </file_structure>
 
 <specification_management priority="CRITICAL">
 <github_issues_protocol>
-  <definition>Specifications are detailed planning documents that define requirements, implementation approaches, and project deliverables managed through GitHub Issues in ondrasek/ai-code-forge repository</definition>
+  <definition>Specifications are detailed planning documents that define requirements, implementation approaches, and project deliverables managed through GitHub Issues in {{GITHUB_OWNER}}/{{GITHUB_REPO}} repository</definition>
 
-  <location>GitHub Issues in ondrasek/ai-code-forge (ABSOLUTE - never use local files)</location>
+  <location>GitHub Issues in {{GITHUB_OWNER}}/{{GITHUB_REPO}} (ABSOLUTE - never use local files)</location>
 
   <agent_delegation>
     <primary_agent>github-issues-workflow (PROACTIVELY use when user mentions tasks, specs, requirements, or asks 'create issue', 'track progress', 'remember to do')</primary_agent>
@@ -92,10 +92,10 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
       - Support version management workflow through GitHub milestones and issue types
     </integration_points>
     <github_commands>
-      - List all issues: gh issue list --repo ondrasek/ai-code-forge
-      - Create new issue: gh issue create --repo ondrasek/ai-code-forge
-      - Update issue: gh issue edit --repo ondrasek/ai-code-forge
-      - Close issue: gh issue close --repo ondrasek/ai-code-forge
+      - List all issues: gh issue list --repo {{GITHUB_OWNER}}/{{GITHUB_REPO}}
+      - Create new issue: gh issue create --repo {{GITHUB_OWNER}}/{{GITHUB_REPO}}
+      - Update issue: gh issue edit --repo {{GITHUB_OWNER}}/{{GITHUB_REPO}}
+      - Close issue: gh issue close --repo {{GITHUB_OWNER}}/{{GITHUB_REPO}}
     </github_commands>
   </operational_rules>
 

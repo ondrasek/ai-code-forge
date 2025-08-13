@@ -8,7 +8,7 @@
 
 **Root Cause Resolution**:
 - **Issue**: Researcher agent using hardcoded 2024 instead of extracting current year (2025) from environment context
-- **Solution**: Implemented complete environment date extraction with production safeguards in `acf/src/ai_code_forge/data/claude/agents/foundation/researcher.md`
+- **Solution**: Implemented complete environment date extraction with production safeguards in `cli/src/ai_code_forge/data/claude/agents/foundation/researcher.md`
 
 **Key Changes Made**:
 1. **Environment Parsing Function** (lines 91-134): Robust regex extraction with error handling

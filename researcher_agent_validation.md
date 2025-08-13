@@ -12,7 +12,7 @@
 
 ### 1. Mandatory Year Extraction
 - **Requirement**: ALWAYS use `Bash(date +%Y)` before any WebSearch
-- **Location**: `acf/src/ai_code_forge/data/claude/agents/foundation/researcher.md:104`
+- **Location**: `cli/src/ai_code_forge/data/claude/agents/foundation/researcher.md:104`
 - **Fallback**: If Bash fails, proceed with temporal keywords only
 
 ### 2. Dual Temporal Strategy
