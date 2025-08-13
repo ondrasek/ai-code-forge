@@ -371,5 +371,150 @@ MCP Server (Node.js/TypeScript)
 - `zod` for input validation
 - `pino` for structured logging
 
+## CRITICAL MCP PROTOCOL INTEGRATION FINDINGS
+
+### 1. Native MCP Support Status (EXPERIMENTAL)
+
+**Official MCP Command:**
+```bash
+codex mcp
+```
+- **Status**: Experimental feature in official Codex CLI
+- **Transport**: Supports stdio transport natively
+- **Documentation**: "It is somewhat experimental, but the Codex CLI can also be run as an MCP server via `codex mcp`"
+- **Authority**: Official OpenAI GitHub repository confirmation
+
+**Key Findings:**
+- Codex CLI DOES have experimental native MCP protocol support
+- Single tool available with configurable inputs in MCP mode
+- stdio transport is the default communication mechanism
+- No additional command arguments documented beyond `codex mcp`
+
+### 2. MCP Server Implementations in Wild (2025)
+
+**Third-Party MCP Wrappers:**
+
+1. **agency-ai-solutions/openai-codex-mcp**:
+   - HTTP-based JSON-RPC server (NOT stdio)
+   - Python FastAPI implementation
+   - Tools: `codex_completion`, `write_code`, `explain_code`, `debug_code`
+   - Limitation: Requires separate HTTP server, not native stdio
+
+2. **rmulligan/mcp-openai-codex**:
+   - Node.js bridge implementing MCP stdio protocol
+   - Custom wrapper translating MCP to Codex CLI calls
+   - Implements proper stdio JSON-RPC transport
+   - Uses child process management for Codex CLI execution
+   - Mentions `codex --tool-mode` (unconfirmed CLI argument)
+
+3. **teabranch/agentic-developer-mcp**:
+   - Full MCP wrapper with stdio and SSE transport options
+   - Command: `python -m mcp_server` (stdio) or `python -m mcp_server --transport sse --port 8000`
+   - Comprehensive toolset including multimodal support
+   - Production-ready implementation patterns
+
+### 3. Stdio Transport Implementation Details
+
+**Native Implementation:**
+- `codex mcp` command launches stdio MCP server mode
+- JSON-RPC 2.0 over stdin/stdout communication
+- Single configurable tool with experimental status
+- No additional CLI arguments documented for MCP mode
+
+**Third-Party Implementations:**
+- Node.js child_process for subprocess management
+- Python asyncio.subprocess for async execution
+- Proper error handling and timeout management
+- Protocol translation between MCP JSON-RPC and CLI text interface
+
+### 4. Authentication in MCP Mode
+
+**Inherits Standard Auth Methods:**
+- ChatGPT Plus/Pro/Team account (preferred)
+- Environment variable: `OPENAI_API_KEY`
+- No MCP-specific authentication mechanism
+- Auth configured in standard Codex CLI, inherited by `codex mcp`
+
+**Security Considerations for MCP:**
+- stdio transport bypasses HTTP security layers
+- Subprocess execution requires input sanitization
+- API key exposure risk through process arguments
+- Recommended: Environment-based authentication only
+
+### 5. Installation Requirements for MCP Integration
+
+**Base Requirements:**
+- OpenAI Codex CLI installed (`npm install -g @openai/codex` or `brew install codex`)
+- Node.js 22+ for npm installation method
+- Git 2.23+ (optional but recommended)
+- 4-8GB RAM for optimal performance
+
+**MCP-Specific Dependencies:**
+- No additional dependencies for native `codex mcp`
+- Third-party wrappers require Node.js or Python runtime
+- MCP client implementation (e.g., Claude Code, VS Code)
+
+### 6. Known Limitations & Compatibility Issues
+
+**Native MCP Mode Limitations:**
+- **Experimental Status**: Feature may change or be removed
+- **Single Tool**: Only one configurable tool available
+- **Limited Documentation**: Minimal official guidance
+- **Feature Parity**: May lack features available in interactive mode
+
+**Integration Challenges:**
+- **Protocol Mismatch**: CLI designed for interactive use, MCP for programmatic
+- **Error Handling**: CLI exit codes don't map cleanly to MCP error responses
+- **Session State**: CLI stateless design vs. MCP session expectations
+- **Rate Limiting**: CLI rate limit handling incompatible with MCP expectations
+
+**Platform Compatibility:**
+- macOS 12+: Fully supported for MCP mode
+- Linux (Ubuntu 20.04+): Fully supported for MCP mode
+- Windows 11: Experimental through WSL2 only
+
+### 7. MCP Integration Architecture Recommendations
+
+**Option 1: Native MCP Mode (HIGH RISK)**
+```bash
+codex mcp  # Direct stdio MCP server
+```
+- **Pros**: No wrapper complexity, official implementation
+- **Cons**: Experimental, single tool, limited functionality
+- **Recommendation**: Monitor for production readiness
+
+**Option 2: Custom MCP Wrapper (RECOMMENDED)**
+```typescript
+// Node.js MCP server wrapping CLI subprocess
+const codexProcess = spawn('codex', ['exec'], {
+  stdio: ['pipe', 'pipe', 'pipe']
+});
+```
+- **Pros**: Full control, multiple tools, stable interface
+- **Cons**: Additional complexity, subprocess management
+- **Recommendation**: Current best approach for production
+
+**Option 3: Hybrid Approach (FUTURE)**
+- Monitor native MCP development for stability
+- Maintain wrapper for production workloads
+- Migrate to native when feature-complete
+
+### 8. Updated Implementation Strategy
+
+**Immediate Priority (High):**
+- Implement MCP wrapper server using established patterns
+- Use subprocess management for CLI communication
+- Support both authentication methods (ChatGPT/API key)
+- Comprehensive error handling and timeout management
+
+**Research Priority (Medium):**
+- Monitor `codex mcp` experimental development
+- Test native MCP mode capabilities and limitations
+- Evaluate migration path from wrapper to native
+
+**Future Priority (Low):**
+- Migrate to native MCP when production-ready
+- Maintain backward compatibility during transition
+
 ACTIONABLE OUTCOME:
-OpenAI Codex CLI is a viable, actively-developed tool for MCP server integration. Implement as Node.js MCP server wrapping Rust CLI subprocess with robust error handling, ChatGPT authentication, and sandbox security. Prioritize rate limiting and retry logic due to known CLI limitations. Current 2025 architecture provides stable foundation for production deployment.
+OpenAI Codex CLI has EXPERIMENTAL native MCP support via `codex mcp` command with stdio transport, but production implementation should use custom MCP wrapper pattern. Native mode limited to single tool and experimental status. Implement robust MCP server wrapping Codex CLI subprocess with comprehensive error handling, authentication inheritance, and monitoring for native MCP maturation. Critical finding: stdio transport IS supported natively, but wrapper approach recommended for production stability.
