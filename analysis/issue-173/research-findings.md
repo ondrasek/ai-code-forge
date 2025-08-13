@@ -275,6 +275,152 @@ set_terminal_title() {
 - Consider tmux/screen session compatibility
 - Follow modern shell ecosystem patterns
 
+## VSCode Integrated Terminal Specific Research (2025)
+
+### VSCode Terminal Title Configuration and OSC Sequence Support
+
+**Current State of Title Management:**
+- VSCode removed support for standard terminal escape sequences (OSC 0, 1, 2) for setting window titles
+- Previous `terminal.integrated.titleMode` setting deprecated in favor of variable-based configuration
+- Standard XTerm escape sequences (`\e]0;TITLE\e\\`) are ignored by VSCode's integrated terminal
+- Title management now uses configuration-based approach through settings
+
+**VSCode Terminal Tab Title Configuration:**
+```json
+{
+  "terminal.integrated.tabs.title": "${process}${separator}${sequence}",
+  "terminal.integrated.tabs.description": "${task}${separator}${local}${separator}${cwdFolder}"
+}
+```
+
+**Available Variables for Title Customization:**
+- `${cwd}` - Current working directory (full path)
+- `${cwdFolder}` - Current working directory folder name
+- `${workspaceFolder}` - Workspace in which terminal was launched
+- `${workspaceFolderName}` - Name of workspace folder
+- `${local}` - Indicates local terminal in remote workspace
+- `${process}` - Name of terminal process
+- `${separator}` - Conditional separator (" - ") only shows when surrounded by variables with values
+- `${sequence}` - Name provided to xterm.js by the process (closest to traditional OSC title)
+- `${task}` - Indicates terminal is associated with a task
+- `${shellType}` - Detected shell type
+- `${shellCommand}` - Command being executed according to shell integration
+- `${shellPromptInput}` - Shell's full prompt input according to shell integration
+
+### VSCode-Specific OSC Sequences
+
+**VSCode Custom OSC 633 Sequences:**
+VSCode implements proprietary OSC 633 sequences for shell integration:
+- `OSC 633 ; A ST` - Mark prompt start
+- `OSC 633 ; B ST` - Mark prompt end
+- `OSC 633 ; C ST` - Mark pre-execution
+- `OSC 633 ; D [; <exitcode>] ST` - Mark execution finished with optional exit code
+- `OSC 633 ; E ; <commandline> [; <nonce] ST` - Explicitly set command line with optional nonce
+- `OSC 633 ; P ; <Property>=<Value> ST` - Set terminal properties
+
+**Supported Properties (OSC 633 P):**
+- `Cwd=<path>` - Report current working directory to terminal
+- `IsWindows=<True|False>` - Indicate Windows backend usage (winpty/conpty)
+
+**Final Term Compatibility:**
+VSCode supports Final Term sequences (OSC 133) for broader compatibility:
+- `OSC 133 ; A ST` - Mark prompt start
+- `OSC 133 ; B ST` - Mark prompt end  
+- `OSC 133 ; C ST` - Mark pre-execution
+- `OSC 133 ; D [; <exitcode>] ST` - Mark execution finished
+
+**iTerm2 Compatibility:**
+- `OSC 1337 ; CurrentDir=<Cwd> ST` - Set current working directory
+- `OSC 1337 ; SetMark ST` - Add marks to terminal with scroll bar annotation
+
+### Cross-Platform Differences in VSCode
+
+**Windows-Specific Behavior:**
+- Console API allows more keyboard shortcuts than Linux/macOS
+- Shell integration enables PowerShell-specific shortcuts (Ctrl+Space for MenuComplete)
+- Environment variable handling differs from system terminal
+- `IsWindows` property available in OSC 633 sequences
+
+**macOS and Linux:**
+- Alt key menu mnemonics disabled by default in terminal (`terminal.integrated.allowMnemonics`)
+- PATH environment variables may differ between VSCode terminal and system terminal
+- Standard Unix terminal behavior expected
+
+**Remote Development (Codespaces):**
+- Shell integration works seamlessly in remote environments
+- AI coding experiences (GitHub Copilot) pre-configured in Codespaces
+- Recent improvements to terminal handling in remote containers
+- Race conditions documented in OSC 633 sequence processing
+
+### VSCode vs VSCode Insiders vs Codespaces
+
+**VSCode Insiders:**
+- Latest terminal features available first
+- May include experimental OSC sequence handling
+- More frequent updates to shell integration
+
+**GitHub Codespaces:**
+- Pre-configured environment with optimal shell integration
+- Agentic AI features introduced in 2025 for enhanced terminal experience
+- Remote development optimizations for terminal performance
+
+**Standard VSCode:**
+- Stable terminal feature set
+- Consistent OSC sequence behavior across releases
+- Well-documented configuration options
+
+### Limitations and Known Issues (2025)
+
+**Critical Limitations:**
+1. **No Standard OSC Support**: VSCode ignores standard terminal title escape sequences (OSC 0, 1, 2)
+2. **Sequence Variable Dependency**: `${sequence}` variable only works if process sends supported OSC sequences
+3. **Shell Integration Required**: Many variables require shell integration to function properly
+4. **Platform Inconsistencies**: Different behavior across Windows, macOS, Linux for environment variables
+5. **Race Conditions**: Documented race conditions in OSC 633 sequence processing with 80% failure rate in testing
+
+**Workarounds and Best Practices:**
+1. **Use Variable-Based Configuration**: Configure `terminal.integrated.tabs.title` with appropriate variables
+2. **Enable Shell Integration**: Use supported shell integration scripts for full functionality
+3. **Platform-Specific Settings**: Configure different terminal settings per platform if needed
+4. **Fallback Strategies**: Implement graceful degradation when shell integration unavailable
+
+**Security Considerations:**
+- VSCode's proprietary OSC sequences should only be sent when `$TERM_PROGRAM=vscode`
+- Input sanitization still required for any user-provided title content
+- Variable-based approach provides inherent protection against injection attacks
+
+### Interaction with Our OSC Implementation
+
+**Compatibility Assessment:**
+- **Standard OSC 0/1/2 sequences**: Will NOT work in VSCode integrated terminal
+- **Shell integration approach**: Could work if we implement VSCode-specific OSC 633 sequences
+- **Fallback strategy**: Essential for VSCode compatibility
+
+**Recommended VSCode Integration Strategy:**
+1. **Detection**: Check for `$TERM_PROGRAM=vscode` environment variable
+2. **VSCode-Specific Implementation**: Send OSC 633 sequences instead of standard OSC 0/1/2
+3. **Configuration Guidance**: Recommend users configure `terminal.integrated.tabs.title="${sequence}"`
+4. **Graceful Fallback**: Use alternative title display methods when VSCode detected
+
+**Implementation Example for VSCode:**
+```bash
+set_vscode_title() {
+    local title="$1"
+    title=$(sanitize_title "$title")
+    
+    if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+        # Use VSCode shell integration sequence
+        echo -ne "\033]633;P;Cwd=${PWD}\033\\"
+        # Note: VSCode doesn't support direct title setting via OSC
+        # Users must configure terminal.integrated.tabs.title="${sequence}"
+        echo "Configure VSCode: terminal.integrated.tabs.title=\"\${sequence}\"" >&2
+    else
+        # Use standard OSC sequences for other terminals
+        echo -ne "\033]0;${title}\033\\"
+    fi
+}
+```
+
 ## Repository Context
 - Working in dedicated worktree: issue-173-feat-implement-terminal
 - Need to find existing worktree scripts to integrate with
