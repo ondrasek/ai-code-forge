@@ -359,6 +359,7 @@ launch_claude_with_prompt() {
     local worktree_path="$1"
     local custom_prompt="$2"
     local dry_run="${3:-false}"
+    local identifier="${4:-}"
     
     # Store original directory for cleanup
     local original_dir="$(pwd)"
@@ -377,14 +378,28 @@ launch_claude_with_prompt() {
         fi
     fi
     
-    # Create prompt file in .acf directory at repository root with secure permissions
-    local acf_dir="$worktree_path/.acf"
-    local prompt_file="$acf_dir/worktree-delivery-prompt-$(date +%Y%m%d-%H%M%S).md"
+    # Determine prompt file location based on workflow type
+    local prompt_file=""
+    local prompt_dir=""
     
-    # Ensure .acf directory exists
-    if [[ ! -d "$acf_dir" ]]; then
-        mkdir -p "$acf_dir" || {
-            print_error "Failed to create .acf directory: $acf_dir"
+    # Check if this is an issue-based workflow
+    local issue_num
+    if issue_num=$(extract_issue_number "${identifier:-}"); then
+        # Create prompt in analysis/issue-XYZ directory to avoid merge conflicts
+        prompt_dir="$MAIN_REPO/analysis/issue-$issue_num"
+        prompt_file="$prompt_dir/worktree-delivery-prompt-$(date +%Y%m%d-%H%M%S).md"
+        print_info "Using analysis directory for issue #$issue_num: $prompt_dir"
+    else
+        # Fall back to .acf directory for branch-based workflows
+        prompt_dir="$worktree_path/.acf"
+        prompt_file="$prompt_dir/worktree-delivery-prompt-$(date +%Y%m%d-%H%M%S).md"
+        print_info "Using .acf directory for branch-based workflow"
+    fi
+    
+    # Ensure prompt directory exists
+    if [[ ! -d "$prompt_dir" ]]; then
+        mkdir -p "$prompt_dir" || {
+            print_error "Failed to create prompt directory: $prompt_dir"
             return 1
         }
     fi
@@ -411,7 +426,7 @@ launch_claude_with_prompt() {
     trap "cleanup_prompt_file '$prompt_file' '$original_dir'" EXIT INT TERM
     
     print_success "Worktree ready: $worktree_path"
-    print_success "Issue context prepared: $prompt_file"
+    print_success "Delivery prompt prepared: $prompt_file"
     print_info ""
     print_info "=============================================="
     print_info "LAUNCHING CLAUDE CODE WITH CUSTOM PROMPT"
@@ -550,7 +565,7 @@ main() {
     fi
     
     # Launch Claude Code with custom prompt
-    launch_claude_with_prompt "$worktree_path" "$custom_prompt" "$dry_run"
+    launch_claude_with_prompt "$worktree_path" "$custom_prompt" "$dry_run" "$identifier"
 }
 
 # Execute main function.
