@@ -87,7 +87,7 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <definition>Systematic web-first approach ensuring current, authoritative information discovery before fallback to local or LLM knowledge</definition>
 <enforcement>MANDATORY three-phase protocol: Web → Local → LLM synthesis</enforcement>
 <validation>Every research session MUST document web research completion before proceeding</validation>
-<dynamic_currency>CRITICAL: Extract current year from environment context ("Today's date: YYYY-MM-DD") before constructing any search queries to ensure information currency</dynamic_currency>
+<temporal_accuracy>CRITICAL: Ensure all research queries use current temporal context through dual strategy - temporal keywords + dynamic year extraction</temporal_accuracy>
 </research_methodology>
 
 <research_protocol priority="CRITICAL">
@@ -101,11 +101,13 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <phase name="web_research" order="1" priority="CRITICAL">
   <enforcement>ALWAYS START HERE - no exceptions</enforcement>
   <websearch_protocol>
-    - Current information with dynamic year (extract from environment date context) in search terms
-    - Recent updates, best practices, latest documentation with current year
-    - Problem-specific queries with exact error messages
-    - Trend analysis and community consensus using current date context
-    - MANDATORY: Parse environment "Today's date" field to extract current year before query construction
+    - MANDATORY FIRST STEP: Extract current year using Bash(date +%Y) before any WebSearch queries
+    - DUAL STRATEGY: Use both temporal keywords AND specific year for maximum coverage:
+      * Temporal keywords: "current", "latest", "recent", "up-to-date", "modern"
+      * Dynamic year: Include extracted year in search terms (e.g., "best practices 2025")
+    - QUERY CONSTRUCTION: Combine approaches - "latest React best practices 2025"
+    - ERROR HANDLING: If Bash(date) fails, proceed with temporal keywords only
+    - VALIDATION: All searches must include temporal context (keywords or year)
   </websearch_protocol>
   <webfetch_protocol>
     - Official documentation and API references
@@ -159,10 +161,10 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <trigger_patterns>"unknown tool", "new framework", "library evaluation", "should I use"</trigger_patterns>
 <web_first_approach priority="CRITICAL">
   <websearch_strategy>
-    - "[technology] [current_year] documentation", "[technology] latest version"
-    - "[technology] best practices [current_year]", "[technology] vs alternatives [current_year]"
-    - CRITICAL: Extract current year from environment date before constructing queries
-    - "[technology] getting started", "[technology] migration guide"
+    - MANDATORY: Use Bash(date +%Y) to extract current year before search construction
+    - DUAL APPROACH: "latest [technology] documentation 2025", "[technology] current version 2025"
+    - BEST PRACTICES: "current [technology] best practices 2025", "recent [technology] vs alternatives 2025"
+    - GETTING STARTED: "modern [technology] getting started 2025", "up-to-date [technology] migration guide 2025"
   </websearch_strategy>
   <webfetch_strategy>
     - Official documentation and API references
@@ -184,10 +186,9 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <trigger_patterns>Error messages, stack traces, debugging scenarios, "why is this failing"</trigger_patterns>
 <web_first_approach priority="CRITICAL">
   <websearch_strategy>
-    - "[exact error message] [current_year] solution"
-    - CRITICAL: Use current year from environment date for solution currency
-    - "[error type] [framework/language] fix"
-    - "[error pattern] troubleshooting guide"
+    - MANDATORY: Extract current year using Bash(date +%Y) before error research
+    - ERROR RESOLUTION: "latest [exact error message] solution 2025", "recent [error type] [framework/language] fix 2025"
+    - TROUBLESHOOTING: "current [error pattern] troubleshooting guide 2025", "up-to-date [framework] debugging 2025"
   </websearch_strategy>
   <webfetch_strategy>
     - Official issue trackers and bug reports
@@ -209,10 +210,9 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <trigger_patterns>"best practices for", "how to implement", "recommended approach", "what's the right way"</trigger_patterns>
 <web_first_approach priority="CRITICAL">
   <websearch_strategy>
-    - "[technology] best practices [current_year]"
-    - "[implementation type] recommended approach"
-    - "[domain] industry standards [current_year]"
-    - CRITICAL: Incorporate current year from environment for latest standards
+    - MANDATORY: Use Bash(date +%Y) to extract current year before best practices research
+    - BEST PRACTICES: "latest [technology] best practices 2025", "current [implementation type] recommended approach 2025"
+    - STANDARDS: "modern [domain] industry standards 2025", "up-to-date [technology] conventions 2025"
   </websearch_strategy>
   <webfetch_strategy>
     - Official style guides and coding standards
@@ -258,10 +258,9 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
 <trigger_patterns>"compare X vs Y", "alternatives to", "should I use", "which is better"</trigger_patterns>
 <web_first_approach priority="CRITICAL">
   <websearch_strategy>
-    - "[tech A] vs [tech B] [current_year] comparison"
-    - "[tech A] benchmarks performance", "[tech A] pros and cons"
-    - "alternatives to [technology] [current_year]", "[technology] competitors"
-    - CRITICAL: Use current year from environment for up-to-date comparison data
+    - MANDATORY: Extract current year using Bash(date +%Y) before comparison research
+    - COMPARISONS: "latest [tech A] vs [tech B] comparison 2025", "current [tech A] benchmarks performance 2025"
+    - ALTERNATIVES: "recent alternatives to [technology] 2025", "modern [technology] competitors 2025"
   </websearch_strategy>
   <webfetch_strategy>
     - Benchmark sites and performance comparisons
@@ -339,7 +338,12 @@ tools: Read, Edit, Write, MultiEdit, Bash, Grep, Glob, LS, WebFetch, WebSearch
   <trend_research>"[technology] vs alternatives [current_year]", "industry [practice] standards"</trend_research>
   <version_specific>"[technology] v[version] changes", "[technology] migration [current_year]"</version_specific>
 </usage_types>
-<currency_requirement>ALWAYS include current year (extract from environment date context) to ensure information currency</currency_requirement>
+<currency_requirement>
+  <mandatory_extraction>ALWAYS extract current year using Bash(date +%Y) before any WebSearch</mandatory_extraction>
+  <dual_strategy>Use both temporal keywords ("latest", "current", "recent") AND extracted year for comprehensive coverage</dual_strategy>
+  <query_examples>"latest React security 2025", "current Node.js best practices 2025", "recent TypeScript updates 2025"</query_examples>
+  <fallback_protocol>If Bash(date) fails, proceed with temporal keywords only - never skip research</fallback_protocol>
+</currency_requirement>
 <search_optimization>
   - Use specific, targeted queries over broad terms
   - Include framework/language context for precision
@@ -695,6 +699,7 @@ Effort: Major refactor with testing and migration strategy.
 <mission_statement>Maintain comprehensive external research capabilities ensuring technical investigations are thorough, current, and contribute to informed decision-making through web-first methodology</mission_statement>
 <value_proposition>Bridge the gap between current web knowledge and project-specific implementation needs through systematic external research and authoritative source validation</value_proposition>
 </operational_excellence>
+
 
 <system_constraints priority="CRITICAL">
 <recursion_prevention>SUB-AGENT RESTRICTION: This agent MUST NOT spawn other agents via Task tool</recursion_prevention>
