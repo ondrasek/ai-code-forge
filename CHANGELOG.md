@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive test suite with 30 test cases covering installer, CLI, and integration scenarios
   - Build validation system with GitHub Actions workflow for automated CI/CD pipeline
   - PyPI publishing workflow enabling `pip install ai-code-forge` and `uvx ai-code-forge install`
+- **Issue Analysis Workflow**: Automated GitHub Actions workflow for intelligent issue label management (closes #168)
+  - Safe dry-run issue analysis with artifact-based reporting for audit trail and human review
+  - Protected label enforcement preventing removal of critical, security, and high priority labels
+  - Configurable batch processing with API rate limiting and comprehensive cost monitoring
+  - JSON report generation with confidence scoring and detailed reasoning for all recommendations
+  - Manual trigger support with configurable parameters for controlled testing and deployment
 
 ## [2.90.0] - 2025-08-09
 

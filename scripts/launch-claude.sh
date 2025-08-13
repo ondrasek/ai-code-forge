@@ -37,7 +37,7 @@ LOAD_ENV="true"
 # Log directory configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-LOG_BASE_DIR="$PROJECT_ROOT/.support/logs/claude-code"
+LOG_BASE_DIR="$PROJECT_ROOT/.acf/logs/claude-code"
 
 # Auto-detect environment function
 detect_environment() {
@@ -184,7 +184,7 @@ OPTIONS:
     -r, --resume [ID]        Resume a conversation (with optional session ID)
     --dry-run                Show what would be executed without running
     --analyze-logs           Analyze existing log files using Claude Code agents
-    --clean-logs             Remove all existing session directories from .support/logs/
+    --clean-logs             Remove all existing session directories from .acf/logs/
     --troubleshoot-mcp       Analyze and troubleshoot MCP server issues using agents
     --skip-permissions       Force enable --dangerously-skip-permissions flag
     --no-skip-permissions    Force disable --dangerously-skip-permissions flag
@@ -211,7 +211,7 @@ FEATURES:
     - Automatic MCP configuration loading from centralized config
       (.support/mcp-servers/mcp-config.json or legacy .mcp.json)
     - Automatic master prompt loading from $MASTER_PROMPT_FILE
-    - Session-based logging to .support/logs/[SESSION]/ directory with timestamped folders
+    - Session-based logging to .acf/logs/[SESSION]/ directory with timestamped folders
     - All log files include timestamps in their filenames (e.g. debug-20250802-085436.log)
     - MCP server debugging with telemetry support
     - Multi-agent log analysis using Claude Code agents
@@ -659,12 +659,12 @@ Debug: $DEBUG_MODE
 MCP Debug: $MCP_DEBUG
 Project: $PROJECT_ROOT
 Claude Code Log Dir: $SESSION_DIR
-Perplexity Log Dir: $PROJECT_ROOT/.support/logs/perplexity/$SESSION_TIMESTAMP
+Perplexity Log Dir: $PROJECT_ROOT/.acf/logs/perplexity/$SESSION_TIMESTAMP
 EOF
 
         echo "📝 Session-based logging enabled:"
         echo "   📁 Claude Code session directory: $SESSION_DIR"
-        echo "   📁 Perplexity session directory: $PROJECT_ROOT/.support/logs/perplexity/$SESSION_TIMESTAMP"
+        echo "   📁 Perplexity session directory: $PROJECT_ROOT/.acf/logs/perplexity/$SESSION_TIMESTAMP"
         echo "   📋 Session log: $session_log"
         echo "   🔌 MCP log: $mcp_log"
         echo "   📊 Telemetry log: $telemetry_log"

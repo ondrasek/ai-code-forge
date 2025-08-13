@@ -697,6 +697,18 @@ main() {
             print_info "Using existing branch - skipping GitHub issue comment"
         fi
 
+        # Update terminal title if we're in an issue context
+        if [[ "$dry_run" == "false" ]] && [[ -f "$SCRIPT_DIR/worktree-title.sh" ]]; then
+            source "$SCRIPT_DIR/worktree-title.sh"
+            if $from_issue_mode && [[ -n "$issue_number" ]]; then
+                # Change to the worktree directory temporarily to update title context
+                local original_pwd=$(pwd)
+                cd "$worktree_path" 2>/dev/null || true
+                update_terminal_title "$issue_number" "$(basename "$worktree_path")"
+                cd "$original_pwd" 2>/dev/null || true
+            fi
+        fi
+
         print_info ""
         if [[ "$dry_run" == "true" ]]; then
             print_info "[DRY RUN] To work in this worktree you would run:"
