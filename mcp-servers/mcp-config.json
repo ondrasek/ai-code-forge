@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "openai-codex": {
+      "command": "codex",
+      "args": ["mcp"],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      },
+      "disabled": false,
+      "alwaysAllow": ["*"],
+      "description": "Native OpenAI Codex CLI MCP server (experimental) for direct code intelligence via stdio transport"
+    },
     "openai-structured": {
       "command": "uv",
       "args": ["run", "--directory", "mcp-servers/openai-structured-mcp", "openai-structured-mcp"],
@@ -9,7 +19,7 @@
       },
       "disabled": false,
       "alwaysAllow": ["*"],
-      "description": "OpenAI structured output MCP server for reliable JSON responses with schema validation"
+      "description": "OpenAI structured output MCP server for reliable JSON responses with schema validation (includes Codex-style tools)"
     },
     "perplexity": {
       "command": "uv",

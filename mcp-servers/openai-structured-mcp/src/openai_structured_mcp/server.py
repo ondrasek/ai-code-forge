@@ -354,6 +354,385 @@ async def list_schemas() -> str:
     return result
 
 
+# === CODEX INTEGRATION TOOLS ===
+
+
+@mcp.tool(
+    annotations={
+        "title": "Codex Generate Code",
+        "description": "Generate code using Codex-optimized prompting strategies",
+        "readOnlyHint": False,
+        "openWorldHint": False
+    }
+)
+@debug_decorator
+async def codex_generate(
+    prompt: str,
+    language: Optional[str] = None,
+    context: Optional[str] = None,
+    style: Optional[str] = "clean",
+    model: Optional[str] = None,
+    temperature: Optional[float] = 0.2
+) -> str:
+    """
+    Generate code using Codex-optimized prompting for high-quality, production-ready code.
+    
+    Args:
+        prompt: Description of the code to generate
+        language: Target programming language (e.g., 'python', 'javascript', 'rust')
+        context: Optional context or existing code to build upon
+        style: Code style preference ('clean', 'documented', 'minimal', 'enterprise')
+        model: OpenAI model to use (defaults to configured model)
+        temperature: Sampling temperature, lower for more deterministic code (default: 0.2)
+    
+    Returns:
+        Generated code with explanation and usage notes
+    """
+    logger.info(f"Codex code generation request: language={language}, style={style}")
+    logger.debug(f"Prompt preview: {prompt[:100]}...")
+    
+    # Build Codex-optimized system message
+    codex_system = f"""You are OpenAI Codex, an expert code generation AI. Generate {language or 'appropriate'} code that is:
+- Production-ready and well-structured
+- Follows best practices and idioms for {language or 'the target language'}
+- Includes proper error handling where applicable
+- Uses clear, descriptive variable and function names
+- Style preference: {style}
+
+Respond with the code and a brief explanation of key design decisions."""
+
+    # Enhanced prompt with context
+    enhanced_prompt = f"""Generate {language or ''} code for: {prompt}
+
+{f"Existing context to build upon: {context}" if context else ""}
+
+Requirements:
+- Write clean, readable, maintainable code
+- Include necessary imports/dependencies
+- Add brief inline comments for complex logic
+- Consider error handling and edge cases"""
+
+    try:
+        # Use OpenAI API directly for Codex-style generation
+        import json
+        from openai import AsyncOpenAI
+        
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return "Error: OPENAI_API_KEY environment variable not set"
+        
+        client = AsyncOpenAI(api_key=api_key)
+        
+        response = await client.chat.completions.create(
+            model=model or os.getenv("OPENAI_DEFAULT_MODEL", "gpt-5"),
+            messages=[
+                {"role": "system", "content": codex_system},
+                {"role": "user", "content": enhanced_prompt}
+            ],
+            temperature=temperature,
+            max_tokens=2000
+        )
+        
+        result = response.choices[0].message.content
+        logger.info("Codex code generation completed successfully")
+        
+        return result
+        
+    except Exception as e:
+        error_msg = f"Error during Codex code generation: {str(e)}"
+        logger.error(error_msg)
+        logger.debug("Codex generation exception details", exc_info=True)
+        return error_msg
+
+
+@mcp.tool(
+    annotations={
+        "title": "Codex Review Code", 
+        "description": "Perform comprehensive code review with Codex-level analysis",
+        "readOnlyHint": True,
+        "openWorldHint": False
+    }
+)
+@debug_decorator
+async def codex_review(
+    code: str,
+    language_hint: Optional[str] = None,
+    focus: Optional[str] = "comprehensive",
+    model: Optional[str] = None,
+    temperature: Optional[float] = 0.3
+) -> str:
+    """
+    Perform Codex-level code review with detailed analysis and actionable feedback.
+    
+    Args:
+        code: Source code to review
+        language_hint: Programming language hint for better analysis
+        focus: Review focus ('security', 'performance', 'maintainability', 'comprehensive')
+        model: OpenAI model to use (defaults to configured model)
+        temperature: Sampling temperature for analysis variability (default: 0.3)
+    
+    Returns:
+        Structured code review with ratings, issues, and improvement suggestions
+    """
+    logger.info(f"Codex code review request: language={language_hint}, focus={focus}")
+    logger.debug(f"Code length: {len(code)} characters")
+    
+    # Build Codex-optimized review prompt
+    codex_system = f"""You are OpenAI Codex performing a professional code review. Analyze the code with focus on: {focus}
+
+Provide a structured review covering:
+1. Overall Assessment (1-10 rating)
+2. Strengths (what's done well)
+3. Issues Found (with severity: Critical/High/Medium/Low)
+4. Security Concerns (if any)
+5. Performance Considerations
+6. Maintainability & Readability
+7. Specific Improvement Recommendations
+8. Code Quality Score (1-10)
+
+Be thorough but constructive in your feedback."""
+
+    enhanced_prompt = f"""Review this {language_hint or 'code'}:
+
+```{language_hint or 'text'}
+{code}
+```
+
+Focus areas for this review: {focus}
+Provide actionable feedback that would help improve code quality in production."""
+
+    try:
+        # Use OpenAI API for comprehensive analysis
+        import json
+        from openai import AsyncOpenAI
+        
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return "Error: OPENAI_API_KEY environment variable not set"
+        
+        client = AsyncOpenAI(api_key=api_key)
+        
+        response = await client.chat.completions.create(
+            model=model or os.getenv("OPENAI_DEFAULT_MODEL", "gpt-5"),
+            messages=[
+                {"role": "system", "content": codex_system},
+                {"role": "user", "content": enhanced_prompt}
+            ],
+            temperature=temperature,
+            max_tokens=1500
+        )
+        
+        result = response.choices[0].message.content
+        logger.info("Codex code review completed successfully")
+        
+        return result
+        
+    except Exception as e:
+        error_msg = f"Error during Codex code review: {str(e)}"
+        logger.error(error_msg)
+        logger.debug("Codex review exception details", exc_info=True)
+        return error_msg
+
+
+@mcp.tool(
+    annotations={
+        "title": "Codex Refactor Code",
+        "description": "Refactor existing code with Codex-level optimization and modernization",
+        "readOnlyHint": False,
+        "openWorldHint": False
+    }
+)
+@debug_decorator
+async def codex_refactor(
+    code: str,
+    requirements: str,
+    language_hint: Optional[str] = None,
+    preserve_behavior: bool = True,
+    model: Optional[str] = None,
+    temperature: Optional[float] = 0.1
+) -> str:
+    """
+    Refactor code using Codex-level analysis with specific improvement requirements.
+    
+    Args:
+        code: Source code to refactor
+        requirements: Specific refactoring requirements or goals
+        language_hint: Programming language hint for better refactoring
+        preserve_behavior: Whether to maintain exact behavioral compatibility (default: True)
+        model: OpenAI model to use (defaults to configured model)
+        temperature: Low temperature for consistent refactoring (default: 0.1)
+    
+    Returns:
+        Refactored code with explanation of changes and improvements made
+    """
+    logger.info(f"Codex refactoring request: language={language_hint}, preserve_behavior={preserve_behavior}")
+    logger.debug(f"Requirements: {requirements[:100]}...")
+    
+    # Build Codex-optimized refactoring prompt
+    codex_system = f"""You are OpenAI Codex performing professional code refactoring. Your goal: {requirements}
+
+Refactoring principles:
+- {'Preserve exact behavior and functionality' if preserve_behavior else 'Improve behavior while meeting new requirements'}
+- Improve code quality, readability, and maintainability
+- Follow modern {language_hint or 'language'} best practices
+- Optimize performance where possible
+- Reduce complexity and technical debt
+
+Provide:
+1. The refactored code
+2. Summary of changes made
+3. Explanation of improvements
+4. Any breaking changes (if preserve_behavior=False)"""
+
+    enhanced_prompt = f"""Refactor this {language_hint or 'code'} according to these requirements:
+
+**Requirements:** {requirements}
+
+**Original Code:**
+```{language_hint or 'text'}
+{code}
+```
+
+**Behavioral Preservation:** {'Must maintain exact same behavior' if preserve_behavior else 'Can modify behavior to meet requirements'}
+
+Provide the refactored code with clear explanations of improvements."""
+
+    try:
+        # Use OpenAI API for intelligent refactoring
+        from openai import AsyncOpenAI
+        
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return "Error: OPENAI_API_KEY environment variable not set"
+        
+        client = AsyncOpenAI(api_key=api_key)
+        
+        response = await client.chat.completions.create(
+            model=model or os.getenv("OPENAI_DEFAULT_MODEL", "gpt-5"),
+            messages=[
+                {"role": "system", "content": codex_system},
+                {"role": "user", "content": enhanced_prompt}
+            ],
+            temperature=temperature,
+            max_tokens=2500
+        )
+        
+        result = response.choices[0].message.content
+        logger.info("Codex refactoring completed successfully")
+        
+        return result
+        
+    except Exception as e:
+        error_msg = f"Error during Codex refactoring: {str(e)}"
+        logger.error(error_msg)
+        logger.debug("Codex refactoring exception details", exc_info=True)
+        return error_msg
+
+
+@mcp.tool(
+    annotations={
+        "title": "Codex Explain Code",
+        "description": "Explain code functionality with Codex-level detail and insights",
+        "readOnlyHint": True,
+        "openWorldHint": False
+    }
+)
+@debug_decorator
+async def codex_explain(
+    code: str,
+    language_hint: Optional[str] = None,
+    level: str = "detailed",
+    audience: str = "developer",
+    model: Optional[str] = None,
+    temperature: Optional[float] = 0.4
+) -> str:
+    """
+    Explain code functionality with comprehensive analysis and educational insights.
+    
+    Args:
+        code: Source code to explain
+        language_hint: Programming language hint for context
+        level: Explanation level ('brief', 'detailed', 'expert', 'beginner')
+        audience: Target audience ('developer', 'student', 'manager', 'technical-lead')
+        model: OpenAI model to use (defaults to configured model) 
+        temperature: Temperature for explanation variety (default: 0.4)
+    
+    Returns:
+        Comprehensive code explanation tailored to the specified level and audience
+    """
+    logger.info(f"Codex explanation request: level={level}, audience={audience}, language={language_hint}")
+    logger.debug(f"Code length: {len(code)} characters")
+    
+    # Build audience and level-appropriate system message
+    audience_context = {
+        "developer": "Assume solid programming knowledge. Focus on implementation details, patterns, and trade-offs.",
+        "student": "Assume learning programming. Explain concepts clearly with educational context.",
+        "manager": "Focus on high-level functionality, business value, and technical risks/benefits.",
+        "technical-lead": "Emphasize architecture, scalability, maintenance implications, and technical decisions."
+    }
+    
+    level_context = {
+        "brief": "Provide a concise overview of main functionality and purpose.",
+        "detailed": "Provide thorough explanation of logic, data flow, and key implementation details.",
+        "expert": "Deep technical analysis including patterns, optimizations, and advanced concepts.",
+        "beginner": "Step-by-step explanation with foundational concepts and learning guidance."
+    }
+    
+    codex_system = f"""You are OpenAI Codex providing code explanation for {audience} at {level} level.
+
+Audience context: {audience_context.get(audience, audience_context['developer'])}
+Detail level: {level_context.get(level, level_context['detailed'])}
+
+Provide explanation covering:
+- High-level purpose and functionality
+- Key algorithms or logic patterns
+- Data flow and transformations
+- Important implementation details
+- Potential issues or considerations
+- Learning insights (for educational contexts)
+
+Tailor language and depth to the specified audience and level."""
+
+    enhanced_prompt = f"""Explain this {language_hint or 'code'} for {audience} at {level} level:
+
+```{language_hint or 'text'}
+{code}
+```
+
+Focus on helping {audience} understand the code's purpose, implementation, and significance."""
+
+    try:
+        # Use OpenAI API for comprehensive explanation
+        from openai import AsyncOpenAI
+        
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return "Error: OPENAI_API_KEY environment variable not set"
+        
+        client = AsyncOpenAI(api_key=api_key)
+        
+        response = await client.chat.completions.create(
+            model=model or os.getenv("OPENAI_DEFAULT_MODEL", "gpt-5"),
+            messages=[
+                {"role": "system", "content": codex_system},
+                {"role": "user", "content": enhanced_prompt}
+            ],
+            temperature=temperature,
+            max_tokens=2000
+        )
+        
+        result = response.choices[0].message.content
+        logger.info("Codex explanation completed successfully")
+        
+        return result
+        
+    except Exception as e:
+        error_msg = f"Error during Codex explanation: {str(e)}"
+        logger.error(error_msg)
+        logger.debug("Codex explanation exception details", exc_info=True)
+        return error_msg
+
+
 @mcp.tool(
     annotations={
         "title": "Health Check",
