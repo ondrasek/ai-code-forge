@@ -46,8 +46,8 @@ RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh && 
 
 # Ensure vscode user owns all files in home directory
 USER root
-RUN chown -R vscode:vscode /home/vscode
 USER vscode
+RUN chown -R vscode:vscode /home/vscode
 
 # Set working directory back to workspace
 WORKDIR /workspace
