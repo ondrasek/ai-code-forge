@@ -10,21 +10,25 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Python tools with cache optimization
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python3 -m pip install --user uv
-
 # Switch to vscode user for tool installations
 USER vscode
 WORKDIR /home/vscode
 
+# Install Python tools with cache optimization as vscode user
+RUN --mount=type=cache,target=/home/vscode/.cache/pip \
+    python3 -m pip install --user uv && \
+    /home/vscode/.local/bin/uv --version
+
+# Add ~/.local/bin to PATH for subsequent RUN commands
+ENV PATH="/home/vscode/.local/bin:${PATH}"
+
 # Install uv tools with user context and cache optimization
 RUN --mount=type=cache,target=/home/vscode/.cache/uv \
-    /home/vscode/.local/bin/uv tool install ruff && \
-    /home/vscode/.local/bin/uv tool install pytest && \
-    /home/vscode/.local/bin/uv tool install mypy && \
-    /home/vscode/.local/bin/uv tool install yamllint && \
-    /home/vscode/.local/bin/uv tool install yq
+    uv tool install ruff && \
+    uv tool install pytest && \
+    uv tool install mypy && \
+    uv tool install yamllint && \
+    uv tool install yq
 
 # Install AI tools with cache optimization
 RUN --mount=type=cache,target=/home/vscode/.npm \
@@ -42,7 +46,11 @@ RUN --mount=type=cache,target=/home/vscode/.npm \
 RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh && \
     cp /home/vscode/.oh-my-zsh/templates/zshrc.zsh-template /home/vscode/.zshrc && \
     echo 'export ZSH="$HOME/.oh-my-zsh"' >> /home/vscode/.zshrc && \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.zshrc && \
     echo 'source $ZSH/oh-my-zsh.sh' >> /home/vscode/.zshrc
+
+# Also configure bash for completeness
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.bashrc
 
 # Ensure vscode user owns all files in home directory
 USER root

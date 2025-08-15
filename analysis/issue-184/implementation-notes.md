@@ -43,21 +43,25 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get install -y zsh && \
     apt-get clean
 
-# Install Python tools with cache management
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python3 -m pip install --user uv
-
 # Switch to vscode user for tool installations
 USER vscode
 WORKDIR /home/vscode
 
+# Install Python tools with cache management as vscode user
+RUN --mount=type=cache,target=/home/vscode/.cache/pip \
+    python3 -m pip install --user uv && \
+    /home/vscode/.local/bin/uv --version
+
+# Add ~/.local/bin to PATH for subsequent RUN commands
+ENV PATH="/home/vscode/.local/bin:${PATH}"
+
 # Install uv tools with user context
 RUN --mount=type=cache,target=/home/vscode/.cache/uv \
-    /home/vscode/.local/bin/uv tool install ruff && \
-    /home/vscode/.local/bin/uv tool install pytest && \
-    /home/vscode/.local/bin/uv tool install mypy && \
-    /home/vscode/.local/bin/uv tool install yamllint && \
-    /home/vscode/.local/bin/uv tool install yq
+    uv tool install ruff && \
+    uv tool install pytest && \
+    uv tool install mypy && \
+    uv tool install yamllint && \
+    uv tool install yq
 
 # Install Node.js tools (Claude CLI, OpenAI tools)
 RUN --mount=type=cache,target=/home/vscode/.npm \
