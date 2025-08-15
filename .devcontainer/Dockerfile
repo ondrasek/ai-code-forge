@@ -15,7 +15,7 @@ USER vscode
 WORKDIR /home/vscode
 
 # Install Python tools with cache optimization as vscode user
-RUN --mount=type=cache,target=/home/vscode/.cache/pip \
+RUN --mount=type=cache,target=/home/vscode/.cache/pip,uid=1000,gid=1000 \
     python3 -m pip install --user uv && \
     /home/vscode/.local/bin/uv --version
 
@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/home/vscode/.cache/pip \
 ENV PATH="/home/vscode/.local/bin:${PATH}"
 
 # Install uv tools with user context and cache optimization
-RUN --mount=type=cache,target=/home/vscode/.cache/uv \
+RUN --mount=type=cache,target=/home/vscode/.cache/uv,uid=1000,gid=1000 \
     uv tool install ruff && \
     uv tool install pytest && \
     uv tool install mypy && \
@@ -31,13 +31,13 @@ RUN --mount=type=cache,target=/home/vscode/.cache/uv \
     uv tool install yq
 
 # Install AI tools with cache optimization
-RUN --mount=type=cache,target=/home/vscode/.npm \
+RUN --mount=type=cache,target=/home/vscode/.npm,uid=1000,gid=1000 \
     npm install -g @anthropic-ai/claude-code && \
     npm install -g @openai/codex && \
     npm install -g opencode-ai
 
 # Install MCP tools with cache optimization
-RUN --mount=type=cache,target=/home/vscode/.npm \
+RUN --mount=type=cache,target=/home/vscode/.npm,uid=1000,gid=1000 \
     npm install -g @modelcontextprotocol/inspector && \
     npm install -g @modelcontextprotocol/server-sequential-thinking && \
     npm install -g @modelcontextprotocol/server-memory
