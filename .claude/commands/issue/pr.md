@@ -6,6 +6,10 @@ allowed-tools: Task
 
 # GitHub Issue Pull Request Phase
 
+!`git status`
+!`git diff HEAD`
+!`git branch --show-current`
+
 User-controlled PR creation phase with comprehensive analysis and multiple confirmation gates.
 
 ## Instructions

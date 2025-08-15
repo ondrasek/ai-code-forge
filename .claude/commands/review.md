@@ -6,6 +6,9 @@ allowed-tools: Task, Read, Grep, Bash
 
 # Code Review
 
+!`git status`
+!`git diff --name-only`
+
 Analyze code quality, identify issues, and provide recommendations for uncommitted changes by default, or specified files/commits.
 
 ## Instructions
