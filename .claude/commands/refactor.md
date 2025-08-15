@@ -6,6 +6,9 @@ allowed-tools: Task, Read, Edit, MultiEdit, Bash, Grep
 
 # Code Refactoring
 
+!`git status`
+!`git diff --name-only`
+
 Comprehensive code refactoring focusing on structure, performance, and maintainability for full codebase or specified files.
 
 ## Instructions

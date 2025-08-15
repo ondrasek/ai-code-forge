@@ -63,15 +63,27 @@ Command description and functionality...
 
 ## Error Handling Strategy
 
-### Non-Git Directory Handling
-- Commands should gracefully handle non-git directories
-- Git commands will fail silently or show appropriate warnings
-- Core command functionality remains intact regardless of git context
+### Comprehensive Error Handling Framework ✅
+**See**: `analysis/issue-186/error-handling-strategy.md` for complete documentation
 
-### Command Failure Resilience
-- Pre-run git commands are informational only
-- Command execution continues even if git operations fail
-- No critical functionality depends on git command success
+### Core Error Handling Principles
+1. **Graceful Degradation**: Commands continue executing if git operations fail
+2. **Silent Failure**: Git errors don't disrupt user experience
+3. **Timeout Protection**: 5-second maximum for git operations to prevent hanging
+4. **Progressive Fallback**: Tier-based resilience from essential to enhanced context
+
+### Specific Error Scenarios Handled
+- ✅ **Non-Git Directory**: Silent skip with informational notice
+- ✅ **Corrupted Repository**: Fail-safe continuation with warnings
+- ✅ **Permission Denied**: Permission-aware fallback to basic operations
+- ✅ **Detached HEAD**: Detached-head aware context display
+- ✅ **Large Repository Timeout**: 5-second timeout with immediate fallback
+- ✅ **Network Filesystem**: Network-resilient execution with reduced timeouts
+
+### Implementation Pattern
+- **Primary**: Silent failure for all git commands
+- **Fallback**: Continue with full command functionality
+- **Enhancement**: Informational notices for significant issues only
 
 ## Performance Considerations
 

@@ -6,6 +6,10 @@ allowed-tools: Task(git-workflow), Read, Edit, Write, Bash(git status), Bash(git
 
 # Git Tag Creation Command
 
+!`git status`
+!`git branch --show-current`
+!`git tag --list | tail -5`
+
 Create semantic version tag from commit analysis with automatic version determination, pyproject.toml synchronization, and tag creation. **MAIN BRANCH ONLY.**
 
 **CRITICAL**: This command automatically updates all pyproject.toml files in bundled tools (cli, perplexity-mcp, openai-structured-mcp) to match the repository tag before creating the tag, ensuring version consistency across all packages.
