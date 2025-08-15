@@ -41,12 +41,15 @@ set -e
 postCreateScriptsDir=$(dirname $0)/postCreate-scripts
 echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 
-"$postCreateScriptsDir/apt-upgrade.sh"
-"$postCreateScriptsDir/install-python-tools.sh"
-"$postCreateScriptsDir/install-ai-tools.sh"
-"$postCreateScriptsDir/install-mcp-tools.sh"
-"$postCreateScriptsDir/install-zsh.sh"
-"$postCreateScriptsDir/configure-oh-my-zsh.sh"
+# Static installations now handled by Dockerfile:
+# - System package updates (apt-upgrade.sh)
+# - Python tools installation (install-python-tools.sh) 
+# - AI tools installation (install-ai-tools.sh)
+# - MCP tools installation (install-mcp-tools.sh)
+# - Zsh installation (install-zsh.sh)
+# - Oh-my-zsh configuration (configure-oh-my-zsh.sh)
+
+# Runtime-specific configurations:
 "$postCreateScriptsDir/configure-git.sh"
 "$postCreateScriptsDir/setup-github-authentication.sh"
 "$postCreateScriptsDir/clone-repository.sh"
