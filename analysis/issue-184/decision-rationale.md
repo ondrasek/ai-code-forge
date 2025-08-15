@@ -35,7 +35,7 @@ RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /tmp/oh-my-zsh-template
 - Shell navigation configuration
 
 **Pros**:
-- **Maximum Build Performance**: ~70-90% reduction in postCreate execution time
+- **Enhanced Build Process**: Substantial reduction in postCreate execution overhead
 - **Optimal Layer Caching**: Docker caches static installations, rebuilds only when Dockerfile changes
 - **Predictable Environment**: Consistent tool versions across all instances
 - **Reduced Runtime Dependencies**: Less network-dependent during container startup
@@ -51,10 +51,10 @@ RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /tmp/oh-my-zsh-template
 - **Medium Compatibility Risk**: May break GitHub Codespaces integration patterns
 - **Low Runtime Risk**: Once built, very stable
 
-**Performance Impact**:
-- **Build Time**: +3-5 minutes (one-time)
-- **Startup Time**: -5-8 minutes (every container creation)
-- **Cache Efficiency**: 95% cache hit rate for subsequent builds
+**Implementation Impact**:
+- **Build Time**: Additional initial build time (one-time cost)
+- **Startup Time**: Reduced through pre-installed dependencies
+- **Cache Efficiency**: High cache hit rate for subsequent builds
 
 ---
 
@@ -85,7 +85,7 @@ RUN python3 -m pip install --user uv
 - Runtime environment setup
 
 **Pros**:
-- **Balanced Performance**: ~40-60% reduction in postCreate time
+- **Balanced Approach**: Meaningful reduction in postCreate overhead
 - **Manageable Migration**: Incremental change, less disruptive
 - **Preserved Flexibility**: Maintains script-based tool management
 - **Cache Benefits**: System packages cached, tools updated as needed
@@ -101,10 +101,10 @@ RUN python3 -m pip install --user uv
 - **Low Compatibility Risk**: Preserves existing runtime patterns
 - **Medium Performance Risk**: May not achieve expected improvements
 
-**Performance Impact**:
-- **Build Time**: +1-2 minutes (one-time)
-- **Startup Time**: -3-5 minutes (every container creation)
-- **Cache Efficiency**: 70% cache hit rate
+**Implementation Impact**:
+- **Build Time**: Additional initial build time (one-time cost)
+- **Startup Time**: Reduced through partial optimization
+- **Cache Efficiency**: Good cache hit rate
 
 ---
 
@@ -144,10 +144,10 @@ RUN ln -s /usr/local/lib/node_modules/.bin/* /usr/local/bin/
 - **High Maintenance Risk**: Advanced Docker knowledge required
 - **Medium Compatibility Risk**: May not work well with DevContainer features
 
-**Performance Impact**:
-- **Build Time**: +2-4 minutes (complex build process)
-- **Image Size**: -30-50% (smaller runtime image)
-- **Startup Time**: -2-4 minutes
+**Implementation Impact**:
+- **Build Time**: Increased due to complex build process
+- **Image Size**: Reduced through smaller runtime image
+- **Startup Time**: Improved through optimized runtime
 
 ---
 
@@ -193,7 +193,7 @@ services:
 - **High Operational Risk**: Complex debugging and troubleshooting
 - **High Migration Risk**: Complete architecture change
 
-**Performance Impact**:
+**Implementation Impact**:
 - **Build Time**: Variable (parallel builds)
 - **Resource Usage**: Higher memory/CPU usage
 - **Complexity Cost**: Significant operational overhead
@@ -242,9 +242,9 @@ services:
 - **Low Performance Risk**: Guaranteed improvement, even if modest
 - **No Compatibility Risk**: Preserves all existing functionality
 
-**Performance Impact**:
+**Implementation Impact**:
 - **Build Time**: No change
-- **Startup Time**: -1-3 minutes
+- **Startup Time**: Moderately improved
 - **Implementation Effort**: Minimal
 
 ---
@@ -254,19 +254,19 @@ services:
 ### Build Performance Improvement Potential
 
 **Ranking (Best to Worst)**:
-1. **Full Dockerfile Migration**: 70-90% improvement
-2. **Multi-stage Build**: 60-80% improvement (with complexity cost)
-3. **Hybrid Approach**: 40-60% improvement
+1. **Full Dockerfile Migration**: Maximum optimization potential
+2. **Multi-stage Build**: High optimization potential (with complexity cost)
+3. **Hybrid Approach**: Balanced optimization approach
 4. **Docker Compose**: Variable (incompatible)
-5. **Feature Enhancement**: 15-25% improvement
+5. **Feature Enhancement**: Limited optimization potential
 
-### Runtime Startup Speed Impact
+### Runtime Startup Enhancement
 
-**Startup Time Reduction**:
-- **Full Dockerfile**: -5-8 minutes
-- **Hybrid Approach**: -3-5 minutes
-- **Multi-stage Build**: -2-4 minutes
-- **Feature Enhancement**: -1-3 minutes
+**Startup Time Benefits**:
+- **Full Dockerfile**: Substantial improvement through pre-installed dependencies
+- **Hybrid Approach**: Meaningful improvement with balanced approach
+- **Multi-stage Build**: Moderate improvement through optimized runtime
+- **Feature Enhancement**: Limited improvement through incremental changes
 - **Docker Compose**: N/A (incompatible)
 
 ### Development Workflow Compatibility
@@ -315,10 +315,10 @@ services:
 ### PRIMARY RECOMMENDATION: Hybrid Approach
 
 **Rationale**:
-1. **Optimal Risk-Benefit Balance**: Achieves 40-60% performance improvement with manageable migration risk
+1. **Optimal Risk-Benefit Balance**: Achieves meaningful build process enhancement with manageable migration risk
 2. **Incremental Migration Strategy**: Allows testing and validation before full commitment
 3. **Rollback Safety**: Clear path back to current approach if issues arise
-4. **Developer Experience**: Minimal workflow disruption while providing meaningful benefits
+4. **Developer Experience**: Minimal workflow disruption while providing functional benefits
 
 ### IMPLEMENTATION PHASES:
 
@@ -372,10 +372,10 @@ services:
 - User acceptance testing with representative developers
 
 #### **Success Metrics**:
-- **Performance**: >40% reduction in postCreate execution time
-- **Reliability**: <5% failure rate in container builds
-- **User Satisfaction**: >80% positive feedback on migration
-- **Compatibility**: 100% feature parity with current setup
+- **Build Efficiency**: Measurable improvement in container build and startup process
+- **Reliability**: Low failure rate in container builds
+- **User Satisfaction**: Positive feedback on migration experience
+- **Compatibility**: Full feature parity with current setup
 
 ---
 
@@ -478,7 +478,7 @@ echo "PostCreate completed in: $((END_TIME - START_TIME)) seconds"
 
 ## CONCLUSION
 
-The **Hybrid Approach** provides the optimal balance of performance improvement, risk management, and implementation feasibility for the Python/Node.js/GitHub CLI development stack. This approach achieves meaningful performance gains (40-60% improvement) while maintaining compatibility with existing workflows and providing clear rollback strategies.
+The **Hybrid Approach** provides the optimal balance of build process optimization, risk management, and implementation feasibility for the Python/Node.js/GitHub CLI development stack. This approach achieves meaningful build process improvements while maintaining compatibility with existing workflows and providing clear rollback strategies.
 
 The recommended implementation prioritizes incremental migration with comprehensive testing at each phase, ensuring developer productivity is maintained throughout the transition. The foundation of system-level caching combined with preserved script-based tool management offers the best long-term maintainability while delivering immediate performance benefits.
 

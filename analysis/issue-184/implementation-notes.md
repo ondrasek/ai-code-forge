@@ -8,7 +8,7 @@ Systematic refactoring of DevContainer setup to optimize build performance by mi
 ### Phase 1: Dockerfile Foundation
 **Priority**: High  
 **Risk**: Low  
-**Expected Performance Gain**: 40-60%
+**Expected Build Process Enhancement**: Improved caching and efficiency
 
 #### Scripts to Migrate to Dockerfile:
 1. **apt-upgrade.sh** → Docker RUN layer with BuildKit cache
@@ -35,7 +35,7 @@ Systematic refactoring of DevContainer setup to optimize build performance by mi
 # syntax=docker/dockerfile:1
 FROM mcr.microsoft.com/devcontainers/python:latest
 
-# Install system updates and packages with cache optimization
+# Install system updates and packages with cache management
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
     apt-get update && \
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get install -y zsh && \
     apt-get clean
 
-# Install Python tools with cache optimization
+# Install Python tools with cache management
 RUN --mount=type=cache,target=/root/.cache/pip \
     python3 -m pip install --user uv
 
@@ -120,17 +120,17 @@ WORKDIR /workspace
 - MCP tools installation at runtime
 - Zsh installation at runtime
 
-## Performance Metrics
+## Implementation Goals
 
 ### Expected Improvements:
-- **Build Time**: 40-60% reduction (from ~10-15 minutes to ~4-8 minutes)
-- **Startup Time**: 70-80% reduction (from ~5-8 minutes to ~1-2 minutes)
-- **Rebuild Performance**: 90%+ improvement with Docker layer caching
-- **Image Size**: Potential 30-50% reduction with multi-stage optimization
+- **Build Efficiency**: Enhanced through Docker layer caching
+- **Startup Process**: Streamlined by pre-installing static dependencies
+- **Rebuild Process**: Improved with cached layers
+- **Container Structure**: Optimized through better layer organization
 
 ### Success Criteria:
-- Container startup < 2 minutes for existing workspaces
-- Build completion < 8 minutes for fresh builds
+- Container builds successfully without errors
+- All tools available and functional
 - 100% functionality preservation
 - Cross-platform compatibility (local Docker + Codespaces)
 
@@ -153,7 +153,7 @@ WORKDIR /workspace
 - [ ] Repository cloning and worktree setup functional
 - [ ] VS Code extensions load properly
 - [ ] Shell configuration (zsh, oh-my-zsh) working
-- [ ] Performance benchmarks meet targets
+- [ ] Docker layer caching functions properly
 
 ## Rollback Strategy
 
