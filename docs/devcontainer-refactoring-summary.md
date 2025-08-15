@@ -56,18 +56,20 @@ The refactoring provides:
 
 ## Docker Optimizations Implemented
 
-### BuildKit Cache Mounts:
+### BuildKit Cache Mounts with Dynamic UID/GID:
 ```dockerfile
-# APT package cache
+# APT package cache (root context)
 --mount=type=cache,target=/var/cache/apt
 
-# Python package cache  
---mount=type=cache,target=/home/vscode/.cache/pip
---mount=type=cache,target=/home/vscode/.cache/uv
+# Python package cache with dynamic permissions
+--mount=type=cache,target=/home/vscode/.cache/pip,uid=$(id -u),gid=$(id -g)
+--mount=type=cache,target=/home/vscode/.cache/uv,uid=$(id -u),gid=$(id -g)
 
-# Node.js package cache
---mount=type=cache,target=/home/vscode/.npm
+# Node.js package cache with dynamic permissions
+--mount=type=cache,target=/home/vscode/.npm,uid=$(id -u),gid=$(id -g)
 ```
+
+**Dynamic Permission Resolution**: Cache mounts automatically detect the `vscode` user's UID/GID at build time, eliminating hardcoded assumptions and resolving permission conflicts across different base images and environments.
 
 ### Layer Optimization:
 - Separate system updates from package installations
@@ -94,14 +96,29 @@ The refactoring provides:
 
 ### Validation Required:
 1. **Build Test**: Verify Dockerfile builds without errors
-2. **Tool Availability**: Confirm all Python, AI, and MCP tools accessible
-3. **User Context**: Validate git config and GitHub auth work correctly  
-4. **Workspace Function**: Test repository cloning and worktree setup
-5. **Functionality Validation**: Verify build and startup processes work correctly
-6. **Cross-Platform**: Test both local Docker and GitHub Codespaces
+2. **Cache Permission Validation**: Confirm dynamic UID/GID detection works correctly
+3. **Tool Availability**: Confirm all Python, AI, and MCP tools accessible
+4. **User Context**: Validate git config and GitHub auth work correctly  
+5. **Workspace Function**: Test repository cloning and worktree setup
+6. **Functionality Validation**: Verify build and startup processes work correctly
+7. **Cross-Platform**: Test both local Docker and GitHub Codespaces
+
+#### Dynamic UID/GID Testing Commands:
+```bash
+# Test build process and verify UID/GID detection
+docker build -t test-devcontainer .devcontainer/ 2>&1 | grep "vscode user UID"
+
+# Verify cache mount permissions inside running container
+docker run --rm -it test-devcontainer /bin/bash -c "ls -la /home/vscode/.cache/"
+
+# Test in different environments (local Docker vs Codespaces)
+# Should show consistent cache mount behavior regardless of actual vscode UID
+```
 
 ### Success Criteria:
 - [ ] Container builds successfully from Dockerfile
+- [ ] Dynamic UID/GID detection shows correct values during build
+- [ ] Cache mounts have proper permissions (no permission denied errors)
 - [ ] All development tools available in PATH
 - [ ] Runtime configurations work correctly
 - [ ] Docker layer caching functions properly
