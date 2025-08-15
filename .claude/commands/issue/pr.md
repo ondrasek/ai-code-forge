@@ -1,14 +1,23 @@
 ---
-description: User-controlled Pull Request creation for implemented GitHub Issue.
+description: "[DEPRECATED] Use /issue:pr-create instead. User-controlled Pull Request creation for implemented GitHub Issue."
 argument-hint: <issue-number>
 allowed-tools: Task
 ---
 
-# GitHub Issue Pull Request Phase
+# GitHub Issue Pull Request Phase [DEPRECATED]
 
 !`git status`
 !`git diff HEAD`
 !`git branch --show-current`
+
+## ⚠️ DEPRECATION NOTICE
+**This command has been renamed to `/issue:pr-create` for improved clarity.**
+
+Please use `/issue:pr-create <issue-number>` instead. This command will be removed in a future version.
+
+For the new AI-assisted PR merge capabilities, use `/issue:pr-merge <issue-number>`.
+
+---
 
 User-controlled PR creation phase with comprehensive analysis and multiple confirmation gates.
 
