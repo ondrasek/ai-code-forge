@@ -44,10 +44,12 @@ echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 # Static installations now handled by Dockerfile:
 # - System package updates (apt-upgrade.sh)
 # - Python tools installation (install-python-tools.sh) 
-# - AI tools installation (install-ai-tools.sh)
-# - MCP tools installation (install-mcp-tools.sh)
 # - Zsh installation (install-zsh.sh)
 # - Oh-my-zsh configuration (configure-oh-my-zsh.sh)
+
+# Node.js tools (require DevContainer Node.js feature to be available):
+"$postCreateScriptsDir/install-ai-tools.sh"
+"$postCreateScriptsDir/install-mcp-tools.sh"
 
 # Runtime-specific configurations:
 "$postCreateScriptsDir/configure-git.sh"

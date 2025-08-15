@@ -31,17 +31,7 @@ RUN --mount=type=cache,target=/home/vscode/.cache/uv,uid=1000,gid=1000 \
     uv tool install yamllint && \
     uv tool install yq
 
-# Install AI tools with cache optimization
-RUN --mount=type=cache,target=/home/vscode/.npm,uid=1000,gid=1000 \
-    npm install -g @anthropic-ai/claude-code && \
-    npm install -g @openai/codex && \
-    npm install -g opencode-ai
-
-# Install MCP tools with cache optimization
-RUN --mount=type=cache,target=/home/vscode/.npm,uid=1000,gid=1000 \
-    npm install -g @modelcontextprotocol/inspector && \
-    npm install -g @modelcontextprotocol/server-sequential-thinking && \
-    npm install -g @modelcontextprotocol/server-memory
+# Note: AI tools and MCP tools are installed in postCreate.sh after Node.js feature is available
 
 # Configure oh-my-zsh
 RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh && \
