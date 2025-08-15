@@ -1,303 +1,457 @@
-# Decision Rationale and Principle Validation
-# GitHub Issue Deduplication Implementation
+# Decision Rationale: GitHub Issue Duplicate Detection System Implementation
 
-## PRINCIPLES ANALYSIS
+## EXECUTIVE SUMMARY
 
-### Single Responsibility Principle
-**Status**: ⚠️ Partially Violated  
-**Evidence**: The deduplication system mixes multiple concerns:
-- Issue similarity detection (core algorithm)
-- GitHub API interaction (infrastructure)
-- Comment templating (presentation)
-- Auto-closure automation (workflow management)
-- Rate limiting management (infrastructure)
+**Recommended Approach**: Agent-delegated command using GitHub CLI with lightweight similarity analysis, conservative confidence thresholds, and semi-automated workflow with human oversight.
 
-**Impact**: Changes to any one concern (e.g., similarity algorithm) require modifications to multiple components. Testing becomes complex as unit tests must mock GitHub API calls even for similarity logic.
+**Key Decision**: Prioritize **reliability and user trust** over **sophisticated detection algorithms** based on analysis of security implications, maintainability, and integration with existing codebase patterns.
 
-**Recommendation**: Split into distinct components:
-```
-DuplicateDetector (pure similarity logic)
-GitHubIssueRepository (API interactions)
-DeduplicationWorkflow (orchestration)
-CommentRenderer (templating)
-RateLimitManager (infrastructure)
-```
+## IMPLEMENTATION APPROACH ANALYSIS
 
-### Open/Closed Principle
-**Status**: ✗ Violated  
-**Evidence**: System is hardcoded to `ondrasek/ai-code-forge` repository and GitHub CLI. Adding support for:
-- Different repositories requires code modification
-- Alternative version control systems requires architecture changes
-- Different similarity algorithms requires core code changes
+### 1. COMMAND STRUCTURE DECISION
 
-**Impact**: Cannot extend functionality without modifying existing code. Violates plugin architecture principles.
+**CHOSEN**: Modular Agent Delegation Pattern  
+**REJECTED**: Monolithic Command Approach
 
-**Recommendation**: Implement interface-based design:
-```typescript
-interface IssueRepository {
-  searchIssues(query: string): Issue[]
-  commentOnIssue(issue: Issue, comment: string): void
-}
+#### Rationale:
+- **Consistency**: Follows established `/issue:*` command → `github-issues-workflow` agent pattern
+- **Testability**: Component isolation allows targeted testing of similarity algorithms
+- **Context Management**: Prevents verbose duplicate analysis from polluting main conversation
+- **Error Isolation**: Agent boundaries contain GitHub API failures and rate limiting issues
 
-interface SimilarityAlgorithm {
-  calculateSimilarity(issue1: Issue, issue2: Issue): number
-}
-```
-
-### Liskov Substitution Principle
-**Status**: ✓ Followed  
-**Evidence**: No inheritance hierarchies in current design. Uses composition patterns through command delegation to agents.
-
-**Impact**: N/A - principle doesn't apply to current architecture.
-
-**Recommendation**: Maintain composition-over-inheritance approach for future extensions.
-
-### Interface Segregation Principle
-**Status**: ⚠️ Partially Violated  
-**Evidence**: The GitHub CLI integration exposes all `gh` command functionality, but deduplication only needs:
-- Issue listing
-- Issue searching
-- Comment creation
-- Issue state management
-
-**Impact**: Components depend on more than they need, creating unnecessary coupling.
-
-**Recommendation**: Create focused interfaces:
-```typescript
-interface IssueSearchService {
-  searchByTitle(keywords: string[]): Issue[]
-  searchByContent(content: string): Issue[]
-}
-
-interface IssueCommentService {
-  addComment(issueId: string, comment: string): void
-  updateComment(commentId: string, content: string): void
-}
-```
-
-### Dependency Inversion Principle
-**Status**: ✗ Violated  
-**Evidence**: High-level deduplication logic directly depends on:
-- GitHub CLI concrete implementation
-- Specific shell commands (`sed`, `grep`, `sort`)
-- Hardcoded file paths and repository names
-- Specific comment template format
-
-**Impact**: Cannot unit test without GitHub CLI installed. Cannot substitute alternative implementations.
-
-**Recommendation**: Depend on abstractions:
-```typescript
-interface VcsClient {
-  authenticateUser(): boolean
-  searchIssues(criteria: SearchCriteria): Issue[]
-  addComment(issue: Issue, comment: Comment): void
-}
-
-class DeduplicationService {
-  constructor(
-    private vcsClient: VcsClient,
-    private similarityService: SimilarityService,
-    private templateService: TemplateService
-  ) {}
-}
-```
-
-## PRINCIPLE CONFLICTS
-
-### Conflict: Single Responsibility vs Performance
-**Context**: Separating concerns requires more API calls (one per component) but GitHub has strict rate limits.  
-**Resolution**: Single Responsibility takes precedence. Use batching and caching within infrastructure layer to address performance concerns without violating SRP.
-
-### Conflict: Open/Closed vs YAGNI
-**Context**: Creating abstractions for repository-agnostic design adds complexity for currently unused functionality.  
-**Resolution**: Open/Closed takes precedence for core abstractions (repository interface), but avoid over-engineering rarely-used extension points.
-
-## SECURITY BY DESIGN ANALYSIS
-
-### Defense in Depth
-**Status**: ⚠️ Insufficient  
-**Evidence**: Single-layer input sanitization using `sed` command. No validation at boundary layers or business logic layer.
-
-**Impact**: Command injection possible through crafted issue titles or repository names.
-
-**Recommendations**:
-1. **Input Validation Layer**: Validate all inputs against expected patterns before processing
-2. **Command Construction Layer**: Use parameterized commands instead of string concatenation
-3. **Output Sanitization Layer**: Sanitize all data before rendering in comments
-
+#### Security Implications:
 ```bash
-# Current (vulnerable):
-gh issue list --search "$search_term"
-
-# Recommended (safe):
-gh issue list --search "$(printf '%q' "$search_term")"
+# Secure agent delegation pattern
+Task(github-issues-workflow): {
+  operation: "analyze_duplicates",
+  issue_number: $VALIDATED_INPUT,
+  confidence_threshold: 0.85,
+  repository: "ondrasek/ai-code-forge"  # Hardcoded for security
+}
 ```
 
-### Least Privilege
-**Status**: ⚠️ Partially Followed  
-**Evidence**: Requires broad GitHub repository permissions but doesn't specify minimal required scopes.
+**Risk Mitigation**: Input validation occurs at command level before agent delegation, preventing command injection through issue numbers or search terms.
 
-**Impact**: Over-privileged access increases security risk surface.
+### 2. DUPLICATE DETECTION ALGORITHM DECISION
 
-**Recommendation**: Document minimal required permissions:
-- `repo:issues:read` - for issue searching
-- `repo:issues:write` - for commenting
-- `repo:metadata:read` - for repository information
+**CHOSEN**: Hybrid Keyword + Content Similarity (Jaccard + TF-IDF)  
+**REJECTED**: Semantic Similarity (BERT/ML models), Simple Keyword Matching
 
-### Fail-Safe Defaults
-**Status**: ✗ Violated  
-**Evidence**: 3-day auto-closure mechanism fails "unsafe" - automatically closes issues that may not be duplicates.
+#### Multi-Factor Confidence Scoring:
+```bash
+final_confidence = (
+    title_similarity * 0.40 +     # Highest weight - titles are most specific
+    body_similarity * 0.30 +      # Content analysis for context
+    label_overlap * 0.20 +        # Label consistency indicates similar type
+    recency_factor * 0.10         # Recent issues more likely duplicates
+)
 
-**Impact**: Data loss risk when false positives occur.
-
-**Recommendation**: Fail-safe approach:
-- Default to manual review required
-- Auto-closure only after explicit confirmation
-- Provide easy reversal mechanism
-
-## MAINTAINABILITY ASSESSMENT
-
-### Code Clarity
-**Status**: ⚠️ Needs Improvement  
-**Evidence**: Shell script implementation mixes business logic with infrastructure concerns. Complex parameter passing through multiple shell functions.
-
-**Recommendations**:
-- Extract configuration to separate files
-- Use consistent naming conventions
-- Add comprehensive inline documentation
-- Consider higher-level language for complex logic
-
-### Documentation
-**Status**: ✓ Well Documented  
-**Evidence**: Comprehensive research findings and technical analysis provide good foundation.
-
-### Testability
-**Status**: ✗ Poor  
-**Evidence**: Tight coupling to GitHub CLI and shell commands makes unit testing extremely difficult.
-
-**Recommendations**:
-- Abstract external dependencies behind interfaces
-- Implement dependency injection
-- Create test doubles for GitHub API interactions
-- Add integration tests with actual GitHub API (in test environment)
-
-## RELIABILITY ANALYSIS
-
-### Error Handling
-**Status**: ✓ Comprehensive  
-**Evidence**: Multi-tier error handling with exponential backoff, circuit breaker pattern, and specific GitHub API error responses.
-
-### Graceful Degradation
-**Status**: ✓ Well Designed  
-**Evidence**: System continues to function with reduced capability when rate limits are hit or network issues occur.
-
-### Recovery Mechanisms
-**Status**: ⚠️ Partial  
-**Evidence**: Automatic retry with backoff, but no mechanism to recover from incorrectly closed issues.
-
-**Recommendation**: Add "reopen duplicate" command with audit trail.
-
-## PERFORMANCE ANALYSIS
-
-### Efficient Algorithms
-**Status**: ⚠️ Needs Optimization  
-**Evidence**: 
-- Sequential issue processing (O(n²) for comparison)
-- No caching of similarity calculations
-- Repeated API calls for same data
-
-**Recommendations**:
-- Implement batch processing for API calls
-- Cache similarity scores for frequently compared issues
-- Use bloom filters for quick negative matches
-
-### Resource Management
-**Status**: ✓ Well Managed  
-**Evidence**: Proper rate limit monitoring and circuit breaker implementation prevents resource exhaustion.
-
-### Scalability
-**Status**: ⚠️ Limited  
-**Evidence**: Sequential processing doesn't scale to repositories with thousands of issues.
-
-**Recommendation**: Implement parallel processing within rate limit constraints.
-
-## OVERALL ASSESSMENT
-
-- **Principle adherence score**: 4/10
-- **Critical violations**: 
-  1. Dependency Inversion (direct coupling to GitHub CLI)
-  2. Open/Closed (hardcoded to specific repository)
-  3. Single Responsibility (mixed concerns)
-  4. Fail-safe defaults (aggressive auto-closure)
-
-- **Improvement priorities**:
-  1. **High Priority**: Abstract GitHub CLI behind interface (enables testing)
-  2. **High Priority**: Separate similarity algorithm from infrastructure (SRP)
-  3. **Medium Priority**: Make repository-agnostic (Open/Closed)
-  4. **Medium Priority**: Implement safe-by-default closure policy
-  5. **Low Priority**: Add comprehensive logging and monitoring
-
-## ARCHITECTURAL RECOMMENDATIONS
-
-### Recommended Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    DeduplicationService                     │
-│  (High-level policy, orchestration)                        │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-              ┌───────▼────────┐
-              │   Controllers   │
-              │   (Commands)    │
-              └───────┬────────┘
-                      │
-    ┌─────────────────┼─────────────────┐
-    │                 │                 │
-┌───▼────┐    ┌───────▼────────┐    ┌───▼────────┐
-│Similarity│    │  Repository     │    │ Template   │
-│Algorithm │    │  Interface      │    │ Service    │
-│(Core)    │    │(GitHub/Git/etc) │    │(Comments)  │
-└─────────┘    └────────────────┘    └────────────┘
+# Conservative thresholds based on research
+HIGH_CONFIDENCE = 0.85    # Auto-suggest with 3-day review
+MEDIUM_CONFIDENCE = 0.70  # Manual review recommended  
+LOW_CONFIDENCE = 0.55     # Mention but don't flag
 ```
 
-### Implementation Strategy
+#### Technical Implementation:
+```bash
+# Efficient similarity calculation in bash
+calculate_jaccard_similarity() {
+    local text1_words=$(extract_keywords "$1")
+    local text2_words=$(extract_keywords "$2")
+    
+    # Use bash arrays for set operations
+    local intersection=$(comm -12 <(echo "$text1_words" | sort) <(echo "$text2_words" | sort) | wc -l)
+    local union=$(cat <(echo "$text1_words") <(echo "$text2_words") | sort -u | wc -l)
+    
+    # Avoid division by zero
+    if [ "$union" -eq 0 ]; then echo "0.0"; else
+        echo "scale=3; $intersection / $union" | bc
+    fi
+}
+```
 
-1. **Start with Interfaces**: Define abstractions first
-2. **Implement Current System**: Create GitHub CLI implementation of interfaces
-3. **Add Testing**: Unit tests with mocks, integration tests with real API
-4. **Extract Core Logic**: Move similarity algorithms to pure functions
-5. **Add Safety Measures**: Implement conservative defaults and reversal mechanisms
+#### Rationale for Lightweight Approach:
+- **Zero Dependencies**: Pure bash + GitHub CLI maintains deployment simplicity
+- **Predictable Performance**: O(n²) complexity acceptable for typical repository sizes (< 1000 issues)
+- **False Positive Control**: Conservative thresholds (85%) minimize incorrect duplicate flagging
+- **Maintainability**: Simple algorithms easy to debug and improve incrementally
 
-## RISK MITIGATION
+### 3. USER INTERACTION MODEL DECISION
 
-### Critical Risks Identified
+**CHOSEN**: Semi-Automated with 3-Day Review Period  
+**REJECTED**: Fully Automated Closure, Immediate Manual Review
 
-1. **Rate Limit Exhaustion**: Point system complexity could cause unexpected failures
-   - **Mitigation**: Implement point calculation and monitoring
-   - **Fallback**: Graceful degradation with manual review
+#### Workflow Design:
+```
+Issue Detection → Similarity Analysis → Comment with Suggestions → 3-Day Review → Auto-Close or Manual Override
+```
 
-2. **False Positive Closure**: Incorrect duplicate detection closes valid issues
-   - **Mitigation**: Conservative confidence thresholds (≥85% for auto-action)
-   - **Fallback**: Easy reversal mechanism with audit trail
+#### Comment Template Strategy:
+```markdown
+## 🔄 Potential Duplicate Issues Detected
 
-3. **Security Vulnerability**: Command injection through crafted inputs
-   - **Mitigation**: Multi-layer input validation and parameterized commands
-   - **Fallback**: Sandboxed execution environment
+**High Confidence Matches (≥85%)**:
+- #123: "Similar error handling issue" (89% similarity)
+- #145: "Authentication error pattern" (87% similarity)
 
-4. **Maintainability Debt**: Shell script complexity becomes unmaintainable
-   - **Mitigation**: Extract business logic to higher-level language
-   - **Fallback**: Comprehensive documentation and test coverage
+**Review Instructions**:
+- Add `not-duplicate` label if this is NOT a duplicate
+- This issue will auto-close in 3 days without action
+- Manual review overrides all automatic actions
 
-### Production Readiness Checklist
+**Detection Confidence**: Based on title similarity (40%), content analysis (30%), label overlap (20%), recency (10%)
+```
 
-- [ ] Implement interface abstractions
-- [ ] Add comprehensive unit test coverage
-- [ ] Implement conservative auto-closure policy
-- [ ] Add security input validation
-- [ ] Create reversal/recovery mechanisms
-- [ ] Add performance monitoring and alerting
-- [ ] Document minimal required permissions
-- [ ] Create runbook for incident response
+#### Rationale:
+- **User Trust**: 3-day review period prevents hasty closures
+- **Clear Override**: Simple label-based override mechanism (`not-duplicate`)
+- **Transparency**: Users see exactly why issues were flagged as duplicates
+- **Fallback Safety**: No action taken without explicit opportunity for human intervention
 
-**Conclusion**: The current approach has solid research foundation but requires significant architectural improvements before production deployment. The principle violations create maintainability, security, and extensibility risks that must be addressed.
+### 4. TECHNICAL IMPLEMENTATION STRATEGY DECISION
+
+**CHOSEN**: Pure Bash + GitHub CLI with Rate Limiting Management  
+**REJECTED**: Python Hybrid, Direct API Calls, In-Memory State
+
+#### Rate Limiting Strategy:
+```bash
+# Conservative request budgeting based on research findings
+MAX_REQUESTS_PER_MINUTE=25  # Buffer below 30/min limit
+BATCH_SIZE=10               # Process issues in batches
+DELAY_BETWEEN_BATCHES=15    # Seconds between batch operations
+
+# Circuit breaker for API protection
+if [[ $consecutive_failures -ge 3 ]]; then
+    echo "Multiple API failures detected, pausing operations..."
+    sleep 300  # 5-minute cooldown
+fi
+```
+
+#### Error Handling Framework:
+```bash
+# Three-tier error handling
+handle_github_error() {
+    case $exit_code in
+        0) return 0 ;;                                    # Success
+        1) if [[ "$output" =~ "rate limit" ]]; then       # Rate limit
+               implement_backoff_delay
+               return 2  # Retry signal
+           fi ;;
+        4) echo "Authentication required: gh auth login" ;;  # Auth failure
+        *) echo "Unexpected error: $output" ;;               # Unknown error
+    esac
+}
+```
+
+#### Security Hardening:
+```bash
+# Input sanitization for all user inputs
+sanitize_issue_number() {
+    local input="$1"
+    if [[ ! "$input" =~ ^[0-9]+$ ]]; then
+        echo "Error: Invalid issue number format" >&2
+        return 1
+    fi
+    echo "$input"
+}
+
+# Prevent command injection in search terms
+sanitize_search_terms() {
+    local input="$1"
+    # Remove shell metacharacters
+    echo "$input" | sed 's/[;&|`$(){}[\]\\]//g' | tr -d '\n\r'
+}
+```
+
+## RISK ANALYSIS AND MITIGATION
+
+### 1. Security Risks
+
+**HIGH RISK**: Command Injection via Issue Numbers/Search Terms
+- **Mitigation**: Strict input validation with regex patterns
+- **Implementation**: All inputs sanitized before GitHub CLI calls
+
+**MEDIUM RISK**: GitHub Token Exposure in Logs
+- **Mitigation**: Use GitHub CLI's built-in credential management
+- **Implementation**: Never log or echo GitHub CLI authentication details
+
+**LOW RISK**: Rate Limit Exhaustion
+- **Mitigation**: Conservative request budgeting with circuit breaker
+- **Implementation**: 25 requests/minute with exponential backoff
+
+### 2. False Positive Management
+
+**Template Similarity Problem**:
+```bash
+# Detect issue template usage
+detect_template_usage() {
+    local issue_body="$1"
+    # Look for template markers
+    if echo "$issue_body" | grep -q "## Description\|## Expected Behavior\|## Steps to Reproduce"; then
+        # Reduce body similarity weight for template issues
+        body_weight=0.15  # Reduced from 0.30
+        template_detected=true
+    fi
+}
+```
+
+**Semantic Drift Handling**:
+```bash
+# Time-based relevance scoring
+calculate_recency_factor() {
+    local issue_date="$1"
+    local current_date=$(date +%s)
+    local issue_timestamp=$(date -d "$issue_date" +%s)
+    local days_old=$(( (current_date - issue_timestamp) / 86400 ))
+    
+    # Reduce confidence for old issues (>90 days)
+    if [ $days_old -gt 90 ]; then
+        echo "0.5"  # 50% recency factor
+    else
+        echo "1.0"  # Full recency factor
+    fi
+}
+```
+
+### 3. Performance and Scalability
+
+**GitHub API Rate Limiting**:
+- **Current Limit**: 5,000 requests/hour (authenticated)
+- **Our Budget**: 25 requests/minute (1,500/hour) for safety margin
+- **Batch Processing**: Process 10 issues per batch to minimize API calls
+
+**Computational Complexity**:
+- **Issue Comparison**: O(n²) for exhaustive comparison
+- **Optimization**: Skip closed issues older than 6 months
+- **Early Termination**: Stop at first 3 high-confidence matches
+
+### 4. User Experience Concerns
+
+**False Positive Communication**:
+```markdown
+**Not a Duplicate?** If this issue represents a different problem:
+1. Add the `not-duplicate` label
+2. Explain the difference in a comment
+3. This will prevent auto-closure and improve our detection
+```
+
+**Clear Override Mechanism**:
+- Simple label-based override (`not-duplicate`)
+- Manual comment option for complex cases
+- Immediate override recognition (no delays)
+
+## INTEGRATION WITH EXISTING CODEBASE
+
+### Command Structure Integration
+```
+.claude/commands/issue/dedupe.md  # New command following existing pattern
+├── Delegates to github-issues-workflow agent
+├── Follows argument validation pattern
+└── Returns structured output to user
+```
+
+### Agent Extension Pattern
+```bash
+# Extend existing github-issues-workflow agent
+case "$operation" in
+    "analyze_duplicates")
+        analyze_duplicates "$issue_number" "$confidence_threshold"
+        ;;
+    "create"|"update"|"review")  # Existing operations
+        # ... existing logic
+        ;;
+esac
+```
+
+### Error Handling Consistency
+- Uses same validation functions as existing issue commands
+- Follows established GitHub CLI error handling patterns
+- Maintains consistent user messaging format
+
+### Label System Integration
+```bash
+# Use existing dynamic label discovery pattern
+AVAILABLE_LABELS=$(gh label list --repo ondrasek/ai-code-forge --json name --jq '.[].name')
+
+# Check for override label existence
+if echo "$AVAILABLE_LABELS" | grep -q "not-duplicate"; then
+    # Label exists, proceed with override check
+else
+    # Create label if it doesn't exist (one-time setup)
+    gh label create "not-duplicate" --color "28a745" --description "Override duplicate detection"
+fi
+```
+
+## TESTING STRATEGY
+
+### 1. Unit Testing Approach
+```bash
+# Test similarity calculation functions
+test_jaccard_similarity() {
+    local result=$(calculate_jaccard_similarity "test words" "test words")
+    assert_equals "1.000" "$result"
+}
+
+# Test input sanitization
+test_input_sanitization() {
+    local result=$(sanitize_issue_number "123; rm -rf /")
+    assert_equals "123" "$result"
+}
+```
+
+### 2. Integration Testing
+```bash
+# Mock GitHub CLI for testing
+gh() {
+    case "$1 $2" in
+        "issue view") echo '{"title":"Test Issue","body":"Test content"}' ;;
+        "issue list") echo '[{"number":123,"title":"Similar Issue"}]' ;;
+        *) return 1 ;;
+    esac
+}
+
+# Test full workflow
+test_duplicate_detection_workflow() {
+    result=$(analyze_duplicates 456 0.85)
+    assert_contains "$result" "High Confidence Matches"
+}
+```
+
+### 3. Security Testing
+```bash
+# Test command injection prevention
+test_command_injection_prevention() {
+    local malicious_input="123; curl evil.com"
+    local result=$(sanitize_issue_number "$malicious_input")
+    assert_not_contains "$result" "curl"
+}
+
+# Test rate limiting behavior
+test_rate_limit_handling() {
+    # Mock rate limit response
+    export MOCK_RATE_LIMITED=true
+    result=$(safe_gh_api_call issue list)
+    assert_equals "2" "$?"  # Should return retry code
+}
+```
+
+## MONITORING AND OBSERVABILITY
+
+### Success Metrics
+- **Duplicate Detection Rate**: Percentage of actual duplicates identified
+- **False Positive Rate**: Percentage of incorrectly flagged issues
+- **User Override Rate**: How often users use `not-duplicate` label
+- **API Request Efficiency**: Requests per successful duplicate detection
+
+### Logging Strategy
+```bash
+# Structured logging for analysis
+log_duplicate_analysis() {
+    local timestamp=$(date --iso-8601=seconds)
+    local log_entry="{
+        \"timestamp\": \"$timestamp\",
+        \"operation\": \"duplicate_detection\",
+        \"issue_number\": $issue_number,
+        \"matches_found\": $matches_count,
+        \"highest_confidence\": $max_confidence,
+        \"api_requests_used\": $request_count
+    }"
+    echo "$log_entry" >> /var/log/claude-code/duplicate-detection.log
+}
+```
+
+### Error Tracking
+```bash
+# Track and report errors for improvement
+track_error() {
+    local error_type="$1"
+    local context="$2"
+    echo "$(date --iso-8601=seconds) ERROR $error_type: $context" >> /var/log/claude-code/errors.log
+    
+    # Alert on critical errors
+    if [[ "$error_type" == "AUTH_FAILURE" ]] || [[ "$error_type" == "RATE_LIMIT_EXCEEDED" ]]; then
+        echo "Critical error detected: $error_type" >&2
+    fi
+}
+```
+
+## DEPLOYMENT PLAN
+
+### Phase 1: Core Implementation
+**High Priority**: Implement basic duplicate detection command
+- Create `/issue:dedupe` command file
+- Implement similarity calculation functions
+- Add basic error handling and input validation
+- Test with manual issue comparisons
+
+### Phase 2: Agent Integration  
+**High Priority**: Integrate with github-issues-workflow agent
+- Extend agent to handle duplicate detection operations
+- Implement structured output format
+- Add comprehensive error handling
+- Test agent delegation workflow
+
+### Phase 3: Comment Automation
+**Medium Priority**: Implement automated comment system
+- Design comment template with clear user instructions
+- Implement 3-day review period logic
+- Add override label detection
+- Test comment update and deletion workflows
+
+### Phase 4: Rate Limiting and Optimization
+**Medium Priority**: Add production-grade reliability
+- Implement circuit breaker pattern
+- Add exponential backoff for API failures
+- Optimize batch processing for large repositories
+- Add comprehensive logging and monitoring
+
+### Phase 5: Advanced Features
+**Low Priority**: Enhance detection capabilities (depends on success of Phase 1-4)
+- Improve similarity algorithms based on real-world usage
+- Add cross-repository duplicate detection (if requested)
+- Implement machine learning enhancements (if justified by usage)
+- Add integration with GitHub Actions for automatic processing
+
+## DECISION VALIDATION
+
+### Why Not Semantic Similarity (BERT/ML)?
+1. **Complexity**: Requires Python runtime and ML dependencies
+2. **Deployment**: Breaks current zero-dependency deployment model
+3. **Maintenance**: Adds model versioning and update complexity
+4. **Performance**: Current lightweight approach adequate for repository size
+
+### Why Not Real-Time Processing?
+1. **API Pressure**: Would exceed rate limits with active repositories
+2. **Performance**: Batch processing more efficient for similarity analysis
+3. **User Experience**: 3-day review period provides better user control
+4. **Resource Usage**: Batch processing more predictable and manageable
+
+### Why Not Fully Automated Closure?
+1. **User Trust**: Risk of closing legitimate issues destroys user confidence
+2. **Error Recovery**: Manual review period allows error correction
+3. **Edge Cases**: Complex similarity cases require human judgment
+4. **Safe Failure**: Conservative approach protects against algorithmic errors
+
+## SUCCESS CRITERIA
+
+### Technical Success Metrics
+- **Zero Security Incidents**: No command injection or authentication issues
+- **95%+ Uptime**: Robust error handling prevents command failures
+- **<30 API Requests/Minute**: Stays within conservative rate limits
+- **<5% False Positive Rate**: Maintains user trust through conservative detection
+
+### User Experience Success Metrics
+- **Clear Override Path**: Users can easily override incorrect detections
+- **Transparent Process**: Users understand why issues were flagged as duplicates
+- **Timely Notification**: 3-day review period provides adequate response time
+- **Minimal Manual Overhead**: Automation reduces manual duplicate management
+
+### Operational Success Metrics
+- **Seamless Integration**: Works with existing command and agent patterns
+- **Maintainable Code**: Clear, testable functions following codebase conventions
+- **Comprehensive Documentation**: Complete command documentation and usage examples
+- **Effective Testing**: Unit and integration tests prevent regressions
+
+---
+
+**Final Recommendation**: Proceed with agent-delegated, semi-automated duplicate detection using conservative similarity thresholds and comprehensive user override mechanisms. This approach balances automation benefits with user trust and system reliability requirements while maintaining consistency with existing codebase patterns and deployment constraints.
