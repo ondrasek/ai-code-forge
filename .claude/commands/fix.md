@@ -6,6 +6,9 @@ allowed-tools: Task, Read, Edit, MultiEdit, Bash, Grep
 
 # Issue Fix Implementation
 
+!`git status`
+!`git diff --name-only`
+
 Implement targeted solutions for identified issues, bugs, or improvements with focused implementation rather than broad refactoring.
 
 ## Instructions

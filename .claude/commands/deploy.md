@@ -6,6 +6,9 @@ allowed-tools: Task, Bash, Read, Write, Glob
 
 # Deployment Automation
 
+!`git status`
+!`git tag --list | tail -5`
+
 Automate deployment processes and infrastructure management with multi-environment deployment, safety checks and rollback capabilities.
 
 ## Instructions

@@ -6,6 +6,10 @@ allowed-tools: Task
 
 # Pull Request Creator
 
+!`git status`
+!`git diff HEAD`
+!`git branch --show-current`
+
 ## Instructions
 
 1. **Validation**

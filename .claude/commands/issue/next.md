@@ -5,6 +5,8 @@ allowed-tools: Task
 
 # GitHub Issue Next Task
 
+!`git status`
+
 Recommend the highest-value GitHub Issue to work on next.
 
 ## Instructions

@@ -6,6 +6,9 @@ allowed-tools: Task(git-workflow), Bash(git status), Bash(git diff), Bash(git lo
 
 # Git Workflow Command
 
+!`git status`
+!`git branch --show-current`
+
 Executes complete git workflow automation including staging, committing, and release evaluation through the git-workflow specialist agent.
 
 ## Instructions
