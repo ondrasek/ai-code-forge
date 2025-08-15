@@ -14,32 +14,28 @@ RUN --mount=type=cache,target=/var/cache/apt \
 USER vscode
 WORKDIR /home/vscode
 
-# Verify vscode user and install Python tools with cache optimization
-RUN --mount=type=cache,target=/home/vscode/.cache/pip,uid=$(id -u),gid=$(id -g) \
-    echo "vscode user UID: $(id -u), GID: $(id -g)" && \
+# Verify vscode user and install Python tools
+RUN echo "vscode user UID: $(id -u), GID: $(id -g)" && \
     python3 -m pip install --user uv && \
     /home/vscode/.local/bin/uv --version
 
 # Add ~/.local/bin to PATH for subsequent RUN commands
 ENV PATH="/home/vscode/.local/bin:${PATH}"
 
-# Install uv tools with dynamic UID/GID cache optimization
-RUN --mount=type=cache,target=/home/vscode/.cache/uv,uid=$(id -u),gid=$(id -g) \
-    uv tool install ruff && \
+# Install uv tools
+RUN uv tool install ruff && \
     uv tool install pytest && \
     uv tool install mypy && \
     uv tool install yamllint && \
     uv tool install yq
 
-# Install AI tools with dynamic UID/GID cache optimization
-RUN --mount=type=cache,target=/home/vscode/.npm,uid=$(id -u),gid=$(id -g) \
-    npm install -g @anthropic-ai/claude-code && \
+# Install AI tools
+RUN npm install -g @anthropic-ai/claude-code && \
     npm install -g @openai/codex && \
     npm install -g opencode-ai
 
-# Install MCP tools with dynamic UID/GID cache optimization
-RUN --mount=type=cache,target=/home/vscode/.npm,uid=$(id -u),gid=$(id -g) \
-    npm install -g @modelcontextprotocol/inspector && \
+# Install MCP tools
+RUN npm install -g @modelcontextprotocol/inspector && \
     npm install -g @modelcontextprotocol/server-sequential-thinking && \
     npm install -g @modelcontextprotocol/server-memory
 
