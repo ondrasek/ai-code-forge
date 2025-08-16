@@ -33,15 +33,9 @@ RUN --mount=type=cache,target=/home/vscode/.cache/uv,uid=1000,gid=1000 \
 
 # Note: AI tools and MCP tools are installed in postCreate.sh after Node.js feature is available
 
-# Configure oh-my-zsh
-RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh && \
-    cp /home/vscode/.oh-my-zsh/templates/zshrc.zsh-template /home/vscode/.zshrc && \
-    echo 'export ZSH="$HOME/.oh-my-zsh"' >> /home/vscode/.zshrc && \
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.zshrc && \
-    echo 'source $ZSH/oh-my-zsh.sh' >> /home/vscode/.zshrc
-
-# Also configure bash for completeness
-RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.bashrc
+# Configure shell PATH (oh-my-zsh installed by postCreate.sh to avoid conflicts)
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.zshrc && \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.bashrc
 
 # Ensure vscode user owns all files in home directory
 USER root
