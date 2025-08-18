@@ -48,6 +48,46 @@ detect_environment() {
     fi
 }
 
+# Detect existing Claude Code conversations for the current project
+detect_conversations() {
+    local project_path="$1"
+    
+    # Convert project path to Claude Code project name format
+    # Claude Code uses the workspace path with slashes replaced by dashes, leading slash removed
+    local project_name=$(echo "$project_path" | sed 's|/|-|g' | sed 's|^-||')
+    local claude_projects_dir="$HOME/.claude/projects/$project_name"
+    
+    if [[ "$DEBUG_MODE" == "true" ]]; then
+        echo "🔍 Checking for conversations in: $claude_projects_dir" >&2
+    fi
+    
+    # Check if Claude projects directory exists
+    if [[ -d "$claude_projects_dir" ]]; then
+        # Find conversation files (*.jsonl)
+        local conversation_files=()
+        while IFS= read -r -d '' file; do
+            conversation_files+=("$file")
+        done < <(find "$claude_projects_dir" -name "*.jsonl" -type f -print0 2>/dev/null)
+        
+        if [[ ${#conversation_files[@]} -gt 0 ]]; then
+            if [[ "$DEBUG_MODE" == "true" ]]; then
+                echo "🔍 Found ${#conversation_files[@]} conversation(s)" >&2
+            fi
+            return 0  # Conversations found
+        else
+            if [[ "$DEBUG_MODE" == "true" ]]; then
+                echo "🔍 No conversation files found in project directory" >&2
+            fi
+        fi
+    else
+        if [[ "$DEBUG_MODE" == "true" ]]; then
+            echo "🔍 No Claude projects directory found for this project" >&2
+        fi
+    fi
+    
+    return 1  # No conversations found
+}
+
 # Secure .env file validation and parsing functions
 validate_env_file() {
     local env_file="$1"
@@ -619,21 +659,19 @@ setup_logging() {
             LOG_FILE="$SESSION_DIR/launch-claude-session-$SESSION_TIMESTAMP.log"
         fi
 
-        # Set up environment variables for comprehensive logging
-        export CLAUDE_DEBUG=1
+        # Set up environment variables for comprehensive logging using official Claude Code standards
         export CLAUDE_CODE_ENABLE_TELEMETRY=1
-        export ANTHROPIC_DEBUG=1
-        export ANTHROPIC_LOG_LEVEL=debug
-        export MCP_DEBUG=1
-        export MCP_LOG_LEVEL=debug
+        export CLAUDE_CODE_VERBOSE=1
         export MCP_TIMEOUT=30000
 
-        # Disable OTEL exporters to prevent stdout pollution but enable telemetry collection
-        export OTEL_LOGS_EXPORTER=""
-        export OTEL_METRICS_EXPORTER=""
-        export OTEL_TRACES_EXPORTER=""
+        # Configure OpenTelemetry for comprehensive telemetry collection
+        export OTEL_LOGS_EXPORTER=console
+        export OTEL_METRICS_EXPORTER=console
+        export OTEL_TRACES_EXPORTER=console
         export OTEL_METRIC_EXPORT_INTERVAL=5000
         export OTEL_LOGS_EXPORT_INTERVAL=2000
+        export OTEL_LOGS_LEVEL=DEBUG
+        export OTEL_RESOURCE_ATTRIBUTES="service.name=launch-claude,service.version=1.0"
 
         # Create session-specific log files with timestamps
         local session_log="$SESSION_DIR/session-$SESSION_TIMESTAMP.log"
@@ -749,9 +787,19 @@ build_claude_command() {
         CLAUDE_CMD+=(--dangerously-skip-permissions)
     fi
 
-    # Add continue or resume flags
+    # Add continue or resume flags with conversation detection
     if [[ "$USE_CONTINUE" == "true" ]]; then
-        CLAUDE_CMD+=(--continue)
+        if detect_conversations "$PROJECT_ROOT"; then
+            CLAUDE_CMD+=(--continue)
+            if [[ "$DEBUG_MODE" == "true" ]]; then
+                echo "🔄 Continue mode: resuming existing conversation" >&2
+            fi
+        else
+            if [[ "$DEBUG_MODE" == "true" ]]; then
+                echo "🆕 No existing conversations found - starting new conversation" >&2
+            fi
+            # Don't add --continue flag when no conversations exist
+        fi
     elif [[ "$USE_RESUME" == "true" ]]; then
         if [[ -n "$RESUME_SESSION_ID" ]]; then
             CLAUDE_CMD+=(--resume "$RESUME_SESSION_ID")
@@ -766,12 +814,8 @@ build_claude_command() {
         CLAUDE_CMD+=("$MASTER_PROMPT_CONTENT")
     fi
 
-    # Add debug environment variables if debug mode
-    if [[ "$DEBUG_MODE" == "true" ]]; then
-        export CLAUDE_DEBUG=1
-        export MCP_LOG_LEVEL=debug
-        export ANTHROPIC_DEBUG=1
-    fi
+    # Debug environment variables are now set in setup_logging function
+    # to use official Claude Code standards
 
     # Add user arguments
     CLAUDE_CMD+=("${ARGS[@]}")
