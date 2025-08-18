@@ -27,13 +27,13 @@ Successfully refactored DevContainer setup by moving static installations from p
 
 ## Build Optimization
 
-### Scripts Migrated to Dockerfile (Build-time):
-- ✅ **System package updates** (`apt-upgrade.sh`) → Docker RUN with apt cache
-- ✅ **Python tools installation** (`install-python-tools.sh`) → Docker RUN with uv cache
-- ✅ **AI tools installation** (`install-ai-tools.sh`) → Docker RUN with npm cache
-- ✅ **MCP tools installation** (`install-mcp-tools.sh`) → Docker RUN with npm cache  
-- ✅ **Zsh installation** (`install-zsh.sh`) → Docker RUN layer
-- ✅ **Oh-my-zsh configuration** (`configure-oh-my-zsh.sh`) → Docker RUN layer
+### Actually Migrated to Dockerfile (Build-time):
+- ✅ **System package updates** → Docker RUN with apt cache
+- ✅ **Python tools installation** → Docker RUN with pip/uv cache  
+- ❌ **AI tools installation** → **LIMITATION: Remain in postCreate.sh** (npm unavailable)
+- ❌ **MCP tools installation** → **LIMITATION: Remain in postCreate.sh** (npm dependency)
+- ✅ **Zsh package installation** → Docker RUN layer
+- ❌ **Oh-my-zsh configuration** → **Remains in postCreate.sh** (user-specific setup)
 
 ### Scripts Preserved in postCreate.sh (Runtime):
 - 🔄 **Git configuration** (`configure-git.sh`) - User context required
@@ -56,20 +56,17 @@ The refactoring provides:
 
 ## Docker Optimizations Implemented
 
-### BuildKit Cache Mounts with Dynamic UID/GID:
+### BuildKit Cache Mounts with Hardcoded UID/GID:
 ```dockerfile
 # APT package cache (root context)
 --mount=type=cache,target=/var/cache/apt
 
-# Python package cache with dynamic permissions
---mount=type=cache,target=/home/vscode/.cache/pip,uid=$(id -u),gid=$(id -g)
---mount=type=cache,target=/home/vscode/.cache/uv,uid=$(id -u),gid=$(id -g)
-
-# Node.js package cache with dynamic permissions
---mount=type=cache,target=/home/vscode/.npm,uid=$(id -u),gid=$(id -g)
+# Python package cache with hardcoded permissions 
+--mount=type=cache,target=/home/vscode/.cache/pip,uid=1000,gid=1000
+--mount=type=cache,target=/home/vscode/.cache/uv,uid=1000,gid=1000
 ```
 
-**Dynamic Permission Resolution**: Cache mounts automatically detect the `vscode` user's UID/GID at build time, eliminating hardcoded assumptions and resolving permission conflicts across different base images and environments.
+**🚨 LIMITATION**: Cache mounts use hardcoded UID/GID 1000, which may fail on systems where vscode user has different UID (macOS Docker Desktop, custom configurations). This is based on DevContainer convention but not truly dynamic.
 
 ### Layer Optimization:
 - Separate system updates from package installations
@@ -103,27 +100,25 @@ The refactoring provides:
 6. **Functionality Validation**: Verify build and startup processes work correctly
 7. **Cross-Platform**: Test both local Docker and GitHub Codespaces
 
-#### Dynamic UID/GID Testing Commands:
+#### UID/GID Hardcoding Impact:
 ```bash
-# Test build process and verify UID/GID detection
+# Current implementation shows UID during build but hardcodes cache permissions
 docker build -t test-devcontainer .devcontainer/ 2>&1 | grep "vscode user UID"
 
-# Verify cache mount permissions inside running container
-docker run --rm -it test-devcontainer /bin/bash -c "ls -la /home/vscode/.cache/"
-
-# Test in different environments (local Docker vs Codespaces)
-# Should show consistent cache mount behavior regardless of actual vscode UID
+# Cache permissions are hardcoded to 1000:1000
+# Will fail if vscode user has different UID on the system
 ```
 
-### Success Criteria:
-- [ ] Container builds successfully from Dockerfile
-- [ ] Dynamic UID/GID detection shows correct values during build
-- [ ] Cache mounts have proper permissions (no permission denied errors)
-- [ ] All development tools available in PATH
-- [ ] Runtime configurations work correctly
-- [ ] Docker layer caching functions properly
-- [ ] Container initialization works correctly
-- [ ] No functionality regression
+### Success Criteria Status:
+- ✅ Container builds successfully from Dockerfile
+- ⚠️ **RISK**: Hardcoded UID/GID may cause permission issues on non-standard systems
+- ✅ Cache mounts work on standard DevContainer setup (UID 1000)
+- ✅ Python tools available in PATH
+- ❌ **INCOMPLETE**: AI/MCP tools still install at runtime (not build-time optimized)
+- ✅ Runtime configurations work correctly
+- ✅ Docker layer caching functions properly
+- ✅ Container initialization works correctly
+- ✅ No functionality regression
 
 ## Rollback Strategy
 

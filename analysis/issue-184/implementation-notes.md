@@ -10,12 +10,12 @@ Systematic refactoring of DevContainer setup to optimize build performance by mi
 **Risk**: Low  
 **Expected Build Process Enhancement**: Improved caching and efficiency
 
-#### Scripts to Migrate to Dockerfile:
-1. **apt-upgrade.sh** → Docker RUN layer with BuildKit cache
-2. **install-python-tools.sh** → Docker RUN with pip cache mount
-3. **install-ai-tools.sh** → Docker RUN with npm/pip cache
-4. **install-mcp-tools.sh** → Docker RUN layer
-5. **install-zsh.sh** → Docker RUN with apt cache
+#### Actually Migrated to Dockerfile:
+1. ✅ **System updates** → Docker RUN layer with BuildKit cache
+2. ✅ **Python tools (uv, ruff, pytest, mypy, etc.)** → Docker RUN with pip/uv cache mount
+3. ❌ **AI tools** → **LIMITATION: Remain in postCreate.sh** (npm not available)
+4. ❌ **MCP tools** → **LIMITATION: Remain in postCreate.sh** (npm dependency)
+5. ✅ **zsh package** → Docker RUN with apt cache
 
 #### Scripts to Keep in postCreate.sh:
 1. **configure-git.sh** - Requires user context ($gitUserName, $gitUserEmail)
@@ -63,17 +63,12 @@ RUN --mount=type=cache,target=/home/vscode/.cache/uv \
     uv tool install yamllint && \
     uv tool install yq
 
-# Install Node.js tools (Claude CLI, OpenAI tools)
-RUN --mount=type=cache,target=/home/vscode/.npm \
-    npm install -g @anthropic-ai/claude-cli && \
-    npm install -g openai
+# Note: AI tools and MCP tools are installed in postCreate.sh after Node.js feature is available
+# This is due to npm not being available in the base Python image
 
-# Install MCP tools
-RUN --mount=type=cache,target=/home/vscode/.cache/pip \
-    python3 -m pip install --user mcp
-
-# Configure oh-my-zsh
-RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+# Configure shell PATH (oh-my-zsh handled by postCreate.sh)
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.zshrc && \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.bashrc
 
 # Ensure proper permissions
 USER root
@@ -126,17 +121,17 @@ WORKDIR /workspace
 
 ## Implementation Goals
 
-### Expected Improvements:
-- **Build Efficiency**: Enhanced through Docker layer caching
-- **Startup Process**: Streamlined by pre-installing static dependencies
-- **Rebuild Process**: Improved with cached layers
-- **Container Structure**: Optimized through better layer organization
+### Actual Improvements Achieved:
+- **Static Dependencies**: System packages and Python tools moved to build-time
+- **Docker Layer Caching**: Implemented for apt, pip, and uv package managers
+- **UID/GID Cache Permissions**: **LIMITATION - Hardcoded to 1000/1000**
+- **Hybrid Approach**: Node.js tools remain in postCreate.sh due to base image constraints
 
-### Success Criteria:
-- Container builds successfully without errors
-- All tools available and functional
-- 100% functionality preservation
-- Cross-platform compatibility (local Docker + Codespaces)
+### Success Criteria Status:
+- ✅ Container builds successfully without errors
+- ✅ All tools available and functional  
+- ✅ 100% functionality preservation
+- ⚠️ **RISK**: Cross-platform compatibility limited by hardcoded UID 1000
 
 ## Testing Strategy
 
