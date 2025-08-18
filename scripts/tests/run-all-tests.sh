@@ -31,29 +31,6 @@ TEST_SUITES=(
     "Integration Tests:test-launcher-integration.sh:CLI interface and workflow validation"
 )
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -v|--verbose)
-            VERBOSE=true
-            shift
-            ;;
-        -s|--stop-on-fail)
-            STOP_ON_FAIL=true
-            shift
-            ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            echo "Use --help for usage information"
-            exit 1
-            ;;
-    esac
-done
-
 # Show help function
 show_help() {
     cat << EOF
@@ -86,6 +63,29 @@ FEATURES:
 
 EOF
 }
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        -s|--stop-on-fail)
+            STOP_ON_FAIL=true
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 # Print header
 print_header() {
@@ -122,11 +122,14 @@ run_test_suite() {
     
     if [[ ! -f "$script_path" ]]; then
         echo -e "${RED}❌ ERROR: Test script not found: $script_path${NC}"
+        echo -e "${YELLOW}Available test files:${NC}"
+        ls -la "$SCRIPT_DIR"/test-*.sh 2>/dev/null || echo "No test files found"
         return 1
     fi
     
     if [[ ! -x "$script_path" ]]; then
         echo -e "${RED}❌ ERROR: Test script not executable: $script_path${NC}"
+        echo -e "${YELLOW}Fix with: chmod +x '$script_path'${NC}"
         return 1
     fi
     
@@ -146,10 +149,17 @@ run_test_suite() {
         fi
     else
         # Capture output and show summary only
+        # Capture both stdout and stderr while preserving exit code
         if test_output=$("$script_path" 2>&1); then
             test_exit_code=0
         else
             test_exit_code=$?
+        fi
+        
+        # Ensure test output is not excessively long for parsing
+        if [[ ${#test_output} -gt 10000 ]]; then
+            test_output=$(echo "$test_output" | head -c 10000)
+            test_output+="\n[Output truncated - exceeded 10KB limit]"
         fi
     fi
     
@@ -157,15 +167,21 @@ run_test_suite() {
     end_time=$(date +%s)
     local duration=$((end_time - start_time))
     
-    # Parse test results from output
+    # Parse test results from output with improved error handling
     local tests_run=0
     local tests_passed=0
     local tests_failed=0
     
     if [[ -n "${test_output:-}" ]]; then
-        tests_run=$(echo "$test_output" | grep -o "Tests run: [0-9]*" | grep -o "[0-9]*" || echo "0")
-        tests_passed=$(echo "$test_output" | grep -o "Passed: [0-9]*" | grep -o "[0-9]*" || echo "0")
-        tests_failed=$(echo "$test_output" | grep -o "Failed: [0-9]*" | grep -o "[0-9]*" || echo "0")
+        # Use more robust parsing with fallbacks
+        tests_run=$(echo "$test_output" | grep -o "Tests run: [0-9]*" | grep -o "[0-9]*" | head -1 || echo "0")
+        tests_passed=$(echo "$test_output" | grep -o "Passed: [0-9]*" | grep -o "[0-9]*" | head -1 || echo "0")
+        tests_failed=$(echo "$test_output" | grep -o "Failed: [0-9]*" | grep -o "[0-9]*" | head -1 || echo "0")
+        
+        # Validate parsed numbers are actually numeric
+        [[ "$tests_run" =~ ^[0-9]+$ ]] || tests_run=0
+        [[ "$tests_passed" =~ ^[0-9]+$ ]] || tests_passed=0
+        [[ "$tests_failed" =~ ^[0-9]+$ ]] || tests_failed=0
     fi
     
     # Update totals
@@ -183,7 +199,8 @@ run_test_suite() {
         echo -e "${RED}❌ SUITE FAILED${NC} - $tests_failed/$tests_run tests failed (${duration}s)"
         if [[ "$VERBOSE" == "false" && -n "${test_output:-}" ]]; then
             echo -e "${YELLOW}Failed test details:${NC}"
-            echo "$test_output" | grep -A 1 "✗ FAIL" || echo "No specific failure details available"
+            # Show both FAIL and ERROR patterns with context
+            echo "$test_output" | grep -A 2 -B 1 "✗ FAIL\|ERROR\|FAILED" | head -20 || echo "No specific failure details available"
         fi
     fi
     
@@ -196,7 +213,18 @@ run_test_suite() {
 print_summary() {
     local end_time
     end_time=$(date +%s)
-    local total_duration=$((end_time - $(date -d "$TEST_START_TIME" +%s) ))
+    local start_epoch
+    if command -v date >/dev/null 2>&1; then
+        if date -d "$TEST_START_TIME" +%s >/dev/null 2>&1; then
+            start_epoch=$(date -d "$TEST_START_TIME" +%s)
+        else
+            # Fallback for systems without GNU date (e.g., macOS)
+            start_epoch=$(date -j -f "%a %b %d %H:%M:%S %Z %Y" "$TEST_START_TIME" +%s 2>/dev/null || echo "0")
+        fi
+    else
+        start_epoch=0
+    fi
+    local total_duration=$((end_time - start_epoch))
     
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}${BOLD}                    TEST SUMMARY                             ${NC}${CYAN}║${NC}"
