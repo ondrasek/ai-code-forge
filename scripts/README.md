@@ -160,14 +160,70 @@ These scripts work within Claude Code's actual capabilities:
 - **Post-execution analysis** - No real-time monitoring capabilities
 - **Output-dependent** - Can only analyze what Claude Code actually outputs to console
 
+## AI-Powered JSONL Analysis
+
+### 🤖 `analyze-jsonl.sh`
+Uses Claude Code itself to analyze JSONL session files with AI insights.
+
+**Usage:**
+```bash
+./scripts/analyze-jsonl.sh <jsonl-file> [analysis-type]
+```
+
+**Analysis Types:**
+- `summary` - General session overview and accomplishments
+- `tools` - Tool usage patterns and efficiency analysis  
+- `mcp` - MCP server and external service usage
+- `patterns` - Workflow and behavioral pattern analysis
+- `performance` - Performance and efficiency metrics
+
+**Example:**
+```bash
+./scripts/analyze-jsonl.sh ~/.claude/projects/*/session.jsonl tools
+```
+
+### 🔍 `discover-sessions.sh`
+Discovers all Claude Code JSONL files and provides analytics overview.
+
+**Features:**
+- Lists all sessions with metadata (size, messages, branch)
+- Shows tool usage statistics across all sessions
+- Identifies recent and largest sessions
+- Provides quick analysis commands
+
+**Usage:**
+```bash
+./scripts/discover-sessions.sh
+```
+
+## Built-in JSONL Analytics
+
+### Claude Code's Automatic Session Logs
+Claude Code automatically creates JSONL files at:
+```
+~/.claude/projects/[project-hash]/[session-id].jsonl
+```
+
+**Each JSONL line contains:**
+- Complete tool executions with parameters
+- Full conversation context and responses
+- Session metadata (git branch, working directory)
+- Timestamps and usage statistics
+
+### Perfect for Your Use Cases
+1. **MCP Server Usage**: All MCP tool calls captured with full context
+2. **Tool Usage Patterns**: Complete Read/Write/Bash execution history
+3. **Prompt Engineering Impact**: Full conversation correlation with tool usage
+4. **Sub-Agent Analysis**: Tool patterns indicate agent behavior
+
 ## Future Enhancements
 
 As Claude Code capabilities evolve, these scripts can be enhanced to:
 
-- Parse structured debug output for automated analysis
-- Integrate with additional Claude Code debug flags
-- Provide real-time monitoring if supported
-- Export data to external analytics tools
+- Build comprehensive analytics dashboards from JSONL data
+- Create automated reports comparing sessions and patterns
+- Integrate with external analytics and visualization tools
+- Provide real-time session monitoring and analysis
 
 ## Troubleshooting
 
