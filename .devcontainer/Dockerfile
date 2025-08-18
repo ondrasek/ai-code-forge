@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/home/vscode/.cache/uv,uid=1000,gid=1000 \
 
 # Note: AI tools and MCP tools are installed in postCreate.sh after Node.js feature is available
 
-# Configure shell PATH (oh-my-zsh installed by postCreate.sh to avoid conflicts)
+# Configure shell PATH (oh-my-zsh handled by postCreate.sh)
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.zshrc && \
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/vscode/.bashrc
 
