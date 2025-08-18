@@ -121,25 +121,46 @@ get_issue_info() {
                     # Initialize result with basic data
                     local result="$title|$url|$state|$assignee|$labels"
                     
-                    # Step 2: Progressive discovery - fetch PR data only if issue has associated PR
+                    # Step 2: Progressive discovery - fetch PR data
+                    local pr_info=""
+                    
+                    # First check if issue IS a pull request
                     if [[ -n "$pull_request" ]]; then
                         local pr_data
                         if pr_data=$(gh api "$pull_request" 2>/dev/null); then
                             local pr_state=$(echo "$pr_data" | jq -r '.state // "unknown"' 2>/dev/null)
                             local pr_mergeable=$(echo "$pr_data" | jq -r '.mergeable // false' 2>/dev/null)
                             local pr_merged=$(echo "$pr_data" | jq -r '.merged // false' 2>/dev/null)
-                            result="$result|PR:$pr_state"
+                            pr_info="PR:$pr_state"
                             if [[ "$pr_merged" == "true" ]]; then
-                                result="$result,merged"
+                                pr_info="$pr_info,merged"
                             elif [[ "$pr_mergeable" == "false" ]]; then
-                                result="$result,conflicts"
+                                pr_info="$pr_info,conflicts"
                             fi
-                        else
-                            result="$result|PR:unknown"
                         fi
                     else
-                        result="$result|"
+                        # Search for PRs that reference this issue (fixes #N, closes #N, resolves #N)
+                        local search_query="\"fixes #$issue_num\" OR \"closes #$issue_num\" OR \"resolves #$issue_num\" OR \"fix #$issue_num\" OR \"close #$issue_num\""
+                        local pr_search_result
+                        if pr_search_result=$(gh pr list --repo "$owner/$repo" --search "$search_query" --state all --limit 1 --json number,state,title 2>/dev/null); then
+                            local pr_count=$(echo "$pr_search_result" | jq '. | length' 2>/dev/null)
+                            if [[ "$pr_count" -gt 0 ]]; then
+                                local pr_number=$(echo "$pr_search_result" | jq -r '.[0].number // ""' 2>/dev/null)
+                                local pr_state=$(echo "$pr_search_result" | jq -r '.[0].state // "unknown"' 2>/dev/null)
+                                if [[ -n "$pr_number" && "$pr_number" != "null" ]]; then
+                                    pr_info="PR:#$pr_number:$pr_state"
+                                    if [[ "$pr_state" == "MERGED" ]]; then
+                                        pr_info="$pr_info,merged"
+                                    elif [[ "$pr_state" == "CLOSED" ]]; then
+                                        pr_info="$pr_info,closed"
+                                    fi
+                                fi
+                            fi
+                        fi
                     fi
+                    
+                    # Add PR info to result or empty string
+                    result="$result|$pr_info"
                     
                     # Cache the result
                     if command -v jq &>/dev/null; then
@@ -338,13 +359,22 @@ display_worktree_info() {
     if [[ -n "$pr_info" ]]; then
         local pr_emoji=""
         local pr_color="$GREEN"
+        local pr_display="$pr_info"
+        
+        # Handle new format: PR:#123:STATE or old format: PR:STATE
+        if [[ "$pr_info" =~ ^PR:#([0-9]+):(.+) ]]; then
+            local pr_number="${BASH_REMATCH[1]}"
+            local pr_state_info="${BASH_REMATCH[2]}"
+            pr_display="PR #$pr_number: $pr_state_info"
+        fi
+        
         case "$pr_info" in
             *"merged"*) pr_emoji="✅"; pr_color="$GREEN" ;;
             *"closed"*) pr_emoji="❌"; pr_color="$RED" ;;
-            *"open"*) pr_emoji="🔄"; pr_color="$YELLOW" ;;
+            *"OPEN"*|*"open"*) pr_emoji="🔄"; pr_color="$YELLOW" ;;
             *"conflicts"*) pr_emoji="⚠️"; pr_color="$RED" ;;
         esac
-        echo -e "   ${pr_color}$pr_info${NC} $pr_emoji"
+        echo -e "   ${pr_color}$pr_display${NC} $pr_emoji"
     fi
     
     # Show issue URL if available
