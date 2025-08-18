@@ -5,7 +5,7 @@ These scripts provide practical debugging and analytics capabilities for Claude 
 ## Scripts Overview
 
 ### 🔍 `debug-claude.sh`
-Enhanced debugging wrapper that captures and splits debug output.
+Enhanced debugging wrapper that captures Claude Code's stdout/stderr output.
 
 **Usage:**
 ```bash
@@ -13,15 +13,18 @@ Enhanced debugging wrapper that captures and splits debug output.
 ```
 
 **Features:**
-- Sets debug environment variables
-- Captures verbose output with timestamps
-- Splits logs by content type (general, MCP-specific)
-- Creates timestamped log directories
+- Captures Claude Code's stdout and stderr streams
+- Sets debug environment variables (ANTHROPIC_LOG=debug)
+- Splits captured output by content type (general, MCP-specific)
+- Creates timestamped log directories with all captured output
+
+**Important:** Claude Code doesn't create log files automatically - this script captures its console output and saves it to files.
 
 **Output:**
-- `logs/debug/YYYYMMDD_HHMMSS/claude-debug.log` - General debug output
-- `logs/debug/YYYYMMDD_HHMMSS/mcp-debug.log` - MCP-specific output
-- `logs/debug/YYYYMMDD_HHMMSS/verbose.log` - Complete verbose output
+- `logs/debug/YYYYMMDD_HHMMSS/verbose.log` - Complete stdout capture
+- `logs/debug/YYYYMMDD_HHMMSS/stderr.log` - Complete stderr capture  
+- `logs/debug/YYYYMMDD_HHMMSS/claude-debug.log` - Combined output
+- `logs/debug/YYYYMMDD_HHMMSS/mcp-debug.log` - MCP-related output filtered from captured streams
 
 ### 🔧 `analyze-mcp.sh`
 Analyzes MCP server configuration and connectivity.
@@ -87,10 +90,12 @@ Validates MCP server configurations and tests connectivity.
 These scripts use the following environment variables for enhanced debugging:
 
 ```bash
-export ANTHROPIC_LOG=debug              # Enable debug logging
-export CLAUDE_CODE_ENABLE_TELEMETRY=1   # Enable telemetry
+export ANTHROPIC_LOG=debug              # Enable debug output to stderr
+export CLAUDE_CODE_ENABLE_TELEMETRY=1   # Enable telemetry output
 export MCP_TIMEOUT=30000                # MCP server timeout (ms)
 ```
+
+**Important:** These environment variables affect Claude Code's stdout/stderr output, not log file creation. The scripts capture this output and save it to log files.
 
 ## Dependencies
 
@@ -146,12 +151,14 @@ ls logs/debug/*/
 
 ## Limitations
 
-These scripts work within Claude Code's documented capabilities:
+These scripts work within Claude Code's actual capabilities:
 
+- **No automatic log files** - Claude Code doesn't create log files; we capture stdout/stderr
 - **No sub-agent context tracking** - Cannot identify which sub-agent made which call
-- **Limited MCP visibility** - Only sees what debug output provides
-- **Manual analysis required** - Requires manual inspection of debug logs
+- **Limited MCP visibility** - Only sees what appears in Claude's debug output to console
+- **Manual analysis required** - Requires manual inspection of captured output
 - **Post-execution analysis** - No real-time monitoring capabilities
+- **Output-dependent** - Can only analyze what Claude Code actually outputs to console
 
 ## Future Enhancements
 
