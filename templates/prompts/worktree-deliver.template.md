@@ -45,6 +45,7 @@ Use the Bash tool to execute these GitHub CLI commands to understand the full is
 5. **Task(researcher)** - Find similar implementations and community solutions
 6. **Task(researcher)** - Research security considerations and performance implications
 7. **Task(researcher)** - Research testing approaches and quality standards
+8. **Task(critic)** - MANDATORY next step after all research is complete: Critically evaluate all research findings, identify potential risks, overlooked complexities, and provide constructive challenges to assumptions
 
 ### 3. Analyze and Synthesize Everything
 - Cross-reference all GitHub data with external research
@@ -53,6 +54,13 @@ Use the Bash tool to execute these GitHub CLI commands to understand the full is
 - **Task(principles)** - Validate against SOLID principles
 - Identify optimal implementation approach
 - Note any conflicts between research and project constraints
+
+**MANDATORY: Update GitHub Issue with Progress**
+After completing all research and analysis above, you MUST update the GitHub issue you are working on with a progress comment summarizing:
+- Research findings and key discoveries
+- Technical approach and implementation plan
+- Any risks or challenges identified
+- Clear next steps for implementation
 
 ### 4. Document Research Findings and Enable Agent Collaboration
 **Create shared analysis directory**: `analysis/issue-[ISSUE_NUMBER]/`
@@ -109,6 +117,8 @@ Before finishing, ensure:
 - ✅ Cross-agent insights are documented in `agent-collaboration.md`
 - ✅ Implementation progress is tracked in `implementation-notes.md`
 - ✅ No conflicting information exists between agent outputs in analysis directory
+- ✅ **GitHub issue updated with research summary and implementation plan**
+- ✅ **Final summary comment posted to GitHub issue with findings and clear next steps**
 
 ## Agent Usage Guidelines
 
