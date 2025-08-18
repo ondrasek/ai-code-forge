@@ -22,6 +22,16 @@ cat $postCreateEnvFile
 echo
 
 workspaceFolder=.
+
+# Build with cache management
+echo "Building DevContainer..."
 devcontainer build --workspace-folder $workspaceFolder
+
+# If build fails due to cache issues, rebuild without cache
+if [ $? -ne 0 ]; then
+    echo "Build failed, retrying without cache..."
+    devcontainer build --workspace-folder $workspaceFolder --no-cache
+fi
+
 devcontainer up --workspace-folder $workspaceFolder --remove-existing-container
 

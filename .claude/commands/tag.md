@@ -4,7 +4,7 @@ argument-hint: Optional version type (auto|major|minor|patch) - defaults to auto
 allowed-tools: Task(git-workflow), Read, Edit, Write, Bash(git status), Bash(git log), Bash(git tag), Bash(git push)
 ---
 
-# Git Tag Creation Command
+# Tag Creation Command
 
 !`git status`
 !`git branch --show-current`
@@ -20,7 +20,7 @@ Create semantic version tag from commit analysis with automatic version determin
    ```bash
    CURRENT_BRANCH=$(git branch --show-current)
    if [[ "$CURRENT_BRANCH" != "main" ]]; then
-       echo "❌ ERROR: /git-tag command only works on main branch"
+       echo "❌ ERROR: /tag command only works on main branch"
        echo "Current branch: $CURRENT_BRANCH"
        echo "Switch to main branch: git checkout main"
        exit 1
@@ -179,7 +179,7 @@ This command triggers the complete release automation:
 
 1. **Version Synchronization**: Updates all pyproject.toml files to match new tag version
 2. **Version Commit**: Commits pyproject.toml changes with proper commit message
-3. **Tag Creation**: `/git-tag` creates and pushes version tag referencing updated files
+3. **Tag Creation**: `/tag` creates and pushes version tag referencing updated files
 4. **GitHub Actions**: Tag push triggers `ai-code-forge-release.yml` workflow
 5. **Automated Pipeline**: 
    - Build and test packages with synchronized versions
@@ -199,12 +199,12 @@ This command triggers the complete release automation:
 
 ```bash
 # Automatic version detection (recommended)
-/git-tag
+/tag
 
 # Force specific version type
-/git-tag major
-/git-tag minor  
-/git-tag patch
+/tag major
+/tag minor  
+/tag patch
 ```
 
 ## Expected Outcomes
