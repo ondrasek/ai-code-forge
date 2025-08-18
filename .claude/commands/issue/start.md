@@ -6,6 +6,9 @@ allowed-tools: Task
 
 # GitHub Issue Implementation Phase
 
+!`git status`
+!`git branch --show-current`
+
 Systematic execution phase for GitHub Issue implementation with proper git workflow and progress tracking.
 
 ## Instructions

@@ -6,6 +6,9 @@ allowed-tools: Task, Read, Grep, Bash, WebSearch
 
 # Security Audit
 
+!`git status`
+!`git diff --name-only`
+
 Comprehensive security audit focusing on vulnerabilities, risks, and remediation for full codebase security analysis.
 
 ## Instructions

@@ -488,5 +488,170 @@ echo "Working in branch: $current_branch"
 - **Issue PR Command**: Use current branch for PR creation
 - **No Branch Validation**: User is responsible for branch management
 
+## DUPLICATE DETECTION SYSTEM (MANDATORY)
+
+### Core Duplicate Detection Workflow
+
+When delegated duplicate detection tasks:
+
+#### Step 1: Issue Analysis and Validation
+```bash
+# Validate target issue exists and is open
+gh issue view $issue_number --repo ondrasek/ai-code-forge --json state,title,body,labels
+
+# Skip if issue has anti-duplicate protections
+# - not-duplicate label present
+# - Recent activity (comments < 24 hours)
+# - Currently assigned to active user
+# - Custom scope labels indicating unique work
+```
+
+#### Step 2: Content Extraction and Fingerprinting
+```bash
+# Extract structured content for analysis
+issue_title=$(gh issue view $issue_number --json title --jq '.title')
+issue_body=$(gh issue view $issue_number --json body --jq '.body')
+issue_labels=$(gh issue view $issue_number --json labels --jq '.labels[].name')
+
+# Generate keyword fingerprint
+# - Technical terms extraction
+# - File path extraction  
+# - Error message extraction
+# - Domain concept identification
+```
+
+#### Step 3: Multi-Pass Search Strategy
+```bash
+# Pass 1: Title keyword search
+gh issue list --search "keyword1 OR keyword2" --repo ondrasek/ai-code-forge --state open
+
+# Pass 2: Technical domain search  
+gh issue list --search "domain_term AND component" --repo ondrasek/ai-code-forge --state open
+
+# Pass 3: File/path-based search
+gh issue list --search "filepath OR filename" --repo ondrasek/ai-code-forge --state open
+
+# Pass 4: Error pattern search
+gh issue list --search "error_signature OR exception_type" --repo ondrasek/ai-code-forge --state open
+```
+
+#### Step 4: Similarity Analysis and Confidence Scoring
+
+**Confidence Calculation Framework**:
+- **Title Similarity** (40% weight): Jaccard coefficient on title words
+- **Content Similarity** (30% weight): TF-IDF cosine similarity on descriptions  
+- **Label Overlap** (20% weight): Percentage of shared labels
+- **Temporal Proximity** (10% weight): Recency bonus for recent similar issues
+
+**Confidence Thresholds**:
+- **≥ 85%**: High confidence duplicate (proceed with duplicate comment)
+- **80-84%**: Medium confidence (manual review recommended)
+- **< 80%**: Low confidence (not considered duplicate)
+
+**Template Detection and Filtering**:
+- Identify common issue template structures
+- Exclude template boilerplate from similarity analysis
+- Focus similarity scoring on user-provided content only
+- Skip issues that are primarily template-based with minimal unique content
+
+#### Step 5: Anti-False-Positive Safeguards
+
+**Pre-Detection Filters**:
+```bash
+# Skip if issue has protective markers
+if [[ "$labels" =~ "not-duplicate" ]]; then exit 0; fi
+if [[ "$recent_activity" == "true" ]]; then exit 0; fi
+if [[ "$assigned_active_user" == "true" ]]; then exit 0; fi
+```
+
+**Conservative Bias Implementation**:
+- Require multiple similarity signals above threshold
+- Manual review recommendation for borderline cases
+- When in doubt, classify as NOT duplicate
+- Prefer false negatives over false positives
+
+#### Step 6: Duplicate Comment Generation
+
+**Structured Comment Template**:
+```markdown
+🔍 **Potential Duplicates Detected**
+
+Based on automated analysis, this issue may be a duplicate of:
+
+1. **#[NUMBER]**: [TITLE] ([CONFIDENCE]% confidence)
+   - Similar keywords: [KEYWORD_LIST]
+   - Same technical domain: [DOMAIN_DESCRIPTION]
+   - Similarity factors: [SPECIFIC_SIMILARITIES]
+
+2. **#[NUMBER]**: [TITLE] ([CONFIDENCE]% confidence)  
+   - Similar symptoms: [SYMPTOM_DESCRIPTION]
+   - Related components: [COMPONENT_LIST]
+   - Overlap areas: [OVERLAP_DETAILS]
+
+**Manual Review Period**: This issue will auto-close in 3 days unless:
+- Someone adds `not-duplicate` label 
+- Author or maintainer reacts with 👎 to this comment
+- Technical differences are identified in comments
+
+**Not a duplicate?** Add the `not-duplicate` label or comment with specific technical differences that distinguish this issue.
+
+**Review Process**: 
+- ✅ Conservative 85% confidence threshold applied
+- ✅ Template content excluded from analysis  
+- ✅ Multiple similarity signals required
+- ✅ Manual override mechanisms available
+```
+
+#### Step 7: Safety Mechanisms and User Control
+
+**User Override Options**:
+1. **`not-duplicate` Label**: Immediately prevents auto-closure
+2. **👎 Reaction**: Monitor for negative reactions on duplicate comments  
+3. **Comment Override**: Any comment explaining technical differences
+4. **Maintainer Override**: Repository maintainers can override any duplicate detection
+
+**Auto-Closure Implementation**:
+```bash
+# Schedule 3-day review period (per Claude Code specification)
+# Monitor for override signals during review period
+# Only close if no override signals detected
+# Add comprehensive closure comment with rationale
+```
+
+**Easy Reversal Process**:
+- Clear instructions in duplicate comment
+- Simple label-based override
+- Comprehensive documentation of reversal steps
+- Audit trail for all duplicate detection actions
+
+#### Step 8: Confidence Validation and Quality Assurance
+
+**Multi-Signal Validation**:
+- Require similarity in at least 3 of 4 categories (title, content, labels, timing)
+- Cross-validate using different similarity algorithms
+- Manual spot-check for edge cases
+- Continuous calibration based on user feedback
+
+**Quality Metrics Tracking**:
+- False positive rate monitoring
+- User override frequency analysis
+- Confidence threshold effectiveness
+- Template detection accuracy
+
+### Integration with Existing Workflow
+
+**Seamless Integration Points**:
+- Duplicate detection triggered via `/issue:dedupe <number>` command
+- Uses existing label discovery and management systems
+- Follows established append-only comment patterns
+- Maintains existing cross-reference and audit capabilities
+- Preserves all existing github-issues-workflow functionality
+
+**Error Handling and Graceful Degradation**:
+- GitHub API failures: Graceful degradation with clear error messages
+- Ambiguous similarity results: Conservative classification as non-duplicate
+- Missing content: Skip analysis with explanation
+- Network issues: Retry with exponential backoff
+
 ## RECURSION PREVENTION (MANDATORY)
 **SUB-AGENT RESTRICTION**: This agent MUST NOT spawn other agents via Task tool. All issue management, GitHub operations, web research, and specification lifecycle management happens within this agent's context to prevent recursive delegation loops. This agent is a terminal node in the agent hierarchy.

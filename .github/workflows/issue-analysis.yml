@@ -18,9 +18,8 @@ on:
         required: false
         default: 'true'
         type: boolean
-  # Future: Enable scheduled runs
-  # schedule:
-  #   - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM UTC
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 4 AM CET (3 AM UTC)
 
 jobs:
   issue-analysis:
@@ -232,11 +231,39 @@ jobs:
                           analyzed_issues.append(self.analyze_issue(issue))
                           time.sleep(0.05)  # Rate limiting
                   
-                  # Generate summary statistics
+                  # Generate detailed summary statistics
                   total_recommendations = sum(1 for issue in analyzed_issues 
                                             if issue['recommendations']['remove'] or issue['recommendations']['add'])
                   protected_count = sum(1 for issue in analyzed_issues 
                                       if issue['recommendations']['confidence'] == 'protected')
+                  
+                  # Label distribution analysis
+                  all_labels = {}
+                  for issue in analyzed_issues:
+                      for label in issue['current_labels']:
+                          all_labels[label] = all_labels.get(label, 0) + 1
+                  
+                  # Issue age analysis
+                  from dateutil.parser import parse
+                  now = datetime.now(timezone.utc)
+                  age_buckets = {'0-7 days': 0, '8-30 days': 0, '31-90 days': 0, '90+ days': 0}
+                  
+                  for issue in analyzed_issues:
+                      updated_date = parse(issue['last_updated'])
+                      days_old = (now - updated_date).days
+                      
+                      if days_old <= 7:
+                          age_buckets['0-7 days'] += 1
+                      elif days_old <= 30:
+                          age_buckets['8-30 days'] += 1
+                      elif days_old <= 90:
+                          age_buckets['31-90 days'] += 1
+                      else:
+                          age_buckets['90+ days'] += 1
+                  
+                  # Comment activity analysis
+                  high_activity = sum(1 for issue in analyzed_issues if issue['comment_count'] >= 5)
+                  no_comments = sum(1 for issue in analyzed_issues if issue['comment_count'] == 0)
                   
                   end_time = datetime.now(timezone.utc)
                   
@@ -254,7 +281,14 @@ jobs:
                           'recommendations_count': total_recommendations,
                           'protected_labels_found': protected_count,
                           'api_calls_made': self.api_calls_made,
-                          'rate_limit_remaining': self.rate_limit_remaining
+                          'rate_limit_remaining': self.rate_limit_remaining,
+                          'label_distribution': dict(sorted(all_labels.items(), key=lambda x: x[1], reverse=True)[:10]),
+                          'issue_age_distribution': age_buckets,
+                          'activity_metrics': {
+                              'high_activity_issues': high_activity,
+                              'no_comment_issues': no_comments,
+                              'avg_comments_per_issue': round(sum(issue['comment_count'] for issue in analyzed_issues) / len(analyzed_issues), 1) if analyzed_issues else 0
+                          }
                       },
                       'issues': analyzed_issues,
                       'safety_checks': {
@@ -309,22 +343,43 @@ jobs:
               print(f"Recommendations: {report['summary']['recommendations_count']}")
               print(f"API calls made: {report['summary']['api_calls_made']}")
               
-              # Generate summary for GitHub UI
+              # Generate enhanced summary for GitHub UI
+              top_labels = list(report['summary']['label_distribution'].items())[:5]
+              labels_text = '\\n'.join([f"  - {label}: {count} issues" for label, count in top_labels])
+              
+              age_dist = report['summary']['issue_age_distribution']
+              activity = report['summary']['activity_metrics']
+              
               summary = f"""## Issue Analysis Summary
               
+              ### 📊 Overview
               - **Issues Analyzed**: {report['summary']['issues_analyzed']}
               - **Recommendations Generated**: {report['summary']['recommendations_count']}
               - **Protected Labels Found**: {report['summary']['protected_labels_found']}
               - **API Calls Made**: {report['summary']['api_calls_made']}
               - **Rate Limit Remaining**: {report['summary']['rate_limit_remaining']}
               
-              ### Safety Checks ✅
-              - Dry run mode: Enabled
-              - Protected labels respected: {report['safety_checks']['protected_labels_respected']}
-              - Rate limits within bounds: {report['safety_checks']['rate_limits_within_bounds']}
-              - No destructive operations: {report['safety_checks']['no_destructive_operations']}
+              ### 🏷️ Top Labels
+              {labels_text}
               
-              Download the artifact to view detailed recommendations.
+              ### 📅 Issue Age Distribution
+              - **0-7 days**: {age_dist['0-7 days']} issues
+              - **8-30 days**: {age_dist['8-30 days']} issues
+              - **31-90 days**: {age_dist['31-90 days']} issues
+              - **90+ days**: {age_dist['90+ days']} issues
+              
+              ### 💬 Activity Metrics
+              - **High activity (5+ comments)**: {activity['high_activity_issues']} issues
+              - **No comments**: {activity['no_comment_issues']} issues
+              - **Average comments per issue**: {activity['avg_comments_per_issue']}
+              
+              ### ✅ Safety Checks
+              - **Dry run mode**: Enabled
+              - **Protected labels respected**: {report['safety_checks']['protected_labels_respected']}
+              - **Rate limits within bounds**: {report['safety_checks']['rate_limits_within_bounds']}
+              - **No destructive operations**: {report['safety_checks']['no_destructive_operations']}
+              
+              📄 Download the artifact to view detailed recommendations.
               """
               
               print(summary)

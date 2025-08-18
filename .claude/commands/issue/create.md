@@ -6,6 +6,9 @@ allowed-tools: Task
 
 # GitHub Issue Creation
 
+!`git status`
+!`git branch --show-current`
+
 Create new GitHub Issue with intelligent classification based on content analysis.
 
 ## Instructions
