@@ -73,6 +73,7 @@ echo "======================="
 
 # Aggregate tool usage across all sessions
 TEMP_TOOLS="/tmp/all_tools_$$"
+TEMP_MCP_TOOLS="/tmp/mcp_tools_$$"
 for jsonl_file in "${JSONL_FILES[@]}"; do
     jq -r 'select(.message.content[]?.type == "tool_use") | .message.content[]? | select(.type == "tool_use") | .name' "$jsonl_file" 2>/dev/null || true
 done | sort | uniq -c | sort -nr > "$TEMP_TOOLS"
@@ -82,7 +83,49 @@ head -10 "$TEMP_TOOLS" | while read count tool; do
     echo "  • $tool: $count uses"
 done
 
-rm -f "$TEMP_TOOLS"
+echo ""
+echo "🔌 MCP Server Tool Detection:"
+echo "============================"
+
+# Known Claude Code built-in tools
+BUILTIN_TOOLS="^(Bash|Read|Write|Edit|MultiEdit|Task|TodoWrite|LS|Grep|Glob|WebSearch|WebFetch|NotebookEdit)$"
+
+# Find potential MCP tools (tools not in the built-in list)
+grep -v -E "$BUILTIN_TOOLS" "$TEMP_TOOLS" > "$TEMP_MCP_TOOLS" 2>/dev/null || true
+
+if [[ -s "$TEMP_MCP_TOOLS" ]]; then
+    echo "Potential MCP server tools detected:"
+    cat "$TEMP_MCP_TOOLS" | while read count tool; do
+        echo "  • $tool: $count uses (potential MCP tool)"
+    done
+else
+    echo "📭 No MCP server tools detected in JSONL files"
+    echo "💡 This means either:"
+    echo "  • No MCP servers were configured during these sessions"
+    echo "  • MCP tools appear with different naming in JSONL files" 
+    echo "  • MCP usage is captured differently than expected"
+fi
+
+echo ""
+echo "🔍 MCP Server Configuration Analysis:"
+echo "===================================="
+
+# Check for MCP-related content in JSONL files
+MCP_MENTIONS=0
+for jsonl_file in "${JSONL_FILES[@]}"; do
+    mentions=$(grep -i -c "mcp\|server.*add\|server.*config" "$jsonl_file" 2>/dev/null || echo "0")
+    MCP_MENTIONS=$((MCP_MENTIONS + ${mentions:-0}))
+done
+
+if [[ $MCP_MENTIONS -gt 0 ]]; then
+    echo "📊 Found $MCP_MENTIONS references to MCP/server configuration in JSONL files"
+    echo "💡 Use './scripts/analyze-jsonl.sh <session.jsonl> mcp' for detailed MCP analysis"
+else
+    echo "📭 No MCP server configuration or usage detected"
+    echo "💡 Sessions appear to use only built-in Claude Code tools"
+fi
+
+rm -f "$TEMP_TOOLS" "$TEMP_MCP_TOOLS"
 
 echo ""
 echo "💡 Quick Analysis Commands:"
