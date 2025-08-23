@@ -47,8 +47,13 @@ initialize_worktree_environment() {
         return 1
     fi
     
+    if [[ ! -f "$workingCopy/scripts/worktree/worktree.sh" ]]; then
+        echo "ℹ️ Worktree scripts not present in this repository, skipping configuration"
+        return 0  # Exit gracefully without error
+    fi
+    
     if [[ ! -x "$workingCopy/scripts/worktree/worktree.sh" ]]; then
-        echo "⚠️ Worktree script not found or not executable, skipping worktree initialization"
+        echo "⚠️ Worktree script found but not executable, skipping worktree initialization"
         return 1
     fi
     
@@ -79,4 +84,13 @@ initialize_worktree_environment() {
 }
 
 # Execute unified worktree initialization
-initialize_worktree_environment
+initialize_worktree_environment || {
+    exit_code=$?
+    if [[ $exit_code -eq 0 ]]; then
+        # Graceful skip - not an error
+        exit 0
+    else
+        # Actual error occurred
+        exit $exit_code
+    fi
+}
