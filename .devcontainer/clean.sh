@@ -1,13 +1,42 @@
 #!/bin/bash
 
 # DevContainer Cleanup Script
-# Removes all stale devcontainers, images, and volumes for ai-code-forge
+# Removes all stale devcontainers, images, and volumes for the current repository
 # Handles the common issue where volumes can't be deleted due to container dependencies
 
 set -e
 
-REPO_NAME="ai-code-forge"
-VOLUME_NAME="ai-code-forge"
+# Dynamically determine repository name
+if ! command -v git &> /dev/null; then
+    echo "❌ Error: git is not installed or not in PATH"
+    exit 1
+fi
+
+# Get the repository root directory
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ $? -ne 0 ]; then
+    echo "❌ Error: Not in a git repository"
+    exit 1
+fi
+
+# Extract repository name from the path
+REPO_NAME=$(basename "$REPO_ROOT")
+
+# Try to get the full repository name (org/repo) using gh CLI if available
+if command -v gh &> /dev/null; then
+    # Get the remote repository name in format owner/repo
+    GH_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
+    if [ -n "$GH_REPO" ]; then
+        # Use just the repo name part for container/volume naming
+        REPO_NAME=$(echo "$GH_REPO" | cut -d'/' -f2)
+        echo "📦 Detected GitHub repository: $GH_REPO"
+    fi
+else
+    echo "⚠️  Warning: gh CLI not available, using local repository name: $REPO_NAME"
+fi
+
+# Use the same name for volume as repository
+VOLUME_NAME="$REPO_NAME"
 
 echo "🧹 DevContainer Cleanup Script for $REPO_NAME"
 echo "================================================"
