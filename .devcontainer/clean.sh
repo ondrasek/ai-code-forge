@@ -95,8 +95,10 @@ cleanup_volume_containers() {
     local volume_name="$1"
     echo "🔍 Finding containers using volume: $volume_name"
     
-    # Get container IDs that use this volume
-    local container_ids=$(docker ps -a --filter volume="$volume_name" --format "{{.ID}}" 2>/dev/null || true)
+    # Get container IDs that use this volume by inspecting their mounts
+    local container_ids=$(docker ps -a --format "{{.ID}}" | while read id; do
+        docker inspect "$id" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{if eq .Name "'"$volume_name"'"}}{{$.ID}}{{end}}{{end}}{{end}}' 2>/dev/null | grep -v '^$'
+    done || true)
     
     if [ -n "$container_ids" ]; then
         if [ "$DRY_RUN" = true ]; then
@@ -146,7 +148,9 @@ cleanup_volume_containers "$VOLUME_NAME"
 # 3. Remove images related to devcontainers
 echo
 echo "🖼️  Step 2: Cleaning up images..."
-IMAGES=$(docker images --filter "label=devcontainer" --format "{{.Repository}}:{{.Tag}} {{.ID}}" 2>/dev/null | grep -i "$REPO_NAME" | cut -d' ' -f2 || true)
+# Look for images with devcontainer label OR images whose repository contains the repo name
+# Check for images whose repository name contains our repo name (VSCode devcontainer naming convention)
+IMAGES=$(docker images --format "{{.Repository}}:{{.Tag}} {{.ID}}" 2>/dev/null | grep -i "vsc-${REPO_NAME}-" | cut -d' ' -f2 | sort -u || true)
 
 if [ -n "$IMAGES" ]; then
     if [ "$DRY_RUN" = true ]; then
@@ -178,8 +182,12 @@ if docker volume ls --format "{{.Name}}" | grep -q "^${VOLUME_NAME}$"; then
             echo "   Checking for remaining containers..."
             
             # Last resort - find any container still using the volume
-            docker ps -a --filter volume="$VOLUME_NAME" --format "table {{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}"
-            echo "   Try running: docker ps -a --filter volume=$VOLUME_NAME"
+            docker ps -a --format "{{.ID}}" | while read id; do
+                if docker inspect "$id" --format '{{range .Mounts}}{{if eq .Type "volume"}}{{if eq .Name "'"$VOLUME_NAME"'"}}found{{end}}{{end}}{{end}}' 2>/dev/null | grep -q "found"; then
+                    docker ps -a --filter "id=$id" --format "table {{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}"
+                fi
+            done
+            echo "   Try inspecting containers manually to find which are using volume: $VOLUME_NAME"
             echo "   Then manually remove those containers and retry"
             exit 1
         fi
