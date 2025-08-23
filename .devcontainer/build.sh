@@ -40,4 +40,3 @@ if [ $? -ne 0 ]; then
 fi
 
 devcontainer up --workspace-folder $workspaceFolder --remove-existing-container
-
