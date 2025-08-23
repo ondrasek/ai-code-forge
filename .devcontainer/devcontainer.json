@@ -74,6 +74,8 @@
 
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer,target=/tmp/.devcontainer,type=bind,consistency=cached",
-    "source=${localWorkspaceFolderBasename},target=/workspace,type=volume"
+    "source=${localWorkspaceFolderBasename},target=/workspace,type=volume",
+    "source=${env:SSH_AUTH_SOCK},target=/tmp/ssh-agent.sock,type=bind",
+    "source=${env:
   ]
 }
