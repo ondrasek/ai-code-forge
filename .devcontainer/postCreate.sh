@@ -52,6 +52,7 @@ echo "🔄 Running setup scripts in: $postCreateScriptsDir"
 "$postCreateScriptsDir/install-mcp-tools.sh"
 
 # Runtime-specific configurations:
+"$postCreateScriptsDir/install-apt-dependencies.sh"
 "$postCreateScriptsDir/configure-git.sh"
 "$postCreateScriptsDir/setup-github-authentication.sh"
 "$postCreateScriptsDir/clone-repository.sh"
