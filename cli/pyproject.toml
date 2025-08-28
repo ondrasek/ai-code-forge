@@ -44,8 +44,7 @@ acf = "ai_code_forge_cli.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ai_code_forge_cli"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"../templates" = "ai_code_forge_cli/templates"
+# Templates managed via build-with-templates.sh script
 
 [tool.uv]
 dev-dependencies = [
