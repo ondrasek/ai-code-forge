@@ -12,7 +12,7 @@ allowed-tools: Task(git-workflow), Read, Edit, Write, Bash(git status), Bash(git
 
 Create semantic version tag from commit analysis with automatic version determination, pyproject.toml synchronization, and tag creation. **MAIN BRANCH ONLY.**
 
-**CRITICAL**: This command automatically updates all pyproject.toml files in bundled tools (cli, perplexity-mcp, openai-structured-mcp) to match the repository tag before creating the tag, ensuring version consistency across all packages.
+**CRITICAL**: This command automatically synchronizes ALL version-bearing files (pyproject.toml AND __init__.py) across all components to match the repository tag before creating the tag, ensuring comprehensive version consistency.
 
 ## Instructions
 
@@ -77,54 +77,48 @@ Create semantic version tag from commit analysis with automatic version determin
    📋 Full changelog: https://github.com/ondrasek/ai-code-forge/compare/$LAST_TAG...$NEXT_VERSION"
    ```
 
-7. **Update PyProject.toml Versions** (CRITICAL - Before Tagging):
+7. **Synchronize All Version-Bearing Files** (CRITICAL - Before Tagging):
    ```bash
-   # Update version in all pyproject.toml files to match the new tag
-   echo "📦 Updating pyproject.toml versions to $NEXT_VERSION..."
+   # Use comprehensive sync script to update ALL version-bearing files
+   echo "📦 Synchronizing all version-bearing files to $NEXT_VERSION..."
    
-   # Remove 'v' prefix for version number in pyproject.toml
+   # Remove 'v' prefix for version number
    VERSION_NUMBER="${NEXT_VERSION#v}"
    
-   # Update cli/pyproject.toml
-   if [ -f "cli/pyproject.toml" ]; then
-     sed -i "s/^version = \".*\"/version = \"$VERSION_NUMBER\"/" cli/pyproject.toml
-     echo "✅ Updated cli/pyproject.toml to version $VERSION_NUMBER"
-   fi
-   
-   # Update perplexity-mcp/pyproject.toml
-   if [ -f "perplexity-mcp/pyproject.toml" ]; then
-     sed -i "s/^version = \".*\"/version = \"$VERSION_NUMBER\"/" perplexity-mcp/pyproject.toml
-     echo "✅ Updated perplexity-mcp/pyproject.toml to version $VERSION_NUMBER"
-   fi
-   
-   # Update openai-structured-mcp/pyproject.toml
-   if [ -f "openai-structured-mcp/pyproject.toml" ]; then
-     sed -i "s/^version = \".*\"/version = \"$VERSION_NUMBER\"/" openai-structured-mcp/pyproject.toml
-     echo "✅ Updated openai-structured-mcp/pyproject.toml to version $VERSION_NUMBER"
+   # Run comprehensive version synchronization script
+   if [ -f "scripts/sync-versions.sh" ]; then
+     echo "🔄 Running comprehensive version synchronization..."
+     ./scripts/sync-versions.sh "$VERSION_NUMBER"
+     echo "✅ All version-bearing files synchronized to $VERSION_NUMBER"
+   else
+     echo "❌ ERROR: scripts/sync-versions.sh not found"
+     echo "Cannot synchronize versions automatically"
+     exit 1
    fi
    ```
 
 8. **Commit Version Updates** (CRITICAL - Before Tagging):
    ```bash
-   # Stage and commit the version updates
-   git add cli/pyproject.toml perplexity-mcp/pyproject.toml openai-structured-mcp/pyproject.toml
+   # Stage all version-bearing files that may have been updated
+   echo "📝 Staging version-bearing files for commit..."
+   git add -A '*.toml' '**/__init__.py'
    
    # Check if there are changes to commit
    if git diff --cached --quiet; then
      echo "ℹ️ No version changes to commit"
    else
-     echo "📝 Committing version updates..."
-     git commit -m "chore: bump version to $NEXT_VERSION in all pyproject.toml files
+     echo "📝 Committing comprehensive version synchronization..."
+     git commit -m "chore: synchronize all version-bearing files to $NEXT_VERSION
 
 🔖 Preparing for release $NEXT_VERSION
-- Updated cli/pyproject.toml to $VERSION_NUMBER
-- Updated perplexity-mcp/pyproject.toml to $VERSION_NUMBER  
-- Updated openai-structured-mcp/pyproject.toml to $VERSION_NUMBER
+- Synchronized all pyproject.toml files to $VERSION_NUMBER
+- Synchronized all __init__.py files to $VERSION_NUMBER  
+- Applied comprehensive version consistency across all components
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
-     echo "✅ Version updates committed"
+     echo "✅ Comprehensive version synchronization committed"
    fi
    ```
 
@@ -138,7 +132,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
    git push origin "$NEXT_VERSION"
    
    echo "✅ Tag created and pushed: $NEXT_VERSION"
-   echo "📦 All pyproject.toml files synchronized to version $VERSION_NUMBER"
+   echo "📦 All version-bearing files synchronized to version $VERSION_NUMBER"
    echo "🚀 GitHub Actions workflow will now trigger for release"
    ```
 
@@ -150,8 +144,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - ✅ Must be up-to-date with origin/main
 - ✅ Tag name must not already exist
 - ✅ Must have commits since last tag
-- ✅ All pyproject.toml files must exist and be writable
-- ✅ Version updates must be committed before tag creation
+- ✅ Version synchronization script must exist and be executable
+- ✅ All version-bearing files must be synchronized before tag creation
 
 ## Automatic Version Detection
 
@@ -177,8 +171,8 @@ PATCH (0.0.x): Only commits with:
 
 This command triggers the complete release automation:
 
-1. **Version Synchronization**: Updates all pyproject.toml files to match new tag version
-2. **Version Commit**: Commits pyproject.toml changes with proper commit message
+1. **Comprehensive Version Synchronization**: Updates ALL version-bearing files (pyproject.toml + __init__.py) to match new tag version
+2. **Version Commit**: Commits all synchronized version changes with proper commit message
 3. **Tag Creation**: `/tag` creates and pushes version tag referencing updated files
 4. **GitHub Actions**: Tag push triggers `ai-code-forge-release.yml` workflow
 5. **Automated Pipeline**: 
@@ -209,7 +203,7 @@ This command triggers the complete release automation:
 
 ## Expected Outcomes
 
-- **Version synchronization** across all pyproject.toml files
+- **Comprehensive version synchronization** across all version-bearing files (pyproject.toml + __init__.py)
 - **Version commit** with standardized commit message
 - **Semantic version tag** created based on commit analysis  
 - **Tag pushed to origin** triggering GitHub Actions workflow
