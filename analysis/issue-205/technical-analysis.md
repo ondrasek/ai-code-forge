@@ -1,277 +1,264 @@
-# Issue #205 Technical Analysis
+# Technical Analysis: CLI Phase 1 Rewrite (Issue #205)
 
-## Repository Technology Stack Analysis
+## SITUATIONAL CONTEXT ANALYSIS
+============================
 
-**Primary Technology**: Python CLI Application
-**Target Distribution**: PyPI via uvx (universal package runner)
-**Package Manager**: uv exclusively (mandated by Python stack guidelines)
-**CLI Framework**: Click (already in dependencies)
-**Build System**: hatchling (already configured)
+**SITUATION UNDERSTANDING:**
+Need comprehensive codebase context for CLI Phase 1 rewrite implementing `acf status`, `acf init`, and `acf update` commands. This is a complete rebuild from scratch, replacing the existing CLI implementation.
 
-### Technology Stack Components
+**RELEVANT CODEBASE CONTEXT:**
 
-#### 1. Python CLI Development with Click Framework
-**Technology Guidelines**: @templates/stacks/python.md
+### Current CLI Implementation Analysis
 
-**MANDATORY PATTERNS:**
-- **Package Management**: Use `uv` exclusively - NEVER pip, poetry, conda
-- **Type Hints**: Required for all functions and methods
-- **Code Quality**: Automatic `ruff` formatting and linting, `mypy` type checking
-- **Project Structure**: src/package_name/ layout (already implemented)
-- **Testing**: pytest with minimum 80% coverage
-- **Error Handling**: Explicit exception handling, never bare except clauses
-
-**Current CLI Analysis:**
-- ✅ Click framework already implemented (`click>=8.1` dependency)
-- ✅ Proper CLI structure with `@click.group()` and subcommands
-- ✅ Version management via Click decorators
-- ⚠️ Missing comprehensive type hints
-- ⚠️ Missing error handling patterns (bare try/except usage)
-- ⚠️ No dataclasses for configuration structures
-
-#### 2. Modern Python Packaging with pyproject.toml and hatchling
-**Current State Analysis:**
-
-**✅ COMPLIANT:**
-- hatchling build backend configured
-- Python >=3.13 requirement
-- Proper project metadata structure
-- uv development dependencies
-
-**🔧 REQUIRES UPDATES:**
-- Package name change from "ai-code-forge" to maintain same name but add "acf" alias
-- Template bundling via hatchling force-include not implemented
-- Missing console script for "acf" alias
-- pyproject.toml structure needs optimization for Phase 1 scope
-
-#### 3. uvx Distribution and PyPI Packaging
-**Distribution Strategy:**
-- **Primary Package**: "ai-code-forge" on PyPI
-- **Installation Method**: `uvx install ai-code-forge`
-- **Command Aliases**: Both `ai-code-forge` and `acf` available
-- **Target Audience**: External repositories (not self-hosting)
-
-**REQUIRED IMPLEMENTATIONS:**
-- Add "acf" console script entry point
-- Ensure uvx compatibility (no special requirements needed)
-- Configure proper project URLs and metadata for PyPI
-- Test installation via uvx in isolated environment
-
-#### 4. Package Resources for Template Bundling
-**Current Gap Analysis:**
-- Templates directory exists at `/templates/` in repository root
-- No current mechanism for bundling templates in package
-- Need importlib.resources implementation for runtime template access
-
-**MANDATORY IMPLEMENTATION:**
-```python
-# Required pattern from Python guidelines
-from importlib import resources
-import json
-from pathlib import Path
-
-def load_template(template_name: str) -> str:
-    """Load bundled template resource."""
-    try:
-        template_files = resources.files("ai_code_forge.templates")
-        template_file = template_files / f"{template_name}.template"
-        return template_file.read_text()
-    except FileNotFoundError as e:
-        logger.error(f"Template not found: {template_name}")
-        raise  # Re-raise, don't swallow (per guidelines)
-```
-
-**hatchling force-include configuration needed:**
-```toml
-[tool.hatch.build.targets.wheel]
-packages = ["src/ai_code_forge"]
-force-include = {"templates" = "ai_code_forge/templates"}
-```
-
-#### 5. JSON State Management Patterns
-**Current State Approach**: Three-file JSON structure in `.acf/` directory
-
-**MANDATORY PYTHON PATTERNS:**
-```python
-@dataclass
-class ACFState:
-    """State management dataclass (required by guidelines)."""
-    installation_id: str
-    template_source: str
-    last_update: str | None = None
-
-# Required context manager pattern
-class StateManager:
-    def __enter__(self) -> ACFState:
-        return self._load_state()
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            self._save_state()
-        # Explicit error handling per guidelines
-```
-
-**Three-file State Structure:**
-1. `config.json` - User preferences and settings
-2. `state.json` - Installation tracking and metadata
-3. `cache.json` - Template cache and performance optimization
-
-#### 6. Python Project Structure Best Practices
-
-**MANDATORY STRUCTURE (per guidelines):**
+#### 1. Current CLI Directory Structure (`cli/`)
 ```
 cli/
-├── src/ai_code_forge/           # Main package with __init__.py
-│   ├── commands/                # Click command modules
-│   ├── core/                    # Core functionality
-│   ├── templates/               # Bundled templates (bundled via hatchling)
-│   └── utils/                   # Utility functions
-├── tests/                       # test_*.py files only
-├── pyproject.toml               # uv-managed configuration
-└── README.md
+├── pyproject.toml              # Current package config (v2.92.0)
+├── src/ai_code_forge/
+│   ├── main.py                 # Click-based CLI with install/status commands
+│   ├── core/installer.py       # ACFInstaller class with file operations
+│   └── data/                   # Bundled template data
+│       ├── CLAUDE.md           # Operational rules template
+│       ├── claude/             # .claude directory contents
+│       └── acf/                # .acf directory contents (duplicated)
+└── tests/                      # Basic test structure
 ```
 
-**ENFORCE REQUIREMENTS:**
-- pathlib for all file operations (no os.path)
-- Context managers for resource management
-- Dataclasses for data structures
-- Comprehensive docstrings for public APIs
+#### 2. Current Package Configuration
+- **Package Name**: `ai-code-forge` (v2.92.0)
+- **CLI Entry Point**: `ai-code-forge = "ai_code_forge.main:main"`
+- **Dependencies**: Only `click>=8.1`
+- **Python Version**: `>=3.13`
+- **Build System**: `hatchling`
 
-## Architectural Guidelines for CLI Implementation
+#### 3. Current Command Analysis
+**`acf install` Command:**
+- Creates `.claude/` and `.acf/` directories
+- Copies bundled data from `src/ai_code_forge/data/`
+- Installs `CLAUDE.md` to project root
+- Has force overwrite option (`--force`)
+- Validates target directory existence
 
-### Phase 1 Command Architecture
+**`acf status` Command:**
+- Checks for `.claude/`, `.acf/`, and `CLAUDE.md` presence
+- Lists files in each directory
+- Provides installation completeness assessment
+- Uses ACFInstaller.get_installation_status()
 
-#### Command: `acf status`
-**Purpose**: State inspection and configuration analysis
-**Technical Requirements**:
-- Read three JSON state files with proper error handling
-- Display structured output using Click's echo functions
-- Validate .acf directory structure
-- Check template source accessibility
+#### 4. Template Data Bundling Strategy
+Current implementation bundles templates in `src/ai_code_forge/data/`:
+- **`claude/`**: Contains `.claude` directory structure (agents, commands, settings.json)
+- **`acf/`**: Contains duplicated templates and documentation
+- **`CLAUDE.md`**: Project-specific operational rules
 
-**Implementation Pattern**:
-```python
-@click.command()
-@click.option("--format", type=click.Choice(["text", "json"]), default="text")
-def status(format: str) -> None:
-    """Show ACF installation status and configuration."""
-    try:
-        with StateManager() as state:
-            if format == "json":
-                click.echo(state.to_json())
-            else:
-                display_status_text(state)
-    except StateError as e:
-        logger.error(f"State management error: {e}")
-        click.echo("❌ Could not read ACF state", err=True)
-        raise click.ClickException(str(e))
+### Template Directory Analysis (`templates/`)
+
+#### Template Structure for Bundling:
+```
+templates/
+├── CLAUDE.md.template          # Template with placeholders {{GITHUB_OWNER}}, {{GITHUB_REPO}}
+├── guidelines/                 # 11 guideline files (.md)
+│   ├── CLAUDE.md
+│   ├── claude-agents-guidelines.md
+│   ├── claude-commands-guidelines.md
+│   └── ... (8 more guideline files)
+├── prompts/                    # 2 prompt template files
+│   ├── master-prompt.md
+│   └── worktree-deliver.template.md
+├── readme/                     # 3 README templates
+│   ├── general-project-template.md
+│   ├── library-package-template.md
+│   └── mcp-server-template.md
+└── stacks/                     # 9 technology stack guides
+    ├── bash.md
+    ├── python.md
+    └── ... (7 more stack files)
 ```
 
-#### Command: `acf init`
-**Purpose**: Bootstrap new repositories with templates
-**Technical Requirements**:
-- Create .acf directory structure
-- Initialize three JSON state files using dataclasses
-- Copy templates from bundled resources using importlib.resources
-- Validate target directory permissions
+**Total Files to Bundle**: 26 template files across 4 categories
 
-#### Command: `acf update`
-**Purpose**: Template synchronization with customization preservation
-**Technical Requirements**:
-- Compare current templates with bundled versions
-- Preserve user customizations (requires diff analysis)
-- Update state.json with sync metadata
-- Handle merge conflicts gracefully
+### Configuration Management Patterns
 
-### Validation Using AI-Code-Forge Repository
-
-**Self-Validation Strategy:**
-1. Test CLI installation in ai-code-forge repository itself
-2. Verify template bundling includes all files from /templates/
-3. Validate state management with existing .claude/ directory
-4. Test uvx installation and both command aliases
-
-**Quality Assurance Requirements:**
-- Type checking with mypy on all modules
-- Test coverage minimum 80% (per Python guidelines)
-- Integration tests with temporary directories
-- CLI testing using Click's testing utilities
-
-### Technology Integration Concerns
-
-#### Template Source Management
-**Current Challenge**: Repository contains /templates/ but CLI needs bundled access
-**Solution**: hatchling force-include + importlib.resources pattern
-
-#### State Directory Coordination  
-**Current Challenge**: Existing .claude/ vs new .acf/ directory structure
-**Solution**: CLI operates only on .acf/ directory, preserves existing .claude/
-
-#### Version Synchronization
-**Current Challenge**: Template versions vs CLI package versions
-**Solution**: Embed template version metadata in bundled resources
-
-## Critical Implementation Requirements
-
-### MANDATORY ADHERENCE TO PYTHON GUIDELINES
-1. **uv exclusive usage** - No pip, poetry, or conda in any documentation or scripts
-2. **Type hints for all functions** - No untyped public APIs
-3. **Dataclasses for data structures** - Replace plain dicts with typed dataclasses
-4. **Context managers for resources** - File operations and state management
-5. **Explicit error handling** - No bare except clauses, proper exception types
-6. **pathlib for file operations** - No os.path usage
-7. **ruff formatting and mypy type checking** - Integrate into development workflow
-
-### BUILD SYSTEM REQUIREMENTS
-1. **hatchling force-include** for template bundling
-2. **Dual console scripts** - both "ai-code-forge" and "acf" entry points
-3. **uv lock file maintenance** for reproducible dependencies
-4. **PyPI metadata optimization** for discoverability
-
-### TESTING STRATEGY
-1. **Click testing utilities** for CLI command testing
-2. **pytest fixtures** for temporary directory management
-3. **Integration tests** with real template bundling
-4. **uvx installation testing** in isolated environments
-
-## Architecture Risks and Mitigation
-
-### Risk: Template Bundling Complexity
-**Mitigation**: Use proven importlib.resources patterns, test with package building
-
-### Risk: State Management Race Conditions  
-**Mitigation**: Implement file locking, use atomic write operations
-
-### Risk: uvx Distribution Issues
-**Mitigation**: Test installation process, provide fallback documentation
-
-### Risk: Version Compatibility
-**Mitigation**: Strict Python >=3.13 requirement, comprehensive dependency specification
-
-## Development Workflow Integration
-
-### Code Quality Pipeline
-```bash
-uv run ruff format .       # Format before committing
-uv run ruff check .        # Lint and fix issues
-uv run mypy src/           # Type checking required
-uv run pytest --cov=src   # Minimum 80% coverage
+#### Current `.claude` Structure (from data/claude/):
+```
+.claude/
+├── agents/
+│   ├── foundation/             # 6 core agents (context.md, critic.md, etc.)
+│   └── specialists/            # 11 specialist agents
+├── commands/                   # Nested command structure
+│   ├── agents/, commands/, issue/
+│   └── 20+ individual command files
+└── settings.json               # Claude Code configuration
 ```
 
-### Package Building and Testing
-```bash
-uv build                   # Create wheel and sdist
-uvx install ./dist/*.whl   # Test installation
-acf status                 # Test CLI functionality
+#### Settings.json Configuration:
+```json
+{
+  "model": "claude-sonnet-4-20250514",
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  },
+  "includeCoAuthoredBy": true,
+  "cleanupPeriodDays": 30
+}
 ```
 
-### Template Bundling Validation
-```python
-# Verify bundled resources accessible
-from importlib import resources
-templates = resources.files("ai_code_forge.templates")
-assert templates.is_dir()
-assert (templates / "CLAUDE.md.template").exists()
-```
+### State Management Requirements
 
-This technical analysis provides the comprehensive technology stack insights and architectural guidelines needed for the CLI rewrite implementation, ensuring full compliance with established Python development patterns and project requirements.
+#### Current Installation State Tracking:
+The existing `ACFInstaller.get_installation_status()` tracks:
+- `claude_dir_exists`: Boolean for `.claude/` presence
+- `acf_dir_exists`: Boolean for `.acf/` presence  
+- `claude_md_exists`: Boolean for `CLAUDE.md` presence
+- `claude_files`: List of files in `.claude/`
+- `acf_files`: List of files in `.acf/`
+
+#### Required State Management for Phase 1:
+Based on issue requirements, need **3 JSON files in `.acf/`**:
+1. **`installation.json`** - Track what's installed and versions
+2. **`customizations.json`** - User modifications to preserve during updates
+3. **`templates.json`** - Template source tracking and metadata
+
+### Python Packaging Constraints
+
+#### Current Dependencies:
+- **Core**: `click>=8.1` (only production dependency)
+- **Dev**: `pytest>=8.0`
+- **Build**: `hatchling` with custom package inclusion
+- **Distribution**: TestPyPI configured
+
+#### Packaging Challenges:
+- **Template Bundling**: Current uses manual copying in `data/` directory
+- **Resource Access**: Uses `importlib.resources` with fallback to development paths
+- **Path Resolution**: Complex logic for finding bundled data
+
+### Existing Script Ecosystem Analysis
+
+#### Scripts Directory (`scripts/`):
+- **19 shell scripts** for worktree management, launching, validation
+- **Complex bash utilities** in `lib/launcher-utils.sh`
+- **Test infrastructure** with security and integration tests
+- **Worktree management system** with terminal title integration
+
+#### Key Integration Points:
+- **`worktree-init.sh`**: 566-line script with shell configuration generation
+- **Security patterns**: Input validation, absolute paths, sanitization
+- **Terminal integration**: Title management, multi-shell support
+
+## HISTORICAL CONTEXT:
+
+### Past Decisions:
+1. **Click Framework**: Chosen for CLI implementation (established pattern)
+2. **Hatchling Build**: Selected over setuptools for modern Python packaging
+3. **Data Directory**: Bundled templates in `src/ai_code_forge/data/`
+4. **Dual Directory**: Both `.claude/` and `.acf/` created by installer
+
+### Evolution:
+- **Version Progression**: Currently at v2.92.0
+- **Command Expansion**: Started with install/status, needs init/update
+- **Template Growth**: 26+ template files to manage
+- **Script Ecosystem**: Extensive bash infrastructure developed
+
+### Lessons Learned:
+- **Resource Loading**: Complex path resolution needed for development vs installed
+- **Template Duplication**: Current `acf/` directory duplicates some template content
+- **State Tracking**: Simple boolean tracking insufficient for update operations
+
+## SITUATIONAL RECOMMENDATIONS:
+
+### Suggested Approach:
+1. **Complete CLI Rebuild**: Delete `cli/` directory and start fresh
+2. **Simplified Package Structure**: Clean pyproject.toml with proper hatchling configuration
+3. **State-First Design**: Implement 3 JSON state files before commands
+4. **Template Bundling**: Use hatchling force-include from `/templates` directly
+5. **Resource Access**: Modern `importlib.resources` with proper fallbacks
+
+### Key Considerations:
+1. **Breaking Change**: Complete rewrite will break existing installations
+2. **Template Synchronization**: Update command needs diff detection
+3. **Customization Preservation**: Critical for user adoption
+4. **Testing Strategy**: Need validation against real ai-code-forge repository
+
+### Implementation Notes:
+1. **Command Priority**: Start with `status` (simplest), then `init`, then `update`
+2. **State Management**: JSON files must be atomic operations
+3. **Template Processing**: Handle placeholders like `{{GITHUB_OWNER}}`
+4. **Path Security**: Follow existing script patterns for absolute paths
+
+### Testing Strategy:
+- **Unit Tests**: Each command and state manager
+- **Integration Tests**: Test against ai-code-forge repository itself
+- **Template Validation**: Ensure all 26 template files bundle correctly
+- **State Management**: Test customization preservation scenarios
+
+## IMPACT ANALYSIS:
+
+### Affected Systems:
+- **Existing CLI Users**: Complete command signature changes
+- **Template Distribution**: New bundling mechanism
+- **Documentation**: CLI usage examples need updates
+- **CI/CD**: Build and test processes need adjustments
+
+### Risk Assessment:
+- **User Migration**: No backward compatibility path
+- **Template Integrity**: Risk of corruption during bundling
+- **State Consistency**: JSON state files could become inconsistent
+- **Resource Loading**: Platform-specific importlib.resources behavior
+
+### Documentation Needs:
+- **CLI Reference**: Complete rewrite of usage documentation
+- **Migration Guide**: How to transition from old CLI
+- **State File Format**: JSON schema documentation
+- **Template Customization**: How preservation works
+
+### Migration Requirements:
+- **Package Rename**: Consider `ai-code-forge` → `acf` transition
+- **Command Migration**: `ai-code-forge install` → `acf init`
+- **Data Migration**: Convert existing installations to new state format
+- **Breaking Change Communication**: Version bump to 3.0.0
+
+## ANALYSIS DOCUMENTATION:
+
+### Context Sources:
+- `/workspace/worktrees/ai-code-forge/issue-205/cli/` - Current implementation
+- `/workspace/worktrees/ai-code-forge/issue-205/templates/` - Templates to bundle
+- `/workspace/worktrees/ai-code-forge/issue-205/scripts/` - Shell script patterns
+- `/workspace/worktrees/ai-code-forge/issue-205/analysis/issue-205/research-findings.md` - Issue context
+
+### Key Discoveries:
+1. **Template Scale**: 26 files across 4 categories need bundling
+2. **State Complexity**: Current boolean tracking insufficient for updates
+3. **Script Integration**: Extensive bash ecosystem with security patterns
+4. **Resource Challenges**: Complex path resolution for bundled data
+
+### Decision Factors:
+1. **Complete Rewrite Justified**: Current architecture doesn't support update operations
+2. **State Management Critical**: JSON files are foundation for all operations
+3. **Template Bundling**: Must handle 26+ files reliably across platforms
+4. **Security Patterns**: Follow established absolute path and validation patterns
+
+## TECHNICAL CONSTRAINTS:
+
+### Python Version:
+- **Minimum**: Python 3.13+ (established constraint)
+- **Packaging**: Modern hatchling build system
+- **Resources**: importlib.resources for template access
+
+### Template Management:
+- **Source**: 26 files in `/templates` directory
+- **Processing**: Handle `{{PLACEHOLDER}}` substitution
+- **Bundling**: Force-include via hatchling configuration
+- **Access**: Runtime loading via importlib.resources
+
+### State Consistency:
+- **Atomic Operations**: JSON file updates must be transactional
+- **Schema Validation**: JSON structure must be validated
+- **Error Handling**: Graceful degradation for corrupted state
+
+### CLI Design:
+- **Framework**: Click (established pattern)
+- **Commands**: 3 commands only (status, init, update)
+- **Options**: Minimal flags, focus on simplicity
+- **Output**: User-friendly with clear status indicators
+
+This analysis provides comprehensive context for the CLI Phase 1 rewrite, identifying what needs to be replaced, what templates need bundling, current configuration patterns, and technical constraints that will guide the implementation.
