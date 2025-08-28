@@ -149,7 +149,7 @@ class StatusReporter:
         
         # Check for conflicts (customized files that would be overwritten)
         customized_files = set(self.repo_analyzer.find_customized_files())
-        templates_to_update = set(missing + outdated)
+        templates_to_update = missing.union(set(outdated))
         
         # Convert template paths to potential file paths
         potential_conflicts = []
