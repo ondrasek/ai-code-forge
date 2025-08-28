@@ -43,28 +43,68 @@ print_status "$BLUE" "🔍 Validating version consistency across all pyproject.t
 # Expected version (optional parameter)
 EXPECTED_VERSION="${1:-}"
 
-# Define all pyproject.toml files that should have synchronized versions
-PYPROJECT_FILES=(
-    "cli/pyproject.toml"
-    "mcp-servers/perplexity-mcp/pyproject.toml"
-    "mcp-servers/openai-structured-mcp/pyproject.toml"
+# Auto-discover all pyproject.toml files in the repository
+print_status "$BLUE" "🔍 Auto-discovering pyproject.toml files..."
+
+# Define exclusion patterns for files that should NOT be synchronized
+EXCLUDE_PATTERNS=(
+    "*/node_modules/*"
+    "*/venv/*"
+    "*/.venv/*"
+    "*/env/*"
+    "*/.env/*"
+    "*/site-packages/*"
+    "*/dist/*"
+    "*/build/*"
+    "*/target/*"
+    "*/.git/*"
+    "*/examples/*"
+    "*/demo/*"
+    "*/test/*"
+    "*/tests/*"
+    "*/.pytest_cache/*"
+    "*/temp/*"
+    "*/tmp/*"
+    "*/.cache/*"
 )
 
-# Check if all required files exist
-MISSING_FILES=()
-for file in "${PYPROJECT_FILES[@]}"; do
-    if [[ ! -f "$file" ]]; then
-        MISSING_FILES+=("$file")
+# Find all pyproject.toml files
+ALL_PYPROJECT_FILES=($(find . -name "pyproject.toml" -type f | sort))
+
+# Filter out excluded files
+PYPROJECT_FILES=()
+for file in "${ALL_PYPROJECT_FILES[@]}"; do
+    # Remove leading ./ from path for cleaner display
+    clean_file="${file#./}"
+    
+    # Check if file matches any exclusion pattern
+    should_exclude=false
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        if [[ "$clean_file" == $pattern ]]; then
+            should_exclude=true
+            break
+        fi
+    done
+    
+    if [[ "$should_exclude" == false ]]; then
+        PYPROJECT_FILES+=("$clean_file")
+    else
+        print_status "$YELLOW" "⏭️  Excluding: $clean_file (matches exclusion pattern)"
     fi
 done
 
-if [[ ${#MISSING_FILES[@]} -gt 0 ]]; then
-    print_status "$RED" "❌ ERROR: Missing required pyproject.toml files:"
-    for file in "${MISSING_FILES[@]}"; do
-        print_status "$RED" "  - $file"
-    done
+# Check if we found any files to validate
+if [[ ${#PYPROJECT_FILES[@]} -eq 0 ]]; then
+    print_status "$RED" "❌ ERROR: No pyproject.toml files found for validation"
+    print_status "$BLUE" "Searched in: $(pwd)"
+    print_status "$BLUE" "Exclusion patterns applied: ${#EXCLUDE_PATTERNS[@]} patterns"
     exit 2
 fi
+
+print_status "$BLUE" "📋 Found ${#PYPROJECT_FILES[@]} pyproject.toml file(s) for validation:"
+for file in "${PYPROJECT_FILES[@]}"; do
+    print_status "$BLUE" "  - $file"
+done
 
 # Extract versions from all files
 declare -A FILE_VERSIONS
