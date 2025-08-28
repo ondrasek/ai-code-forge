@@ -85,14 +85,16 @@ jobs:
               exit 1
             fi
 
-            # Version consistency validation
-            PYPROJECT_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
-            if [[ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]]; then
-              echo "❌ ERROR: Tag version ($TAG_VERSION) must match pyproject.toml version ($PYPROJECT_VERSION)"
+            # Comprehensive version consistency validation across all pyproject.toml files
+            echo "🔍 Running comprehensive version consistency validation..."
+            chmod +x scripts/validate-versions.sh
+            if ./scripts/validate-versions.sh "$TAG_VERSION"; then
+              echo "✅ Comprehensive version validation passed: $TAG_VERSION"
+            else
+              echo "❌ ERROR: Version consistency validation failed"
+              echo "All pyproject.toml files must have synchronized versions matching the tag"
               exit 1
             fi
-
-            echo "✅ Version validation passed: $TAG_VERSION"
           fi
 
           # Determine release type
