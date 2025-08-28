@@ -1,1 +1,1 @@
-"""Tests for ACF CLI."""
+"""Tests for AI Code Forge CLI."""
