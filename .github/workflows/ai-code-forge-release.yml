@@ -2,7 +2,8 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
     paths:
       - '.claude/**'
       - 'templates/**'
@@ -12,18 +13,9 @@ on:
       - 'CLAUDE.md'
       - 'README.md'
       - 'CHANGELOG.md'
+  push:
     tags:
       - 'v*'  # Semantic version tags (v0.2.0, v0.2.1, etc.)
-  pull_request:
-    paths:
-      - '.claude/**'
-      - 'templates/**'
-      - 'scripts/**'
-      - 'docs/**'
-      - 'cli/**'
-      - 'CLAUDE.md'
-      - 'README.md'
-      - 'CHANGELOG.md'
   workflow_dispatch:
     inputs:
       build_type:
