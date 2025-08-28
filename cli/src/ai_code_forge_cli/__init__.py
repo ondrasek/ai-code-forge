@@ -1,5 +1,5 @@
 """AI Code Forge CLI - Template management for AI development workflows."""
 
-__version__ = "2.93.0"
+__version__ = "2.94.0"
 __author__ = "AI Code Forge"
 __email__ = "noreply@example.com"
