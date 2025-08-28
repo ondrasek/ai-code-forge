@@ -1,6 +1,6 @@
 [project]
 name = "openai-structured-mcp-server"
-version = "2.91.0"
+version = "2.93.0"
 description = "MCP server for OpenAI structured output integration"
 requires-python = ">=3.13"
 dependencies = [
