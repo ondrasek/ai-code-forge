@@ -6,6 +6,7 @@ from typing import Optional
 import click
 
 from . import __version__
+from .commands.init import init_command
 from .commands.status import status_command
 
 
@@ -83,6 +84,7 @@ def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path]) -> None:
 
 
 # Add commands
+main.add_command(init_command)
 main.add_command(status_command)
 
 
