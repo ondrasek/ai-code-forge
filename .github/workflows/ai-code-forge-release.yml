@@ -13,7 +13,6 @@ on:
       - 'CLAUDE.md'
       - 'README.md'
       - 'CHANGELOG.md'
-  push:
     tags:
       - 'v*'  # Semantic version tags (v0.2.0, v0.2.1, etc.)
   workflow_dispatch:
