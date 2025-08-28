@@ -343,7 +343,7 @@ def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
                 click.echo(f"  ✅ {file_count} files deployed")
             
             if results["parameters_used"]:
-                param_count = len([v for v in results["parameters_used"].values() if not v.startswith("{{")])
+                param_count = len([v for v in results["parameters_used"].values() if v and not v.startswith("{{")])
                 click.echo(f"  ✅ {param_count} parameters substituted")
             
             click.echo()
