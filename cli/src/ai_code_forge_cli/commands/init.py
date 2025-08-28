@@ -1,11 +1,16 @@
 """Init command implementation."""
 
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
 
 import click
 
-from ..core.init import InitCommand
+from .. import __version__
+from ..core.detector import RepositoryDetector
+from ..core.deployer import TemplateDeployer
+from ..core.state import ACFState, FileInfo, InstallationState, StateManager, TemplateState
+from ..core.templates import TemplateManager
 
 
 @click.command("init")
@@ -78,11 +83,9 @@ def init_command(
         if verbose or acf_ctx.verbose:
             click.echo(f"🎯 Target directory: {target_path}")
         
-        # Create init command instance
-        init_cmd = InitCommand(target_path)
-        
         # Execute initialization
-        results = init_cmd.run(
+        results = _run_init(
+            target_path=target_path,
             force=force,
             dry_run=dry_run,
             interactive=interactive,
@@ -103,6 +106,185 @@ def init_command(
             raise
         else:
             raise click.ClickException(f"Failed to initialize repository: {e}")
+
+
+def _run_init(
+    target_path: Path,
+    force: bool = False,
+    dry_run: bool = False,
+    interactive: bool = False,
+    github_owner: Optional[str] = None,
+    project_name: Optional[str] = None,
+    verbose: bool = False,
+) -> Dict[str, Any]:
+    """Execute the init command logic.
+    
+    Args:
+        target_path: Target repository path
+        force: Overwrite existing configuration
+        dry_run: Show what would be done without changes
+        interactive: Prompt for parameters
+        github_owner: Override GitHub owner detection
+        project_name: Override project name detection
+        verbose: Show detailed output
+        
+    Returns:
+        Dictionary with command results
+    """
+    results = {
+        "success": False,
+        "message": "",
+        "files_created": [],
+        "parameters_used": {},
+        "warnings": [],
+        "errors": [],
+    }
+    
+    try:
+        # Validate target directory
+        if not target_path.exists():
+            results["errors"].append(f"Target directory does not exist: {target_path}")
+            return results
+        
+        # Initialize components
+        detector = RepositoryDetector(target_path)
+        template_manager = TemplateManager()
+        state_manager = StateManager(target_path)
+        
+        # Check existing configuration
+        existing_config = detector.check_existing_configuration()
+        
+        if not force and (existing_config["has_acf"] or existing_config["has_claude"]):
+            error_msg = "Repository already has ACF or Claude Code configuration. Use --force to overwrite."
+            results["errors"].append(error_msg)
+            return results
+        
+        # Detect repository information
+        repo_info = detector.detect_github_info()
+        
+        # Override with explicit parameters
+        if github_owner:
+            repo_info["github_owner"] = github_owner
+        if project_name:
+            repo_info["project_name"] = project_name
+        
+        # Prepare template parameters
+        parameters = {
+            "GITHUB_OWNER": repo_info.get("github_owner", "{{GITHUB_OWNER}}"),
+            "PROJECT_NAME": repo_info.get("project_name", "{{PROJECT_NAME}}"),
+            "REPO_URL": repo_info.get("repo_url", "{{REPO_URL}}"),
+            "CREATION_DATE": datetime.now().isoformat(),
+            "ACF_VERSION": __version__,
+            "TEMPLATE_VERSION": template_manager.calculate_bundle_checksum()[:8],
+        }
+        
+        # Handle interactive mode
+        if interactive:
+            parameters = _prompt_for_parameters(parameters)
+        
+        results["parameters_used"] = parameters
+        
+        if verbose:
+            click.echo(f"🔧 Using parameters: {list(parameters.keys())}")
+        
+        # Deploy templates
+        deployer = TemplateDeployer(target_path, template_manager)
+        deploy_results = deployer.deploy_templates(parameters, dry_run)
+        
+        results["files_created"] = deploy_results["files_deployed"] + deploy_results["directories_created"]
+        results["errors"].extend(deploy_results["errors"])
+        
+        # Initialize ACF state (if not dry run)
+        if not dry_run and not results["errors"]:
+            _initialize_acf_state(state_manager, template_manager, parameters)
+            results["files_created"].append(".acf/state.json")
+        
+        if not results["errors"]:
+            results["success"] = True
+            if dry_run:
+                results["message"] = f"Would create {len(results['files_created'])} files"
+            else:
+                results["message"] = "Repository initialized successfully"
+        else:
+            results["message"] = "Initialization completed with errors"
+            
+    except Exception as e:
+        results["errors"].append(f"Initialization failed: {e}")
+        results["message"] = f"Failed to initialize repository: {e}"
+    
+    return results
+
+
+def _prompt_for_parameters(parameters: Dict[str, str]) -> Dict[str, str]:
+    """Prompt user for template parameters interactively.
+    
+    Args:
+        parameters: Default parameters
+        
+    Returns:
+        Updated parameters with user input
+    """
+    updated = parameters.copy()
+    
+    # Prompt for key parameters
+    for param in ["GITHUB_OWNER", "PROJECT_NAME"]:
+        current_value = updated.get(param, "")
+        if current_value.startswith("{{"):
+            current_value = ""
+        
+        prompt_text = f"{param.replace('_', ' ').title()}"
+        if current_value:
+            prompt_text += f" [{current_value}]"
+        
+        user_input = click.prompt(prompt_text, default=current_value, show_default=False)
+        if user_input:
+            updated[param] = user_input
+    
+    return updated
+
+
+def _initialize_acf_state(
+    state_manager: StateManager, 
+    template_manager: TemplateManager,
+    parameters: Dict[str, str]
+) -> None:
+    """Initialize ACF state file.
+    
+    Args:
+        state_manager: State manager instance
+        template_manager: Template manager instance
+        parameters: Template parameters used
+    """
+    # Create .acf directory
+    acf_dir = state_manager.repo_root / ".acf"
+    acf_dir.mkdir(exist_ok=True)
+    
+    # Build template file information
+    template_files = {}
+    available_templates = template_manager.list_template_files()
+    
+    for template_path in available_templates:
+        template_info = template_manager.get_template_info(template_path)
+        if template_info:
+            template_files[template_path] = template_info
+    
+    # Create initial state
+    initial_state = ACFState(
+        installation=InstallationState(
+            template_version=parameters.get("TEMPLATE_VERSION", "unknown"),
+            installed_at=datetime.now(),
+            cli_version=__version__,
+        ),
+        templates=TemplateState(
+            checksum=template_manager.calculate_bundle_checksum(),
+            files=template_files,
+        ),
+    )
+    
+    # Save state
+    with state_manager.atomic_update() as state:
+        state.installation = initial_state.installation
+        state.templates = initial_state.templates
 
 
 def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:

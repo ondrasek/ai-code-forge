@@ -9,7 +9,9 @@ import pytest
 from click.testing import CliRunner
 
 from ai_code_forge_cli.cli import main
-from ai_code_forge_cli.core.init import InitCommand, ParameterSubstitutor, RepositoryDetector
+from ai_code_forge_cli.core.detector import RepositoryDetector
+from ai_code_forge_cli.core.deployer import ParameterSubstitutor
+from ai_code_forge_cli.commands.init import _run_init
 
 
 class TestParameterSubstitutor:
