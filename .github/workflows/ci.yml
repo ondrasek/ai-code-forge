@@ -1,0 +1,192 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: 
+      - main
+    paths:
+      - '.claude/**'
+      - 'templates/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'cli/**'
+      - 'mcp-servers/**'
+      - 'CLAUDE.md'
+      - 'README.md'
+      - 'CHANGELOG.md'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.claude/**'
+      - 'templates/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'cli/**'
+      - 'mcp-servers/**'
+      - 'CLAUDE.md'
+      - 'README.md'
+      - 'CHANGELOG.md'
+
+jobs:
+  validate-versions:
+    name: Version Consistency Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Make validation script executable
+        run: chmod +x scripts/validate-versions.sh
+
+      - name: Run version consistency validation
+        run: |
+          echo "🔍 Running version consistency validation..."
+          ./scripts/validate-versions.sh
+          echo "✅ Version validation completed"
+
+  build-and-test:
+    name: Build and Test CLI Package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python and uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('cli/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Verify build script exists
+        run: |
+          echo "=== Verifying Build Script ==="
+          if [[ -f cli/build-with-templates.sh ]]; then
+            echo "✅ Build script found: cli/build-with-templates.sh"
+            chmod +x cli/build-with-templates.sh
+          else
+            echo "❌ Build script not found: cli/build-with-templates.sh"
+            echo "The build script is required to properly bundle templates"
+            exit 1
+          fi
+
+      - name: Build CLI package with templates
+        run: |
+          echo "=== Building CLI Package with Templates ==="
+          cd cli
+          # Use custom build script to properly bundle templates
+          ./build-with-templates.sh
+
+      - name: Validate package
+        run: |
+          echo "=== Validating Package ==="
+          cd cli
+
+          # Check if artifacts were created using proper file checks
+          if ls dist/*.whl >/dev/null 2>&1; then
+            echo "✅ Wheel file created successfully"
+            WHEEL_FILE=$(ls dist/*.whl | head -1)
+            echo "Wheel: $WHEEL_FILE"
+          else
+            echo "❌ No wheel file found"
+            exit 1
+          fi
+
+          if ls dist/*.tar.gz >/dev/null 2>&1; then
+            echo "✅ Source distribution created successfully"
+            TAR_FILE=$(ls dist/*.tar.gz | head -1)
+            echo "Source dist: $TAR_FILE"
+          else
+            echo "❌ No source distribution found"
+            exit 1
+          fi
+
+          # Test package import
+          echo "Testing package import..."
+          if uv run python -c "import ai_code_forge; print('✅ Package imports successfully')"; then
+            echo "✅ Package validation passed"
+          else
+            echo "❌ Package validation failed"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: |
+          echo "=== Running Tests ==="
+          cd cli
+          uv run pytest --verbose --tb=short
+          echo "✅ Tests completed"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-build-artifacts-${{ github.sha }}
+          path: cli/dist/
+          retention-days: 7
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-test-results-${{ github.sha }}
+          path: cli/.pytest_cache/
+          retention-days: 7
+
+  build-summary:
+    name: CI Summary
+    needs: [validate-versions, build-and-test]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      contents: read
+
+    steps:
+      - name: Generate CI summary
+        run: |
+          echo "## 🔍 Continuous Integration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Version validation status
+          if [[ "${{ needs.validate-versions.result }}" == "success" ]]; then
+            echo "✅ **Version Consistency:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Version Consistency:** FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Build and test status  
+          if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
+            echo "✅ **Build & Test:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build & Test:** FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 What Was Validated:" >> $GITHUB_STEP_SUMMARY
+          echo "- Version consistency across all pyproject.toml and __init__.py files" >> $GITHUB_STEP_SUMMARY
+          echo "- CLI package builds successfully with templates" >> $GITHUB_STEP_SUMMARY  
+          echo "- Package imports work correctly" >> $GITHUB_STEP_SUMMARY
+          echo "- All tests pass" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" ]]; then
+            echo "🎉 **Overall Status:** All checks passed - ready for release!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Overall Status:** Some checks failed - review before release" >> $GITHUB_STEP_SUMMARY
+          fi
