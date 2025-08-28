@@ -383,3 +383,137 @@ build-backend = "hatchling.build"
 4. Add performance optimizations and error handling
 
 **Research Complete:** Web-first methodology successfully gathered comprehensive 2025 best practices for all requested areas.
+
+## SECURITY & PERFORMANCE DEEP DIVE (2025)
+
+### Advanced Security Considerations
+
+**Input Validation & Attack Prevention (CRITICAL):**
+- **Whitelist Validation**: Always validate user input against acceptable values to prevent injection attacks
+- **Input Length Limits**: Implement strict limits to prevent buffer overflows and resource exhaustion attacks
+- **Character Validation**: Use `str.isalnum()`, regex patterns for strict input checks; reject unexpected characters
+- **CLI Parameter Security**: Use `shlex.quote()` for shell command parameter escaping when invoking external tools
+- **Path Traversal Prevention**: Validate all file paths using `pathlib.Path.resolve()` to prevent directory traversal attacks
+
+**File Operations Security Hardening:**
+- **Secure File Handling**: Always check `os.path.exists()` and validate file types before operations
+- **Principle of Least Privilege**: Grant only minimum required file permissions using `os.chmod()`
+- **Archive Security**: Validate archive contents and paths before extraction to prevent zip-slip attacks
+- **Atomic File Operations**: Use context managers for transactional file operations with automatic rollback
+- **Symlink Attack Prevention**: Validate symbolic links in file operations using `Path.is_symlink()`
+
+**Advanced Dependency Security:**
+- **Continuous Vulnerability Scanning**: Integrate Safety CLI for real-time dependency vulnerability detection
+- **Package Integrity Verification**: Verify package checksums and signatures from PyPI
+- **Virtual Environment Isolation**: Strictly isolate CLI dependencies to prevent system-wide contamination
+- **Supply Chain Security**: Implement automated dependency update processes with security review gates
+
+**Code Security Patterns:**
+- **Dangerous Function Avoidance**: Never use `eval()`, `exec()`, or `os.system()` with any user input
+- **Secure Secret Management**: Use environment variables, Azure Key Vault, or AWS Secrets Manager - never hardcode secrets
+- **Exception Information Disclosure**: Sanitize error messages in production to prevent stack trace information leakage
+- **Static Security Analysis**: Integrate Bandit, PyLint, Semgrep security scanning in CI/CD pipelines
+
+### High-Performance CLI Patterns
+
+**Template Processing Optimization:**
+- **Lazy Template Loading**: Use `importlib.util.LazyLoader` for template resources following PEP 690 lazy import standards
+- **Template Caching Strategy**: Cache parsed templates using `@functools.lru_cache(maxsize=128)` decorator
+- **Resource Bundling Efficiency**: Use hatchling force-include for optimal template distribution packaging
+- **On-Demand Resource Access**: Load templates only when accessed using importlib.resources streaming
+
+**State Management Performance:**
+- **Atomic State Operations**: Use context managers for transactional state updates with automatic rollback
+- **JSON Streaming Processing**: Process large state files with `ijson` streaming parser for memory efficiency  
+- **Configuration Caching**: Cache frequently accessed configuration data in memory with TTL invalidation
+- **Lazy State Loading**: Load state components only when required using property decorators
+
+**Click Framework Performance Optimization:**
+- **Lazy Subcommand Loading**: Implement custom `LazyGroup` class to reduce startup time for large CLI applications
+- **Command Composition**: Design nested commands for better code organization and memory efficiency
+- **Help Generation Optimization**: Leverage Click's automatic help page generation to reduce documentation overhead
+- **Type Validation Efficiency**: Use Click's built-in parameter type validation instead of manual checks
+
+**General Performance Optimization Patterns:**
+- **Profile-First Methodology**: Always use `cProfile` module to identify actual bottlenecks before optimization efforts
+- **Memory-Efficient Processing**: Use generators instead of lists for large data processing to maintain low memory usage
+- **CPU Utilization**: Leverage `multiprocessing` module for CPU-intensive operations to utilize all available cores
+- **Built-in Function Preference**: Prefer Python built-ins over manual implementations for performance and reliability
+
+### Robust Error Handling Architecture
+
+**Advanced Error Management:**
+- **EAFP Philosophy**: Follow "Easier to Ask for Forgiveness than Permission" - use try-except over pre-condition checks
+- **Focused Exception Handling**: Keep try blocks narrow and specific to pinpoint exact error sources
+- **Error Aggregation Pattern**: Continue processing multiple items, collect errors, and report all issues at completion
+- **Graceful Degradation**: Implement comprehensive fallback mechanisms for non-critical feature failures
+
+**State Consistency & Transactions:**
+- **Transaction Context Managers**: Ensure atomic operations with automatic rollback on failures
+- **Validation Checkpoints**: Validate state consistency at critical operation boundaries
+- **Recovery Mechanisms**: Implement sophisticated state recovery from partial failures
+- **Backup Strategies**: Create automatic state backups before destructive operations
+
+### Cross-Platform Compatibility Excellence
+
+**Modern Path Handling (2025 Standards):**
+- **pathlib Adoption**: Use `pathlib.Path` exclusively instead of `os.path` for complete cross-platform compatibility
+- **Forward Slash Convention**: Always use forward slashes in code - let pathlib handle OS-specific conversion
+- **Path Validation**: Comprehensive validation for Windows, Linux, macOS file system differences and limitations
+- **Home Directory Access**: Use `Path.home()` for reliable cross-platform user directory access
+
+**Platform-Specific Optimization:**
+- **Environment Variable Handling**: Account for different environment variable conventions and case sensitivity
+- **File Permission Models**: Handle Unix vs Windows permission models with appropriate fallbacks  
+- **Line Ending Normalization**: Automatically handle CRLF vs LF line ending differences in templates
+- **Shell Integration**: Consider different shell capabilities and syntax across platforms
+
+### Template Security & Validation
+
+**Template Processing Security:**
+- **Input Sanitization**: Sanitize all template variables before processing using allowlist filtering
+- **Template Sandboxing**: Restrict template execution environment capabilities to prevent code injection
+- **Path Validation**: Validate all template file paths to prevent directory traversal attacks
+- **Content Security Policy**: Scan template content for potential security issues using AST analysis
+
+**Advanced Validation Approaches:**
+- **Schema-Based Validation**: Use Pydantic v2 or Marshmallow for strict template data validation
+- **Type System Integration**: Implement comprehensive type checking for template parameters
+- **Content Security Scanning**: Automated template content security scanning for potential vulnerabilities
+- **Version Compatibility**: Validate template compatibility with target system versions
+
+### CLI Observability & Monitoring
+
+**Performance Monitoring:**
+- **Command Execution Timing**: Track command execution times for performance regression detection
+- **Resource Usage Tracking**: Monitor memory and CPU usage patterns for optimization opportunities
+- **Error Rate Monitoring**: Track error rates and patterns for reliability improvements
+- **User Behavior Analytics**: Understand command usage patterns for UX optimization
+
+**Security Monitoring:**
+- **Access Pattern Analysis**: Monitor file access patterns for unusual behavior detection
+- **Input Validation Logs**: Log input validation failures for security threat analysis
+- **Dependency Vulnerability Alerts**: Automated alerts for new vulnerabilities in dependencies
+- **Security Event Logging**: Comprehensive logging of security-relevant events
+
+### Modern Development Toolchain (2025)
+
+**Static Analysis Integration:**
+- **Security Scanning**: Bandit for security vulnerability detection, integrated in CI/CD
+- **Code Quality**: Ruff for fast linting, Black for formatting, mypy for type checking
+- **Dependency Analysis**: Safety CLI for vulnerability scanning, pip-audit for additional checks
+- **Performance Profiling**: py-spy for production profiling, memory-profiler for memory analysis
+
+**Testing Excellence:**
+- **Comprehensive Test Coverage**: pytest with Click's CliRunner for CLI-specific testing
+- **Security Test Cases**: Dedicated security test cases for input validation and attack prevention
+- **Performance Benchmarking**: Automated performance benchmarks in CI/CD pipeline
+- **Cross-Platform Testing**: Automated testing across Windows, Linux, macOS environments
+
+**Deployment & Distribution:**
+- **Modern Packaging**: hatchling with PEP 621 compliance for standardized packaging
+- **Secure Distribution**: Package signing and verification for supply chain security
+- **Version Management**: Semantic versioning with automated changelog generation
+- **Performance Monitoring**: Production performance monitoring and alerting
+
+This comprehensive security and performance research provides the foundation for building a robust, secure, and high-performance CLI application that meets 2025 industry standards.
