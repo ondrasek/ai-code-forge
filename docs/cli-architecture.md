@@ -305,7 +305,7 @@ def test_init_command():
 
 ## Implementation Plan
 
-### Foundation
+### Foundation Setup
 1. **Delete current CLI**: Remove `cli/` directory entirely
 2. **Create clean pyproject.toml**: Hatchling build system with force-include
 3. **Basic command structure**: Click-based CLI with subcommands
