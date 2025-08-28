@@ -1,46 +1,67 @@
-# AI Code Forge
+# AI Code Forge CLI
 
-Configuration management tool for AI Code Forge - automated deployment of Claude Code configurations, templates, and development tools.
+A command-line tool for managing AI Code Forge templates and configurations.
 
 ## Installation
 
 ```bash
-pip install ai-code-forge
+# Install via uvx (recommended for ephemeral usage)
+uvx ai-code-forge --help
+uvx acf --help
+
+# Install persistently
+uv tool install ai-code-forge
 ```
 
-## Usage
+## Commands
 
-### Install Configuration
+### `acf status`
 
-Deploy complete AI Code Forge configuration to your project:
-
-```bash
-acf install
-```
-
-Options:
-- `--target PATH` - Install to specific directory (default: current directory)
-- `--force` - Overwrite existing files
-
-### Check Status
-
-Verify your AI Code Forge installation:
+Show comprehensive status of repository configuration and templates.
 
 ```bash
+# Human-readable status
 acf status
+
+# Verbose output with detailed information
+acf status --verbose
+
+# JSON output for scripting
+acf status --format json
 ```
 
-## What Gets Installed
+## Development
 
-- **`.claude/`** - Claude Code agents, commands, and settings
-- **`.acf/`** - Templates, documentation, and scripts
-- **`CLAUDE.md`** - Core operational rules and guidelines
+```bash
+# Install in development mode
+cd cli
+uv pip install -e .
 
-## Requirements
+# Run tests
+uv run pytest
 
-- Python 3.13+
-- Claude Code CLI
+# Type checking
+uv run mypy src/
 
-## Project
+# Formatting
+uv run ruff format
+uv run ruff check
+```
 
-This tool is part of the [AI Code Forge](https://github.com/ondrasek/ai-code-forge) project - a comprehensive template system that enhances Claude Code with specialized AI agents, technology stack configurations, and automated workflows.
+## Architecture
+
+This CLI manages AI development workflows through:
+
+- **Template Management**: Bundled templates for agents, commands, and configurations
+- **State Management**: Atomic state tracking in `.acf/state.json`  
+- **Configuration Analysis**: Detection and analysis of existing configurations
+- **Customization Preservation**: Support for `.local` files and user modifications
+
+## Phase 1 Implementation
+
+Currently implements:
+- ✅ `acf status` - Complete status reporting and analysis
+
+Coming next:
+- 🚧 `acf init` - Repository initialization with templates
+- 🚧 `acf update` - Template synchronization with customization preservation
