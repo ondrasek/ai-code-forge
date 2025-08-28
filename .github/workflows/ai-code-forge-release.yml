@@ -144,35 +144,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-uv-
 
-      - name: Prepare ACF package data
+      - name: Verify build script exists
         run: |
-          echo "=== Preparing ACF Package Data ==="
-          mkdir -p cli/src/ai_code_forge/data/{claude,acf}
+          echo "=== Verifying Build Script ==="
+          if [[ -f cli/build-with-templates.sh ]]; then
+            echo "✅ Build script found: cli/build-with-templates.sh"
+            chmod +x cli/build-with-templates.sh
+          else
+            echo "❌ Build script not found: cli/build-with-templates.sh"
+            echo "The build script is required to properly bundle templates"
+            exit 1
+          fi
 
-          # Copy Claude Code files
-          echo "Copying .claude directory..."
-          cp -r .claude/* cli/src/ai_code_forge/data/claude/
-
-          # Copy ACF-managed files
-          echo "Copying templates, scripts, docs..."
-          cp -r templates scripts docs cli/src/ai_code_forge/data/acf/
-
-          # Copy ACF tool documentation
-          echo "Copying ACF tool documentation..."
-          cp README.md CHANGELOG.md cli/src/ai_code_forge/data/acf/
-
-          # Copy CLAUDE.md to root
-          echo "Copying CLAUDE.md..."
-          cp CLAUDE.md cli/src/ai_code_forge/data/
-
-          echo "✅ Package data preparation complete"
-
-      - name: Build ACF package
+      - name: Build ACF package with templates
         run: |
-          echo "=== Building ACF Package ==="
+          echo "=== Building ACF Package with Templates ==="
           cd cli
-          uv build
-          echo "✅ Package build complete"
+          # Use custom build script to properly bundle templates
+          ./build-with-templates.sh
 
       - name: Validate package
         run: |
