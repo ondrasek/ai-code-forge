@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aicodeforge"
+name = "cforge"
 version = "2.94.0"
 description = "CLI for AI Code Forge template management"
 readme = "README.md"
@@ -40,7 +40,7 @@ Issues = "https://github.com/ondrasek/ai-code-forge/issues"
 [project.scripts]
 ai-code-forge = "ai_code_forge_cli.cli:main"
 acf = "ai_code_forge_cli.cli:main"
-aicodeforge = "ai_code_forge_cli.cli:main"
+cforge = "ai_code_forge_cli.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ai_code_forge_cli"]
