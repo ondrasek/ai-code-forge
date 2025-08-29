@@ -6,11 +6,10 @@ A command-line tool for managing AI Code Forge templates and configurations.
 
 ```bash
 # Install via uvx (recommended for ephemeral usage)
-uvx ai-code-forge --help
 uvx acf --help
 
 # Install persistently
-uv tool install ai-code-forge
+uv tool install acf
 ```
 
 ## Commands
