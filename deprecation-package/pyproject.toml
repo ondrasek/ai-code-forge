@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ai-code-forge"
-version = "3.0.2"
+version = "3.0.3"
 description = "DEPRECATED: This package has been renamed to 'acforge'. Please use 'uv tool install acforge' instead."
 readme = "README.md"
 requires-python = ">=3.9"
