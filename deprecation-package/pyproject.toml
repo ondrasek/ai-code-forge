@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-code-forge"
+version = "3.0.0"
+description = "DEPRECATED: This package has been renamed to 'acforge'. Please use 'uv tool install acforge' instead."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "AI Code Forge", email = "noreply@example.com"},
+]
+keywords = ["deprecated", "acforge", "ai", "configuration", "cli", "templates", "development"]
+classifiers = [
+    "Development Status :: 7 - Inactive",
+    "Intended Audience :: Developers", 
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/ondrasek/ai-code-forge"
+Repository = "https://github.com/ondrasek/ai-code-forge"
+Issues = "https://github.com/ondrasek/ai-code-forge/issues"
+"New Package" = "https://pypi.org/project/acforge/"
+
+[project.scripts]
+ai-code-forge = "ai_code_forge_deprecated.main:main"
+acf = "ai_code_forge_deprecated.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_code_forge_deprecated"]
