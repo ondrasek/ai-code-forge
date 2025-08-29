@@ -1,6 +1,6 @@
 [project]
 name = "perplexity-mcp-server"
-version = "3.0.0"
+version = "3.0.1"
 description = "MCP server for Perplexity API integration"
 requires-python = ">=3.13"
 dependencies = [
