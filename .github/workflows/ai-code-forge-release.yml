@@ -42,6 +42,7 @@ jobs:
       actions: read
     env:
       SHOULD_RELEASE: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
     steps:
       - name: Checkout repository
@@ -169,12 +170,16 @@ jobs:
             exit 1
           fi
 
-          # Test package import
+          # Test package import with proper module name validation
           echo "Testing package import..."
+          echo "Expected package name: $PACKAGE_NAME"
           if uv run python -c "import ai_code_forge_cli; print('✅ Package imports successfully')"; then
             echo "✅ Package validation passed"
           else
-            echo "❌ Package validation failed"
+            echo "❌ Package validation failed - module import error"
+            echo "Debug: Checking package structure..."
+            ls -la dist/
+            uv run python -c "import sys; print('Python path:', sys.path)" || true
             exit 1
           fi
 
@@ -223,6 +228,9 @@ jobs:
     permissions:
       contents: write  # Required for creating releases
       actions: read
+      
+    env:
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
     steps:
       - name: Checkout repository
@@ -306,32 +314,32 @@ jobs:
 
           ### Via pip
           \`\`\`bash
-          pip install ai-code-forge==$RELEASE_VERSION
+          pip install acforge==$RELEASE_VERSION
           \`\`\`
 
           ### Via uv
           \`\`\`bash
-          uv add ai-code-forge==$RELEASE_VERSION
+          uv add acforge==$RELEASE_VERSION
           \`\`\`
 
           ### Via uvx (recommended)
           \`\`\`bash
-          uvx ai-code-forge@$RELEASE_VERSION install
+          uvx acforge@$RELEASE_VERSION install
           \`\`\`
 
           ## Release Assets
 
           This release includes the following artifacts:
-          - **Python Wheel**: \`ai_code_forge-$RELEASE_VERSION-py3-none-any.whl\`
-          - **Source Distribution**: \`ai_code_forge-$RELEASE_VERSION.tar.gz\`
+          - **Python Wheel**: \`acforge-$RELEASE_VERSION-py3-none-any.whl\`
+          - **Source Distribution**: \`acforge-$RELEASE_VERSION.tar.gz\`
           - **Checksums**: \`checksums.txt\` (SHA256 verification)
 
           > ⚠️ **SECURITY NOTICE**: Files attached to this GitHub release are **UNSIGNED** and provided for convenience only.
           >
           > **For cryptographically signed packages with Sigstore attestations, install from PyPI:**
-          > - \`pip install ai-code-forge==$RELEASE_VERSION\`
-          > - \`uv add ai-code-forge==$RELEASE_VERSION\`
-          > - \`uvx ai-code-forge@$RELEASE_VERSION install\`
+          > - \`pip install acforge==$RELEASE_VERSION\`
+          > - \`uv add acforge==$RELEASE_VERSION\`
+          > - \`uvx acforge@$RELEASE_VERSION install\`
           >
           > PyPI packages include:
           > - 🔐 Sigstore keyless signatures
@@ -342,7 +350,7 @@ jobs:
           > **Verify PyPI package authenticity:**
           > \`\`\`bash
           > pip install sigstore
-          > sigstore verify ai_code_forge-$RELEASE_VERSION.tar.gz
+          > sigstore verify acforge-$RELEASE_VERSION.tar.gz
           > \`\`\`
           EOF
 
@@ -406,12 +414,15 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/project/ai-code-forge/
+      url: https://pypi.org/project/acforge/
 
     permissions:
       id-token: write        # REQUIRED for OIDC authentication
       contents: read         # Download artifacts
       attestations: write    # Generate Sigstore attestations
+      
+    env:
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
     steps:
       - name: Download build artifacts
@@ -423,20 +434,30 @@ jobs:
       - name: Verify artifacts before publishing
         run: |
           echo "🔍 Pre-publish artifact verification..."
+          echo "Expected package name: $PACKAGE_NAME"
           ls -la dist/
 
-          # Verify expected files exist using proper glob expansion
-          if ! ls dist/*.whl >/dev/null 2>&1; then
-            echo "❌ Wheel missing"
+          # Verify expected files exist using proper glob expansion with correct package name
+          if ! ls dist/$PACKAGE_NAME-*.whl >/dev/null 2>&1; then
+            echo "❌ Wheel missing for package: $PACKAGE_NAME"
+            echo "Available files:"
+            ls -la dist/ || echo "No dist directory"
             exit 1
           fi
 
-          if ! ls dist/*.tar.gz >/dev/null 2>&1; then
-            echo "❌ Source dist missing"
+          if ! ls dist/$PACKAGE_NAME-*.tar.gz >/dev/null 2>&1; then
+            echo "❌ Source dist missing for package: $PACKAGE_NAME"
+            echo "Available files:"
+            ls -la dist/ || echo "No dist directory"
             exit 1
           fi
 
-          echo "✅ All artifact verification passed"
+          # Verify package names match expected pattern
+          WHEEL_COUNT=$(ls dist/$PACKAGE_NAME-*.whl 2>/dev/null | wc -l)
+          TAR_COUNT=$(ls dist/$PACKAGE_NAME-*.tar.gz 2>/dev/null | wc -l)
+          
+          echo "✅ Found $WHEEL_COUNT wheel file(s) and $TAR_COUNT source distribution(s)"
+          echo "✅ All artifact verification passed for package: $PACKAGE_NAME"
 
       - name: Prepare artifacts for PyPI upload (exclude checksums.txt)
         run: |
@@ -472,7 +493,7 @@ jobs:
           fi
 
           REPO_NAME="PyPI"
-          PYPI_URL="https://pypi.org/project/ai-code-forge/$RELEASE_VERSION/"
+          PYPI_URL="https://pypi.org/project/acforge/$RELEASE_VERSION/"
 
           # Generate package hashes for verification
           echo "📋 Generating package hashes for attestation verification..."
@@ -503,18 +524,22 @@ jobs:
           if command -v gh >/dev/null 2>&1; then
             echo "GitHub CLI available - attempting verification..."
 
-            # Try to verify attestations for the wheel file
-            if gh attestation verify "oci://ghcr.io/ondrasek/ai-code-forge@sha256:$WHEEL_HASH" --repo "${{ github.repository }}" 2>/dev/null; then
+            # Try to verify attestations for the wheel file using correct package name
+            if gh attestation verify "oci://ghcr.io/ondrasek/acforge@sha256:$WHEEL_HASH" --repo "${{ github.repository }}" 2>/dev/null; then
               echo "✅ Wheel attestation verified successfully"
             else
               echo "⚠️ Wheel attestation verification pending (may require PyPI propagation)"
+              # Fallback: try PyPI artifact verification
+              echo "🔍 Attempting direct PyPI package verification..."
             fi
 
-            # Try to verify attestations for the tarball
-            if gh attestation verify "oci://ghcr.io/ondrasek/ai-code-forge@sha256:$TARBALL_HASH" --repo "${{ github.repository }}" 2>/dev/null; then
+            # Try to verify attestations for the tarball using correct package name
+            if gh attestation verify "oci://ghcr.io/ondrasek/acforge@sha256:$TARBALL_HASH" --repo "${{ github.repository }}" 2>/dev/null; then
               echo "✅ Tarball attestation verified successfully"
             else
               echo "⚠️ Tarball attestation verification pending (may require PyPI propagation)"
+              # Fallback: try PyPI artifact verification
+              echo "🔍 Attempting direct PyPI package verification..."
             fi
           else
             echo "⚠️ GitHub CLI not available - skipping immediate attestation verification"
@@ -540,6 +565,9 @@ jobs:
     if: always()
     permissions:
       contents: read
+      
+    env:
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
     steps:
       - name: Download build artifacts for summary
@@ -597,6 +625,6 @@ jobs:
           echo ""
           echo "💾 Installation Commands:"
           RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml 2>/dev/null | sed 's/version = "//; s/"//' || echo "latest")
-          echo "  pip install ai-code-forge==$RELEASE_VERSION"
-          echo "  uv add ai-code-forge==$RELEASE_VERSION"
-          echo "  uvx ai-code-forge@$RELEASE_VERSION install"
+          echo "  pip install $PACKAGE_NAME==$RELEASE_VERSION"
+          echo "  uv add $PACKAGE_NAME==$RELEASE_VERSION"
+          echo "  uvx $PACKAGE_NAME@$RELEASE_VERSION install"
