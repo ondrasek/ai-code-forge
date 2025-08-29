@@ -63,7 +63,7 @@ def init_command(
 ) -> None:
     """Initialize repository with ACF configuration and Claude Code templates.
     
-    Creates .acf/ directory for ACF state management and .claude/ directory
+    Creates .acforge/ directory for ACF state management and .claude/ directory
     with Claude Code configuration from bundled templates. Performs template
     parameter substitution for repository-specific values.
     
@@ -197,7 +197,7 @@ def _run_init(
         # Initialize ACF state (if not dry run)
         if not dry_run and not results["errors"]:
             _initialize_acf_state(state_manager, template_manager, parameters)
-            results["files_created"].append(".acf/state.json")
+            results["files_created"].append(".acforge/state.json")
         
         if not results["errors"]:
             results["success"] = True
@@ -255,8 +255,8 @@ def _initialize_acf_state(
         template_manager: Template manager instance
         parameters: Template parameters used
     """
-    # Create .acf directory
-    acf_dir = state_manager.repo_root / ".acf"
+    # Create .acforge directory
+    acf_dir = state_manager.repo_root / ".acforge"
     acf_dir.mkdir(exist_ok=True)
     
     # Build template file information

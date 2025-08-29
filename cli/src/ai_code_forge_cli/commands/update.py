@@ -303,7 +303,7 @@ def _preserve_customizations(target_path: Path, files_to_preserve: List[str]) ->
     """Create backups of files that should be preserved."""
     backups = {}
     claude_dir = target_path / ".claude"
-    backup_dir = target_path / ".acf" / "backups" / datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_dir = target_path / ".acforge" / "backups" / datetime.now().strftime("%Y%m%d_%H%M%S")
     
     for file_path in files_to_preserve:
         source_file = claude_dir / file_path

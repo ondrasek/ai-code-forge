@@ -45,6 +45,9 @@ build/
 # Logs
 *.log
 logs/
+
+# ACF State
+.acforge/
 .support/logs/claude-code/
 
 # Testing

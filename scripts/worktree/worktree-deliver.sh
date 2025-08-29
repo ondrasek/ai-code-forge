@@ -393,10 +393,10 @@ launch_claude_with_prompt() {
         prompt_file="$prompt_dir/worktree-delivery-prompt-$(date +%Y%m%d-%H%M%S).md"
         print_info "Using analysis directory for issue #$issue_num: $prompt_dir"
     else
-        # Fall back to .acf directory for branch-based workflows
-        prompt_dir="$worktree_path/.acf"
+        # Fall back to .acforge directory for branch-based workflows
+        prompt_dir="$worktree_path/.acforge"
         prompt_file="$prompt_dir/worktree-delivery-prompt-$(date +%Y%m%d-%H%M%S).md"
-        print_info "Using .acf directory for branch-based workflow"
+        print_info "Using .acforge directory for branch-based workflow"
     fi
     
     # Ensure prompt directory exists

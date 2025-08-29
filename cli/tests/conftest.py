@@ -31,8 +31,8 @@ def existing_claude_config(temp_repo):
 
 @pytest.fixture
 def existing_acf_config(temp_repo):
-    """Create a repository with existing .acf configuration."""
-    acf_dir = temp_repo / ".acf"
+    """Create a repository with existing .acforge configuration."""
+    acf_dir = temp_repo / ".acforge"
     acf_dir.mkdir()
     (acf_dir / "state.json").write_text("{}")
     return temp_repo

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **CLI Foundation Commands**: Complete implementation of `acf init` command with comprehensive repository bootstrapping (closes #205)
-  - Dual directory initialization with `.acf/` state management and `.claude/` configuration deployment
+  - Dual directory initialization with `.acforge/` state management and `.claude/` configuration deployment
   - Template parameter substitution system supporting {{GITHUB_OWNER}}, {{PROJECT_NAME}}, {{REPO_NAME}} variables
   - GitHub CLI integration for automatic repository detection via `gh repo view --json` commands
   - Graceful failure handling with existing configuration detection and interactive overwrite prompts
@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ai-code-forge status` command for installation verification and diagnostics with detailed component reporting
   - Support for targeted installations with `--target` option for custom directory deployment
   - Force installation option with `--force` flag for overwriting existing configurations
-  - Automated deployment of `.claude/` (agents, commands, settings), `.acf/` (templates, docs), and `CLAUDE.md`
+  - Automated deployment of `.claude/` (agents, commands, settings), `.acforge/` (templates, docs), and `CLAUDE.md`
   - Complete Python packaging with pyproject.toml and build system for distribution-ready wheel creation
   - Comprehensive test suite with 30 test cases covering installer, CLI, and integration scenarios
   - Build validation system with GitHub Actions workflow for automated CI/CD pipeline

@@ -99,6 +99,6 @@ class RepositoryDetector:
             Dictionary with has_acf and has_claude flags
         """
         return {
-            "has_acf": (self.repo_path / ".acf").exists(),
+            "has_acf": (self.repo_path / ".acforge").exists(),
             "has_claude": (self.repo_path / ".claude").exists(),
         }

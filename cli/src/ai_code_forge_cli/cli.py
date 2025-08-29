@@ -33,9 +33,9 @@ class ACFContext:
         
         current = Path.cwd()
         
-        # Look for .git directory or existing .acf/.claude directories
+        # Look for .git directory or existing .acforge/.claude directories
         for path in [current] + list(current.parents):
-            if any((path / marker).exists() for marker in [".git", ".acf", ".claude"]):
+            if any((path / marker).exists() for marker in [".git", ".acforge", ".claude"]):
                 self.repo_root = path
                 return path
         

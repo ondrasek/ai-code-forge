@@ -269,7 +269,7 @@ EOF
 # Test: find_recent_sessions function
 test_find_recent_sessions() {
     local test_project="$TEST_TEMP_DIR/test_project"
-    local log_base="$test_project/.acf/logs/test-tool"
+    local log_base="$test_project/.acforge/logs/test-tool"
     mkdir -p "$log_base"
     
     # Create mock session directories with timestamps
@@ -360,7 +360,7 @@ test_session_logging_env_vars() {
 # Test: clean_tool_logs function (non-interactive mode)
 test_clean_tool_logs() {
     local test_project="$TEST_TEMP_DIR/test_project"
-    local log_base="$test_project/.acf/logs/cleantest"
+    local log_base="$test_project/.acforge/logs/cleantest"
     mkdir -p "$log_base"
     
     # Create mock session directories

@@ -255,9 +255,9 @@ test_session_logging_security() {
     # Test session logging setup with proper paths
     if setup_session_logging "codex" "$test_project" false true 2>/dev/null; then
         # Verify session directory is created with proper structure
-        if [[ -d "$test_project/.acf/logs/codex" ]]; then
+        if [[ -d "$test_project/.acforge/logs/codex" ]]; then
             # Verify no path traversal in session directories
-            local session_dirs=($(find "$test_project/.acf/logs/codex" -maxdepth 1 -type d -name "[0-9]*-[0-9]*" 2>/dev/null))
+            local session_dirs=($(find "$test_project/.acforge/logs/codex" -maxdepth 1 -type d -name "[0-9]*-[0-9]*" 2>/dev/null))
             if [[ ${#session_dirs[@]} -gt 0 ]]; then
                 echo "Session logging security working - proper directory structure"
                 return 0

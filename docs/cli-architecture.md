@@ -19,8 +19,8 @@ The AI Code Forge CLI (`acf`) is a configuration management tool for coding agen
 - No requirement to clone or know about ai-code-forge repository structure
 
 ### Minimal State Management
-- State exists only in `.acf/` directory within each target repository
-- No global configuration files (`~/.acf`, `/etc/acf`, etc.)
+- State exists only in `.acforge/` directory within each target repository
+- No global configuration files (`~/.acforge`, `/etc/acf`, etc.)
 - Clean, self-contained per-repository state
 
 ## Architecture Decisions
@@ -71,7 +71,7 @@ target-repo/
 │   ├── agents/
 │   ├── commands/
 │   └── settings.json
-├── .acf/            # ACF state directory
+├── .acforge/            # ACF state directory
 │   ├── template-version.json
 │   ├── customizations.json
 │   └── status.json
@@ -113,7 +113,7 @@ def update():
 **Behavior**:
 - Creates `.claude/` directory structure
 - Installs `CLAUDE.md` from templates
-- Creates initial `.acf/` state
+- Creates initial `.acforge/` state
 - Provides interactive template selection
 
 **Template Sources**:
@@ -127,7 +127,7 @@ def update():
 - Compares current config with bundled templates
 - Preserves `.local` files (e.g., `.claude/agents/custom.local.md`)
 - Updates base templates only
-- Records changes in `.acf/status.json`
+- Records changes in `.acforge/status.json`
 
 **Customization Preservation**:
 - `.local` file pattern for user customizations
@@ -139,7 +139,7 @@ def update():
 **Behavior**:
 - Analyzes existing `.claude/` directory
 - Maps to ACF template structure
-- Creates `.acf/` state directory
+- Creates `.acforge/` state directory
 - Preserves existing customizations as `.local` files
 
 #### `uvx acf status`
@@ -165,10 +165,10 @@ Use 'acf explain' for configuration documentation.
 #### `uvx acf factory-reset`
 **Purpose**: Nuclear option - full reset to template defaults
 **Behavior**:
-- Backs up current configuration to `.acf/backup/`
+- Backs up current configuration to `.acforge/backup/`
 - Removes all `.claude/` content
 - Reinstalls fresh templates
-- Resets `.acf/` state
+- Resets `.acforge/` state
 
 #### `uvx acf explain`
 **Purpose**: Documentation and help for configuration elements
@@ -197,7 +197,7 @@ What would you like to know about?
 1. Select configuration element to customize
 2. Create `.local` version with guided editing
 3. Document customization in `ACF.md`
-4. Update `.acf/customizations.json`
+4. Update `.acforge/customizations.json`
 
 ## Template Organization
 
@@ -361,7 +361,7 @@ dev = ["black", "ruff", "mypy"]
 - No arbitrary code execution from templates
 
 ### State File Safety
-- `.acf/` files contain only configuration metadata
+- `.acforge/` files contain only configuration metadata
 - No executable content in state files
 - Validation of all JSON state files
 

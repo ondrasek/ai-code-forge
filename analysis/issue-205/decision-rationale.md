@@ -13,7 +13,7 @@
 **Risk Mitigation**: Git provides safety net, no existing users to break
 
 ### 2. Three-File State Management Approach
-**Decision**: `.acf/installation.json`, `.acf/customizations.json`, `.acf/templates.json`
+**Decision**: `.acforge/installation.json`, `.acforge/customizations.json`, `.acforge/templates.json`
 **Rationale**:
 - Clear separation of concerns for different state aspects
 - Supports atomic operations for each state type

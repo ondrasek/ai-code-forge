@@ -3,7 +3,7 @@
 ## Overview
 
 The `acf init` command bootstraps a repository with AI Code Forge configuration by:
-1. Creating `.acf/` directory for ACF state management
+1. Creating `.acforge/` directory for ACF state management
 2. Creating `.claude/` directory with Claude Code configuration from templates
 3. Performing template parameter substitution for repository-specific values
 4. Initializing state tracking for future template synchronization
@@ -40,7 +40,7 @@ acf init [OPTIONS] [TARGET_DIR]
 
 **Existing Configuration Detection:**
 - Check for existing `.claude/` directory
-- Check for existing `.acf/` directory
+- Check for existing `.acforge/` directory
 - If either exists without `--force`:
   - Display current configuration status
   - Prompt: "Configuration exists. Overwrite? [y/N/show]"
@@ -54,9 +54,9 @@ acf init [OPTIONS] [TARGET_DIR]
 
 ### 2. Directory Structure Creation
 
-**`.acf/` State Directory:**
+**`.acforge/` State Directory:**
 ```
-.acf/
+.acforge/
 ├── state.json              # ACF state tracking
 ├── template-metadata.json  # Template versions and checksums
 └── customizations.json     # User customization tracking
@@ -106,7 +106,7 @@ acf init [OPTIONS] [TARGET_DIR]
 
 ### 4. State Initialization
 
-**`.acf/state.json` Initial Content:**
+**`.acforge/state.json` Initial Content:**
 ```json
 {
   "version": "1.0",
@@ -142,7 +142,7 @@ acf init [OPTIONS] [TARGET_DIR]
 🎉 ACF initialization complete!
 
 📁 Created directories:
-  ✅ .acf/ (ACF state management)
+  ✅ .acforge/ (ACF state management)
   ✅ .claude/ (Claude Code configuration)
 
 📦 Deployed templates:
@@ -171,7 +171,7 @@ acf init [OPTIONS] [TARGET_DIR]
 
 1. **Permission Denied:**
    ```
-   ❌ Cannot create .acf directory: Permission denied
+   ❌ Cannot create .acforge directory: Permission denied
    💡 Try: sudo chown -R $USER:$USER .
    ```
 

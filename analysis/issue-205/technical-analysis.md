@@ -20,7 +20,7 @@ cli/
 │   └── data/                   # Bundled template data
 │       ├── CLAUDE.md           # Operational rules template
 │       ├── claude/             # .claude directory contents
-│       └── acf/                # .acf directory contents (duplicated)
+│       └── acf/                # .acforge directory contents (duplicated)
 └── tests/                      # Basic test structure
 ```
 
@@ -33,14 +33,14 @@ cli/
 
 #### 3. Current Command Analysis
 **`acf install` Command:**
-- Creates `.claude/` and `.acf/` directories
+- Creates `.claude/` and `.acforge/` directories
 - Copies bundled data from `src/ai_code_forge/data/`
 - Installs `CLAUDE.md` to project root
 - Has force overwrite option (`--force`)
 - Validates target directory existence
 
 **`acf status` Command:**
-- Checks for `.claude/`, `.acf/`, and `CLAUDE.md` presence
+- Checks for `.claude/`, `.acforge/`, and `CLAUDE.md` presence
 - Lists files in each directory
 - Provides installation completeness assessment
 - Uses ACFInstaller.get_installation_status()
@@ -108,13 +108,13 @@ templates/
 #### Current Installation State Tracking:
 The existing `ACFInstaller.get_installation_status()` tracks:
 - `claude_dir_exists`: Boolean for `.claude/` presence
-- `acf_dir_exists`: Boolean for `.acf/` presence  
+- `acf_dir_exists`: Boolean for `.acforge/` presence  
 - `claude_md_exists`: Boolean for `CLAUDE.md` presence
 - `claude_files`: List of files in `.claude/`
-- `acf_files`: List of files in `.acf/`
+- `acf_files`: List of files in `.acforge/`
 
 #### Required State Management for Phase 1:
-Based on issue requirements, need **3 JSON files in `.acf/`**:
+Based on issue requirements, need **3 JSON files in `.acforge/`**:
 1. **`installation.json`** - Track what's installed and versions
 2. **`customizations.json`** - User modifications to preserve during updates
 3. **`templates.json`** - Template source tracking and metadata
@@ -151,7 +151,7 @@ Based on issue requirements, need **3 JSON files in `.acf/`**:
 1. **Click Framework**: Chosen for CLI implementation (established pattern)
 2. **Hatchling Build**: Selected over setuptools for modern Python packaging
 3. **Data Directory**: Bundled templates in `src/ai_code_forge/data/`
-4. **Dual Directory**: Both `.claude/` and `.acf/` created by installer
+4. **Dual Directory**: Both `.claude/` and `.acforge/` created by installer
 
 ### Evolution:
 - **Version Progression**: Currently at v2.92.0

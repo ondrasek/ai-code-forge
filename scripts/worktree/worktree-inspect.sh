@@ -354,7 +354,7 @@ analyze_assistant_state() {
         return 1
     fi
     
-    local acf_run_dir="$worktree_path/.acf-run"
+    local acf_run_dir="$worktree_path/.acforge-run"
     
     if [[ -d "$acf_run_dir" ]]; then
         ASSISTANT_STATE["directory_exists"]="true"

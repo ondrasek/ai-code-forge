@@ -113,11 +113,11 @@ The old package will continue to work but will show deprecation warnings. All fu
 - **Status Monitoring**: `ai-code-forge status` - Verifies installation and shows components
 - **Targeted Deployment**: `--target` option for custom installation directories
 - **Force Updates**: `--force` option for overwriting existing configurations
-- **File Management**: Automatically installs `.claude/`, `.acf/`, and `CLAUDE.md`
+- **File Management**: Automatically installs `.claude/`, `.acforge/`, and `CLAUDE.md`
 
 **What Gets Installed:**
 - **`.claude/`** - All agents, commands, and Claude Code settings
-- **`.acf/`** - Templates, documentation, and ACF-specific tools
+- **`.acforge/`** - Templates, documentation, and ACF-specific tools
 - **`CLAUDE.md`** - Core operational rules and project guidelines
 
 ## Script System

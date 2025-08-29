@@ -8,7 +8,7 @@
 # - ChatGPT subscription authentication support
 # - Custom configuration loading from ~/.codex/config.toml
 # - Enhanced verbose logging capabilities
-# - Session-based logging to .acf/logs/codex/
+# - Session-based logging to .acforge/logs/codex/
 # - Auto-detection of devcontainer/codespace environments
 
 set -euo pipefail
@@ -71,7 +71,7 @@ OPTIONS:
     -r, --resume [ID]        Resume a conversation (with optional session ID)
     --dry-run                Show what would be executed without running
     --analyze-logs           Analyze existing log files using Claude Code agents
-    --clean-logs             Remove all existing session directories from .acf/logs/codex/
+    --clean-logs             Remove all existing session directories from .acforge/logs/codex/
     --troubleshoot-codex     Analyze and troubleshoot Codex CLI issues using agents
     --skip-permissions       Force enable --dangerously-skip-permissions flag
     --no-skip-permissions    Force disable --dangerously-skip-permissions flag
@@ -109,7 +109,7 @@ FEATURES:
     - Support for -c (continue) and -r (resume) flags with optional session ID
     - ChatGPT subscription authentication with fallback to API key
     - Automatic Codex configuration loading from ~/.codex/config.toml
-    - Session-based logging to .acf/logs/codex/[SESSION]/ directory with timestamped folders
+    - Session-based logging to .acforge/logs/codex/[SESSION]/ directory with timestamped folders
     - All log files include timestamps in their filenames (e.g. debug-20250812-123456.log)
     - Codex CLI debugging with Rust logging support (RUST_LOG)
     - Multi-agent log analysis using Claude Code agents
@@ -125,7 +125,7 @@ analyze_logs() {
     echo "🔍 Analyzing Codex logs using Claude Code agents..."
 
     # Check if log directory exists
-    local log_base_dir="$PROJECT_ROOT/.acf/logs/codex"
+    local log_base_dir="$PROJECT_ROOT/.acforge/logs/codex"
     if [[ ! -d "$log_base_dir" ]]; then
         echo "❌ No log directory found at $log_base_dir"
         echo "💡 Run launch-codex with logging enabled first to generate logs."
@@ -223,7 +223,7 @@ troubleshoot_codex() {
     echo "🔧 Troubleshooting Codex CLI issues using Claude Code agents..."
 
     # Check if log directory exists
-    local log_base_dir="$PROJECT_ROOT/.acf/logs/codex"
+    local log_base_dir="$PROJECT_ROOT/.acforge/logs/codex"
     if [[ ! -d "$log_base_dir" ]]; then
         echo "❌ No log directory found at $log_base_dir"
         echo "💡 Run launch-codex with logging enabled first to generate logs for analysis."

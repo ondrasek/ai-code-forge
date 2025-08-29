@@ -189,7 +189,7 @@ test_logging_directory_creation() {
     claude_output=$("$LAUNCHER_DIR/launch-claude.sh" --dry-run --force-logs "test" 2>&1)
     
     if [[ "$claude_output" =~ "Session-based logging enabled" ]] && \
-       [[ "$claude_output" =~ ".acf/logs/claude-code/" ]]; then
+       [[ "$claude_output" =~ ".acforge/logs/claude-code/" ]]; then
         echo "launch-claude.sh logging setup working"
     else
         echo "launch-claude.sh logging setup failed"
@@ -201,7 +201,7 @@ test_logging_directory_creation() {
     codex_output=$("$LAUNCHER_DIR/launch-codex.sh" --dry-run --force-logs "test" 2>&1)
     
     if [[ "$codex_output" =~ "Session-based logging enabled" ]] && \
-       [[ "$codex_output" =~ ".acf/logs/codex/" ]]; then
+       [[ "$codex_output" =~ ".acforge/logs/codex/" ]]; then
         echo "launch-codex.sh logging setup working"
     else
         echo "launch-codex.sh logging setup failed"
@@ -209,8 +209,8 @@ test_logging_directory_creation() {
     fi
     
     # Check that log directories were actually created
-    if [[ -d "$test_project/.acf/logs/claude-code" ]] && \
-       [[ -d "$test_project/.acf/logs/codex" ]]; then
+    if [[ -d "$test_project/.acforge/logs/claude-code" ]] && \
+       [[ -d "$test_project/.acforge/logs/codex" ]]; then
         echo "Log directories created correctly"
     else
         echo "Log directories not created"
@@ -345,10 +345,10 @@ test_clean_logs_functionality() {
     cd "$test_project"
     
     # Create mock session directories for both tools
-    mkdir -p ".acf/logs/claude-code/20250101-120000"
-    mkdir -p ".acf/logs/codex/20250101-120000"
-    echo "test" > ".acf/logs/claude-code/20250101-120000/test.log"
-    echo "test" > ".acf/logs/codex/20250101-120000/test.log"
+    mkdir -p ".acforge/logs/claude-code/20250101-120000"
+    mkdir -p ".acforge/logs/codex/20250101-120000"
+    echo "test" > ".acforge/logs/claude-code/20250101-120000/test.log"
+    echo "test" > ".acforge/logs/codex/20250101-120000/test.log"
     
     # Test Claude clean logs (check that it detects sessions)
     local claude_clean

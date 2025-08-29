@@ -4,14 +4,14 @@
 
 ```yaml
 REQUIRED_SEPARATION:
-  acf_directory: ".acf/"     # ACF tool state and templates
+  acf_directory: ".acforge/"     # ACF tool state and templates
   claude_directory: ".claude/" # Claude Code recognized files only
   constraint: "no_overlap_between_directories"
 
 PROJECT_STRUCTURE:
   root: "PROJECT_ROOT/"
   directories:
-    - path: ".acf/"
+    - path: ".acforge/"
       purpose: "acf_tool_state"
     - path: ".claude/" 
       purpose: "claude_recognized_files"
@@ -22,7 +22,7 @@ PROJECT_STRUCTURE:
 
 ```yaml
 CREATE_ACF_STRUCTURE:
-  base_path: ".acf/"
+  base_path: ".acforge/"
   subdirectories:
     config:
       files: ["acf.json", "deployment.json", "overrides.json"]
@@ -56,7 +56,7 @@ CREATE_CLAUDE_STRUCTURE:
 
 CREATE_PROJECT_INTEGRATION:
   root_files: ["CLAUDE.md"]
-  directories: [".acf/", ".claude/"]
+  directories: [".acforge/", ".claude/"]
   preserve_existing: true
 ```
 
@@ -70,13 +70,13 @@ APPLY_CONFIG_HIERARCHY:
       level: "project"
       override_all: true
     2:
-      source: ".acf/config/overrides.json"
+      source: ".acforge/config/overrides.json"
       level: "user_override"
     3:
-      source: ".acf/config/deployment.json" 
+      source: ".acforge/config/deployment.json" 
       level: "acf_deployment"
     4:
-      source: ".acf/config/acf.json"
+      source: ".acforge/config/acf.json"
       level: "acf_defaults"
     5:
       source: "system_claude_config"
@@ -93,16 +93,16 @@ PRE_DEPLOYMENT_VALIDATION:
     action_if_exists:
       - EXECUTE: create_backup
         source: ".claude/"
-        target: ".acf/backups/{timestamp}/"
+        target: ".acforge/backups/{timestamp}/"
       - EXECUTE: analyze_conflicts
         existing: ".claude/"
-        incoming: ".acf/templates/"
+        incoming: ".acforge/templates/"
       - EXECUTE: prompt_user_conflict_resolution
         conflicts: "analysis_result"
 
 TEMPLATE_PROCESSING:
   - EXECUTE: iterate_templates
-    source: ".acf/templates/"
+    source: ".acforge/templates/"
     for_each_template:
       - EXECUTE: check_target_exists
         target: ".claude/{template_path}"
@@ -110,17 +110,17 @@ TEMPLATE_PROCESSING:
           - EXECUTE: apply_merge_strategy
             strategy: "file_type_based"
           - EXECUTE: log_conflicts
-            destination: ".acf/state/conflicts.log"
+            destination: ".acforge/state/conflicts.log"
         action_if_not_exists:
           - EXECUTE: deploy_template
-            source: ".acf/templates/{template}"
+            source: ".acforge/templates/{template}"
             target: ".claude/{template_path}"
 
 POST_DEPLOYMENT_ACTIONS:
   - EXECUTE: update_versions
-    file: ".acf/state/versions.json"
+    file: ".acforge/state/versions.json"
   - EXECUTE: generate_checksums
-    file: ".acf/state/checksums.json"
+    file: ".acforge/state/checksums.json"
   - EXECUTE: validate_claude_config
     directory: ".claude/"
 ```
@@ -129,7 +129,7 @@ POST_DEPLOYMENT_ACTIONS:
 
 ```yaml
 ACF_DIRECTORY_RULES:
-  path: ".acf/"
+  path: ".acforge/"
   management: "acf_tool_only"
   contents:
     config: "acf_tool_configuration"
@@ -158,39 +158,39 @@ CLAUDE_DIRECTORY_RULES:
 ```yaml
 MERGE_STRATEGIES:
   agents:
-    source: ".acf/templates/agents/"
+    source: ".acforge/templates/agents/"
     target: ".claude/agents/"
     strategy: "type_based_merge"
     preserve_user: true
   commands:
-    source: ".acf/templates/commands/"
+    source: ".acforge/templates/commands/"
     target: ".claude/commands/"
     strategy: "user_precedence"
-    log_updates: ".acf/state/conflicts.log"
+    log_updates: ".acforge/state/conflicts.log"
   settings:
-    source: ".acf/templates/settings.json"
+    source: ".acforge/templates/settings.json"
     target: ".claude/settings.json"
     strategy: "deep_merge"
     priority: "user"
   guidelines:
-    source: ".acf/templates/guidelines/"
+    source: ".acforge/templates/guidelines/"
     target: "CLAUDE.md"
     strategy: "additive_merge"
     conflict_markers: true
 
 LEGACY_MIGRATION:
   - EXECUTE: check_conditions
-    condition: "exists(.claude/) AND not_exists(.acf/)"
+    condition: "exists(.claude/) AND not_exists(.acforge/)"
     actions:
       - EXECUTE: create_backup
         source: ".claude/"
-        target: ".acf/backups/migration-{timestamp}/"
+        target: ".acforge/backups/migration-{timestamp}/"
       - EXECUTE: analyze_existing_config
         path: ".claude/"
       - EXECUTE: apply_templates
         strategy: "preservation"
       - EXECUTE: log_migration
-        file: ".acf/state/migrations.json"
+        file: ".acforge/state/migrations.json"
 ```
 
 ## INTEGRATION_WORKFLOWS
@@ -201,21 +201,21 @@ NEW_PROJECT_SETUP:
     action: create_acf_structure
     templates: "default"
   - EXECUTE: deploy_base_config
-    source: ".acf/templates/"
+    source: ".acforge/templates/"
     target: ".claude/"
   - EXECUTE: generate_project_instructions
     file: "CLAUDE.md"
   - EXECUTE: setup_version_control
-    gitignore: ['.acf/state/', '.acf/cache/']
+    gitignore: ['.acforge/state/', '.acforge/cache/']
 
 EXISTING_PROJECT_INTEGRATION:
   - EXECUTE: backup_existing
     source: ".claude/"
-    target: ".acf/backups/{timestamp}/"
+    target: ".acforge/backups/{timestamp}/"
   - EXECUTE: merge_configurations
     strategy: "intelligent"
     existing: ".claude/"
-    templates: ".acf/templates/"
+    templates: ".acforge/templates/"
   - EXECUTE: resolve_conflicts
     method: "user_prompt"
   - EXECUTE: gradual_migration
@@ -239,7 +239,7 @@ PROJECT_TYPE_DETECTION:
 
 ```yaml
 ACF_CONFIG_SCHEMA:
-  file: ".acf/config/acf.json"
+  file: ".acforge/config/acf.json"
   required_fields:
     version: "string"
     auto_update: "boolean"
@@ -262,7 +262,7 @@ ACF_CONFIG_SCHEMA:
       preserve_customizations: true
 
 USER_OVERRIDE_SCHEMA:
-  file: ".acf/config/overrides.json"
+  file: ".acforge/config/overrides.json"
   optional_fields:
     disabled_components: "array[string]"
     custom_templates:
@@ -273,7 +273,7 @@ USER_OVERRIDE_SCHEMA:
 
 STATE_TRACKING_SCHEMAS:
   installed_components:
-    file: ".acf/state/installed.json"
+    file: ".acforge/state/installed.json"
     schema:
       acf_version: "string"
       installed_at: "iso_timestamp"
@@ -284,7 +284,7 @@ STATE_TRACKING_SCHEMAS:
       user_modifications: "object[filepath: timestamp]"
   
   version_management:
-    file: ".acf/state/versions.json"
+    file: ".acforge/state/versions.json"
     schema:
       acf_version: "string"
       template_versions:
@@ -298,25 +298,25 @@ STATE_TRACKING_SCHEMAS:
 
 ```yaml
 GITIGNORE_PATTERNS:
-  - ".acf/state/"
-  - ".acf/backups/"
-  - ".acf/cache/"
-  - ".acf/tmp/"
-  - ".acf/.cache/"
-  - ".acf/config/overrides.json"
+  - ".acforge/state/"
+  - ".acforge/backups/"
+  - ".acforge/cache/"
+  - ".acforge/tmp/"
+  - ".acforge/.cache/"
+  - ".acforge/config/overrides.json"
 
 VERSION_CONTROL_STRATEGY:
   include:
-    - ".acf/config/acf.json"
-    - ".acf/config/deployment.json"
-    - ".acf/templates/"
+    - ".acforge/config/acf.json"
+    - ".acforge/config/deployment.json"
+    - ".acforge/templates/"
     - ".claude/"
     - "CLAUDE.md"
   exclude:
-    - ".acf/state/"
-    - ".acf/backups/"
-    - ".acf/cache/"
-    - ".acf/config/overrides.json"
+    - ".acforge/state/"
+    - ".acforge/backups/"
+    - ".acforge/cache/"
+    - ".acforge/config/overrides.json"
 ```
 
 ## OPERATIONAL_WORKFLOWS
@@ -361,7 +361,7 @@ MIGRATION_FROM_CLAUDE:
     scan: ".claude/"
     detect: "customizations"
   - EXECUTE: create_backup
-    target: ".acf/backups/{timestamp}/"
+    target: ".acforge/backups/{timestamp}/"
   - EXECUTE: match_templates
     identify: "acf_equivalent_components"
   - EXECUTE: flag_custom_components
@@ -373,7 +373,7 @@ MIGRATION_FROM_CLAUDE:
 
 MIGRATION_FROM_LEGACY_ACF:
   - EXECUTE: detect_version
-    from: ".acf/state/"
+    from: ".acforge/state/"
   - EXECUTE: run_migration_scripts
     version_specific: true
   - EXECUTE: update_templates
@@ -412,7 +412,7 @@ VALIDATION_RULES:
 
 SENSITIVE_DATA_RULES:
   - NEVER: store_secrets
-    in: ".acf/config/"
+    in: ".acforge/config/"
   - USE: environment_variables
     for: "secret_management"
   - EXCLUDE: sensitive_files
@@ -428,7 +428,7 @@ ERROR_HANDLING:
         to: "user"
     claude_corruption_detected:
       - EXECUTE: restore_from_backup
-        source: ".acf/backups/latest/"
+        source: ".acforge/backups/latest/"
       - EXECUTE: report_restoration
         to: "user"
     template_integrity_fails:

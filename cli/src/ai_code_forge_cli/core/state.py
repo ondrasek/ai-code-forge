@@ -74,12 +74,12 @@ class StateManager:
             repo_root: Root directory of the repository
         """
         self.repo_root = repo_root
-        self.acf_dir = repo_root / ".acf"
+        self.acf_dir = repo_root / ".acforge"
         self.state_file = self.acf_dir / "state.json"
         self.backup_file = self.state_file.with_suffix(".json.backup")
     
     def ensure_acf_dir(self) -> None:
-        """Ensure .acf directory exists."""
+        """Ensure .acforge directory exists."""
         self.acf_dir.mkdir(exist_ok=True)
     
     def load_state(self) -> ACFState:

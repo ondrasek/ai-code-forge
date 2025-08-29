@@ -165,7 +165,7 @@ class RepositoryAnalyzer:
         """
         self.repo_root = repo_root
         self.claude_dir = repo_root / ".claude"
-        self.acf_dir = repo_root / ".acf"
+        self.acf_dir = repo_root / ".acforge"
     
     def detect_configuration_type(self) -> str:
         """Detect what type of configuration exists in repository.
@@ -200,7 +200,7 @@ class RepositoryAnalyzer:
                     relative_path = file_path.relative_to(self.repo_root)
                     existing_files.add(str(relative_path))
         
-        # Check .acf directory (but not state files)
+        # Check .acforge directory (but not state files)
         if self.acf_dir.exists():
             for file_path in self.acf_dir.rglob("*"):
                 if file_path.is_file() and not file_path.name.endswith((".json", ".backup", ".tmp")):

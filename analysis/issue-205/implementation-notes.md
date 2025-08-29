@@ -70,7 +70,7 @@ acf = "ai_code_forge_cli.cli:main"
 **CRITICAL DECISION CHANGE**: Based on critic agent analysis, implementing **single state file** approach:
 
 ```python
-# .acf/state.json - Single atomic state file
+# .acforge/state.json - Single atomic state file
 {
     "version": "1.0",
     "installation": {
@@ -129,7 +129,7 @@ def get_template_content(template_path: str) -> str:
 #### `acf init` Command  
 **Purpose**: Repository bootstrap with template deployment
 **Key Features**:
-- `.acf/` directory creation
+- `.acforge/` directory creation
 - Template extraction from bundled resources
 - Initial state file creation
 - .gitignore updates
@@ -199,7 +199,7 @@ def test_acf_init_full_workflow():
         assert result.exit_code == 0
         
         # Verify state file creation
-        state_path = Path('.acf/state.json')
+        state_path = Path('.acforge/state.json')
         assert state_path.exists()
         
         # Verify template installation

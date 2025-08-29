@@ -17,7 +17,7 @@ This is a comprehensive CLI rewrite focused on **Phase 1 implementation only** -
 - **PyPI Package**: "ai-code-forge" with alias "acf" distributed via uvx
 - **Template Strategy**: Bundled using hatchling force-include from /templates
 - **Target Focus**: External repositories (not ai-code-forge repo itself) 
-- **State Management**: Three-file approach in `.acf/` directory
+- **State Management**: Three-file approach in `.acforge/` directory
 - **Complete CLI Rebuild**: DELETE entire `cli/` directory and rebuild from scratch
 
 ### Implementation Scope (Phase 1 Only)
@@ -223,7 +223,7 @@ class ACFConfig(BaseModel):
 ```python
 class TemplateUpdater:
     def __init__(self, acf_dir: Path):
-        self.acf_dir = acf_dir
+        self.acforge_dir = acf_dir
         self.customizations = self.load_customizations()
     
     def update_templates(self, preserve_customizations=True):
@@ -271,7 +271,7 @@ class TestACFCLI:
     def test_status_command(self):
         with self.runner.isolated_filesystem():
             # Setup test repository
-            Path('.acf').mkdir()
+            Path('.acforge').mkdir()
             
             result = self.runner.invoke(cli, ['status'])
             assert result.exit_code == 0
@@ -285,7 +285,7 @@ class TestACFCLI:
                 input='y\n'  # Confirm prompts
             )
             assert result.exit_code == 0
-            assert Path('my-project/.acf').exists()
+            assert Path('my-project/.acforge').exists()
 ```
 
 **Advanced Testing Features:**

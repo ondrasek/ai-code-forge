@@ -54,7 +54,7 @@ Based on comprehensive research documented in research-findings.md and technical
    - Environment variable handling
 
 6. **Logging and debugging**
-   - Session-based logging in .acf/logs/codex/
+   - Session-based logging in .acforge/logs/codex/
    - Debug mode with RUST_LOG support
    - Agent analysis integration
 
@@ -107,7 +107,7 @@ Options:
 - Process isolation
 
 ### Integration Requirements
-- Session-based logging in .acf/logs/codex/[SESSION]/
+- Session-based logging in .acforge/logs/codex/[SESSION]/
 - Environment auto-detection (devcontainer, codespace)
 - .env file loading with security validation
 - Shared authentication patterns
@@ -124,7 +124,7 @@ Options:
 - ✅ Shared utility library creation (scripts/lib/launcher-utils.sh)
 - ✅ Core launch-codex.sh implementation (400+ lines)
 - ✅ Codex-specific configuration management (TOML, ChatGPT auth)
-- ✅ Session-based logging implementation (.acf/logs/codex/)
+- ✅ Session-based logging implementation (.acforge/logs/codex/)
 - ✅ Environment detection and permission handling
 - ✅ CLI interface implementation (mirroring launch-claude.sh)
 - ✅ Advanced features (--analyze-logs, --troubleshoot-codex, --clean-logs)
