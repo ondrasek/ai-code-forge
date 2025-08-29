@@ -10,7 +10,7 @@ import pytest
 from click.testing import CliRunner
 
 from ai_code_forge_cli.cli import main
-from ai_code_forge_cli.core.update import UpdateAnalyzer, CustomizationPreserver, UpdateCommand
+from ai_code_forge_cli.commands.update import UpdateAnalyzer, CustomizationPreserver, UpdateCommand
 from ai_code_forge_cli.core.state import ACFState, InstallationState, TemplateState, FileInfo
 
 
