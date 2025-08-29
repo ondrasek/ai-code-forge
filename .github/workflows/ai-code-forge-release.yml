@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'  # Semantic version tags (v1.0.0, v1.0.0-beta.1, etc.)
+  workflow_dispatch:  # Allow manual triggers for testing/emergency releases
 
 jobs:
   build:
