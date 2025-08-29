@@ -3,36 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # Semantic version tags (v0.2.0, v0.2.1, etc.)
-  workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build type'
-        required: true
-        default: 'development'
-        type: choice
-        options:
-          - development
-          - release
-          - test
-      create_release:
-        description: 'Create GitHub release (only on main branch)'
-        required: false
-        default: false
-        type: boolean
-      version_override:
-        description: 'Version override (leave empty for pyproject.toml version)'
-        required: false
-        type: string
-      release_type:
-        description: 'Release type'
-        required: false
-        default: 'release'
-        type: choice
-        options:
-          - release
-          - prerelease
-          - draft
+      - 'v*'  # Semantic version tags (v1.0.0, v1.0.0-beta.1, etc.)
 
 jobs:
   build:
@@ -41,7 +12,6 @@ jobs:
       contents: read   # Minimal permissions for security
       actions: read
     env:
-      SHOULD_RELEASE: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.create_release == 'true') }}
       PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
     steps:
@@ -86,23 +56,12 @@ jobs:
             fi
           fi
 
-          # Determine release type
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
-            if [[ -n "${{ inputs.version_override }}" ]]; then
-              RELEASE_VERSION="${{ inputs.version_override }}"
-            fi
-          else
-            RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
-          fi
+          # Extract version from tag (v1.0.0 -> 1.0.0)
+          RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
 
-          # Prerelease detection
+          # Auto-detect prerelease from semantic version suffixes
           IS_PRERELEASE="false"
-          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev) ]]; then
-            IS_PRERELEASE="true"
-          fi
-
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.release_type }}" == "prerelease" ]]; then
+          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev|pre) ]]; then
             IS_PRERELEASE="true"
           fi
 
@@ -224,11 +183,11 @@ jobs:
   create-github-release:
     needs: build
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write  # Required for creating releases
       actions: read
-      
+
     env:
       PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
@@ -246,28 +205,21 @@ jobs:
 
       - name: Set release variables
         run: |
-          # Determine release version
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
-            if [[ -n "${{ inputs.version_override }}" ]]; then
-              RELEASE_VERSION="${{ inputs.version_override }}"
-            fi
-          else
-            RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
-          fi
+          # Extract version from tag (v1.0.0 -> 1.0.0)
+          RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
 
-          # Prerelease detection
+          # Auto-detect prerelease from semantic version suffixes
           IS_PRERELEASE="false"
-          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev) ]]; then
-            IS_PRERELEASE="true"
-          fi
-
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.release_type }}" == "prerelease" ]]; then
+          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev|pre) ]]; then
             IS_PRERELEASE="true"
           fi
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
           echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_ENV
+
+          echo "📋 Release configuration:"
+          echo "  Version: $RELEASE_VERSION"
+          echo "  Prerelease: $IS_PRERELEASE"
 
       - name: Parse changelog and generate release notes
         run: |
@@ -365,35 +317,25 @@ jobs:
         run: |
           echo "🚀 Creating GitHub release..."
 
-          # Determine draft status
-          DRAFT_FLAG=""
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.release_type }}" == "draft" ]]; then
-            DRAFT_FLAG="--draft"
-          fi
-
-          # Determine prerelease flag
+          # Set release flags based on semantic version
           PRERELEASE_FLAG=""
           if [[ "$IS_PRERELEASE" == "true" ]]; then
             PRERELEASE_FLAG="--prerelease"
           fi
 
-          # Create the release
           RELEASE_TAG="v$RELEASE_VERSION"
 
-          # For workflow_dispatch, create tag if it doesn't exist
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            if ! git tag --list | grep -q "^$RELEASE_TAG$"; then
-              echo "Creating tag: $RELEASE_TAG"
-              git tag "$RELEASE_TAG"
-              git push origin "$RELEASE_TAG"
-            fi
+          # Delete existing release if it exists (allows re-creation/overwrite)
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "⚠️  Release $RELEASE_TAG already exists - deleting to recreate..."
+            gh release delete "$RELEASE_TAG" --yes || true
           fi
 
-          # Create release with comprehensive validation
+          # Always create release (no draft mode)
+          echo "🚀 Creating release $RELEASE_TAG..."
           gh release create "$RELEASE_TAG" \
-            --title "AI Code Forge v$RELEASE_VERSION" \
+            --title "ACForge v$RELEASE_VERSION" \
             --notes-file "release-notes.md" \
-            $DRAFT_FLAG \
             $PRERELEASE_FLAG \
             --verify-tag \
             dist/*.whl \
@@ -410,7 +352,7 @@ jobs:
   publish-to-pypi:
     needs: [build]
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+    if: startsWith(github.ref, 'refs/tags/v')
 
     environment:
       name: pypi
@@ -420,7 +362,7 @@ jobs:
       id-token: write        # REQUIRED for OIDC authentication
       contents: read         # Download artifacts
       attestations: write    # Generate Sigstore attestations
-      
+
     env:
       PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
@@ -455,7 +397,7 @@ jobs:
           # Verify package names match expected pattern
           WHEEL_COUNT=$(ls dist/$PACKAGE_NAME-*.whl 2>/dev/null | wc -l)
           TAR_COUNT=$(ls dist/$PACKAGE_NAME-*.tar.gz 2>/dev/null | wc -l)
-          
+
           echo "✅ Found $WHEEL_COUNT wheel file(s) and $TAR_COUNT source distribution(s)"
           echo "✅ All artifact verification passed for package: $PACKAGE_NAME"
 
@@ -565,7 +507,7 @@ jobs:
     if: always()
     permissions:
       contents: read
-      
+
     env:
       PACKAGE_NAME: "acforge"  # Centralized package name configuration
 
