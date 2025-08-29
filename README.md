@@ -3,6 +3,7 @@
 **Transform Claude Code into a specialized AI agent system with templates, workflows, and intelligent automation.**
 
 [![Version](https://img.shields.io/github/v/release/ondrasek/ai-code-forge)](https://github.com/ondrasek/ai-code-forge/releases)
+[![PyPI](https://img.shields.io/pypi/v/acforge)](https://pypi.org/project/acforge/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Issues](https://img.shields.io/github/issues/ondrasek/ai-code-forge)](https://github.com/ondrasek/ai-code-forge/issues)
 
@@ -13,15 +14,17 @@ A comprehensive template system that enhances Claude Code with specialized AI ag
 ### Method 1: ACF CLI Tool (Recommended)
 
 ```bash
-# Install ACF tool
-pip install ai-code-forge
+# Install ACF tool (new package name)
+uv tool install acforge
 
 # Deploy configuration to your project
-ai-code-forge install
+acforge init
 
 # Verify installation
-ai-code-forge status
+acforge status
 ```
+
+> **Migration Note**: The package has been renamed from `ai-code-forge` to `acforge` for easier usage. The old package will show deprecation warnings.
 
 ### Method 2: Development Installation
 
@@ -54,6 +57,28 @@ cd ai-code-forge
 ```
 
 **Requirements**: Claude Code CLI, Git, Python 3.13+, Node.js
+
+## Package Migration (v3.0.0)
+
+**The PyPI package has been renamed for better usability:**
+
+- **Old**: `pip install ai-code-forge` → `ai-code-forge` command  
+- **New**: `uv tool install acforge` → `acforge` command
+
+### Migration Steps
+
+```bash
+# 1. Uninstall old package (if installed)
+uv tool uninstall ai-code-forge
+
+# 2. Install new package
+uv tool install acforge  
+
+# 3. Use new command
+acforge --help
+```
+
+The old package will continue to work but will show deprecation warnings. All functionality remains the same with the shorter, more convenient command name.
 
 ## What You Get
 
