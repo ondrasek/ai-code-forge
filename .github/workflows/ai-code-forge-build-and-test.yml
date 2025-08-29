@@ -120,7 +120,7 @@ jobs:
 
           # Test package import
           echo "Testing package import..."
-          if uv run python -c "import ai_code_forge; print('✅ Package imports successfully')"; then
+          if uv run python -c "import ai_code_forge_cli; print('✅ Package imports successfully')"; then
             echo "✅ Package validation passed"
           else
             echo "❌ Package validation failed"
