@@ -6,27 +6,27 @@ A command-line tool for managing AI Code Forge templates and configurations.
 
 ```bash
 # Install via uvx (recommended for ephemeral usage)
-uvx cforge --help
+uvx acforge --help
 
 # Install persistently
-uv tool install cforge
+uv tool install acforge
 ```
 
 ## Commands
 
-### `acf status`
+### `acforge status`
 
 Show comprehensive status of repository configuration and templates.
 
 ```bash
 # Human-readable status
-acf status
+acforge status
 
 # Verbose output with detailed information
-acf status --verbose
+acforge status --verbose
 
 # JSON output for scripting
-acf status --format json
+acforge status --format json
 ```
 
 ## Development
@@ -52,15 +52,15 @@ uv run ruff check
 This CLI manages AI development workflows through:
 
 - **Template Management**: Bundled templates for agents, commands, and configurations
-- **State Management**: Atomic state tracking in `.acf/state.json`  
+- **State Management**: Atomic state tracking in `.acforge/state.json`  
 - **Configuration Analysis**: Detection and analysis of existing configurations
 - **Customization Preservation**: Support for `.local` files and user modifications
 
 ## Phase 1 Implementation
 
 Currently implements:
-- ✅ `acf status` - Complete status reporting and analysis
+- ✅ `acforge status` - Complete status reporting and analysis
 
 Coming next:
-- 🚧 `acf init` - Repository initialization with templates
-- 🚧 `acf update` - Template synchronization with customization preservation
+- 🚧 `acforge init` - Repository initialization with templates
+- 🚧 `acforge update` - Template synchronization with customization preservation

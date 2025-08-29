@@ -58,7 +58,7 @@ pass_context = click.make_pass_decorator(ACFContext, ensure=True)
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
     help="Repository root directory (auto-detected if not specified)"
 )
-@click.version_option(version=__version__, prog_name="acf")
+@click.version_option(version=__version__, prog_name="acforge")
 @click.pass_context
 def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path]) -> None:
     """AI Code Forge CLI - Template management for AI development workflows.
@@ -69,7 +69,7 @@ def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path]) -> None:
     - Project structure templates
     - Custom command definitions
     
-    Use 'acf COMMAND --help' for detailed help on specific commands.
+    Use 'acforge COMMAND --help' for detailed help on specific commands.
     """
     # Initialize shared context
     acf_ctx = ACFContext()
