@@ -9,7 +9,7 @@ import click
 from .. import __version__
 from ..core.detector import RepositoryDetector
 from ..core.deployer import TemplateDeployer
-from ..core.state import ACFState, FileInfo, InstallationState, StateManager, TemplateState
+from ..core.state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
 from ..core.templates import TemplateManager
 
 
@@ -70,11 +70,11 @@ def init_command(
     TARGET_DIR: Target repository directory (defaults to current directory)
     
     Examples:
-      acf init                    # Initialize current directory
-      acf init /path/to/repo      # Initialize specific directory  
-      acf init --dry-run          # Preview what would be created
-      acf init --force            # Overwrite existing configuration
-      acf init --interactive      # Prompt for all parameters
+      acforge init                    # Initialize current directory
+      acforge init /path/to/repo      # Initialize specific directory  
+      acforge init --dry-run          # Preview what would be created
+      acforge init --force            # Overwrite existing configuration
+      acforge init --interactive      # Prompt for all parameters
     """
     try:
         # Resolve target directory
@@ -350,10 +350,10 @@ def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
             
             # Show next steps
             click.echo("💡 Next steps:")
-            click.echo("  - Run 'acf status' to verify configuration")
+            click.echo("  - Run 'acforge status' to verify configuration")
             click.echo("  - Open repository in Claude Code to test setup")
             click.echo("  - Customize templates by creating .local files")
-            click.echo("  - Use 'acf update' to sync with latest templates")
+            click.echo("  - Use 'acforge update' to sync with latest templates")
             click.echo()
             click.echo("🚀 Repository ready for AI-enhanced development!")
     else:

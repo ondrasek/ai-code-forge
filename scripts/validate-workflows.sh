@@ -181,56 +181,56 @@ for workflow in $WORKFLOW_FILES; do
 done
 
 echo ""
-echo "📋 Step 5: ACF-Specific Validation"
+echo "📋 Step 5: ACForge-Specific Validation"
 echo "---------------------------------"
 
-ACF_WORKFLOW="$WORKFLOW_DIR/acf-build.yml"
+ACFORGE_WORKFLOW="$WORKFLOW_DIR/acforge-build.yml"
 
-if [ -f "$ACF_WORKFLOW" ]; then
-    echo "Validating ACF-specific requirements..."
+if [ -f "$ACFORGE_WORKFLOW" ]; then
+    echo "Validating ACForge-specific requirements..."
     
     # Check trigger paths
-    if grep -q "\.claude/\*\*" "$ACF_WORKFLOW"; then
+    if grep -q "\.claude/\*\*" "$ACFORGE_WORKFLOW"; then
         print_status "PASS" "Triggers on .claude changes"
     else
         print_status "FAIL" "Missing .claude path trigger"
     fi
     
-    if grep -q "templates/\*\*" "$ACF_WORKFLOW"; then
+    if grep -q "templates/\*\*" "$ACFORGE_WORKFLOW"; then
         print_status "PASS" "Triggers on templates changes"
     else
         print_status "FAIL" "Missing templates path trigger"
     fi
     
-    if grep -q "cli/\*\*" "$ACF_WORKFLOW"; then
+    if grep -q "cli/\*\*" "$ACFORGE_WORKFLOW"; then
         print_status "PASS" "Triggers on cli changes"
     else
         print_status "FAIL" "Missing cli path trigger"
     fi
     
     # Check for uv setup
-    if grep -q "astral-sh/setup-uv" "$ACF_WORKFLOW"; then
+    if grep -q "astral-sh/setup-uv" "$ACFORGE_WORKFLOW"; then
         print_status "PASS" "Uses astral-sh/setup-uv action"
     else
         print_status "FAIL" "Missing uv setup action"
     fi
     
     # Check for caching
-    if grep -q "actions/cache@v" "$ACF_WORKFLOW"; then
+    if grep -q "actions/cache@v" "$ACFORGE_WORKFLOW"; then
         print_status "PASS" "Implements caching"
     else
         print_status "WARN" "No caching configured"
     fi
     
     # Check for artifacts
-    if grep -q "actions/upload-artifact@v" "$ACF_WORKFLOW"; then
+    if grep -q "actions/upload-artifact@v" "$ACFORGE_WORKFLOW"; then
         print_status "PASS" "Uploads artifacts"
     else
         print_status "WARN" "No artifact upload configured"
     fi
     
 else
-    print_status "WARN" "ACF workflow not found: $ACF_WORKFLOW"
+    print_status "WARN" "ACForge workflow not found: $ACFORGE_WORKFLOW"
 fi
 
 echo ""
@@ -246,7 +246,7 @@ else
     print_status "FAIL" "Missing required source directories"
 fi
 
-# Test ACF structure
+# Test ACForge structure
 if [ -f "cli/pyproject.toml" ]; then
     print_status "PASS" "CLI pyproject.toml exists"
 else

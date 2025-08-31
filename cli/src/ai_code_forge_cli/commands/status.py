@@ -228,7 +228,7 @@ class StatusReporter:
         
         # Detailed analysis
         if analysis["needs_init"]:
-            click.echo("   💡 Run 'acf init' to initialize ACF configuration")
+            click.echo("   💡 Run 'acforge init' to initialize ACForge configuration")
         
         if analysis["needs_update"]:
             if analysis["missing_templates"]:
@@ -250,7 +250,7 @@ class StatusReporter:
             if analysis["has_conflicts"]:
                 click.echo(f"   ⚠️  {len(analysis.get('potential_conflicts', []))} potential conflicts with customizations")
             
-            click.echo("   💡 Run 'acf update' to sync with latest templates")
+            click.echo("   💡 Run 'acforge update' to sync with latest templates")
         
         if analysis["extra_files"]:
             click.echo(f"   📤 {len(analysis['extra_files'])} extra files not in current templates")
@@ -274,7 +274,7 @@ class StatusReporter:
     help="Show detailed information"
 )
 @click.pass_obj
-def status_command(acf_ctx: Any, output_format: str, verbose: bool) -> None:
+def status_command(acforge_ctx: Any, output_format: str, verbose: bool) -> None:
     """Show ACF configuration status and template information.
     
     The status command provides comprehensive information about:
@@ -287,8 +287,8 @@ def status_command(acf_ctx: Any, output_format: str, verbose: bool) -> None:
     Use --format=json for machine-readable output suitable for scripting.
     """
     try:
-        repo_root = acf_ctx.find_repo_root()
-        reporter = StatusReporter(repo_root, verbose or acf_ctx.verbose)
+        repo_root = acforge_ctx.find_repo_root()
+        reporter = StatusReporter(repo_root, verbose or acforge_ctx.verbose)
         
         status_data = reporter.generate_status_data()
         
@@ -298,7 +298,7 @@ def status_command(acf_ctx: Any, output_format: str, verbose: bool) -> None:
             reporter.print_human_readable(status_data)
     
     except Exception as e:
-        if acf_ctx.verbose:
+        if acforge_ctx.verbose:
             raise
         else:
             raise click.ClickException(f"Failed to generate status: {e}")

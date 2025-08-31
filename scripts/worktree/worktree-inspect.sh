@@ -354,14 +354,14 @@ analyze_assistant_state() {
         return 1
     fi
     
-    local acf_run_dir="$worktree_path/.acforge-run"
+    local acforge_run_dir="$worktree_path/.acforge-run"
     
-    if [[ -d "$acf_run_dir" ]]; then
+    if [[ -d "$acforge_run_dir" ]]; then
         ASSISTANT_STATE["directory_exists"]="true"
         
         # Check for active process indicators
         local pid_files
-        mapfile -t pid_files < <(find "$acf_run_dir" -name "*.pid" 2>/dev/null)
+        mapfile -t pid_files < <(find "$acforge_run_dir" -name "*.pid" 2>/dev/null)
         
         local active_count=0
         for pid_file in "${pid_files[@]}"; do
@@ -378,12 +378,12 @@ analyze_assistant_state() {
         
         # Check for session files
         local session_count
-        session_count=$(find "$acf_run_dir" -name "session-*" -type d 2>/dev/null | wc -l)
+        session_count=$(find "$acforge_run_dir" -name "session-*" -type d 2>/dev/null | wc -l)
         ASSISTANT_STATE["session_count"]="$session_count"
         
         # Get last activity time
         local last_activity
-        last_activity=$(find "$acf_run_dir" -type f -printf "%T@\n" 2>/dev/null | sort -n | tail -1)
+        last_activity=$(find "$acforge_run_dir" -type f -printf "%T@\n" 2>/dev/null | sort -n | tail -1)
         ASSISTANT_STATE["last_activity"]="${last_activity:-0}"
         
         return 0

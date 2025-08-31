@@ -171,7 +171,7 @@ class RepositoryAnalyzer:
         """Detect what type of configuration exists in repository.
         
         Returns:
-            Configuration type: 'acf', 'claude', 'mixed', or 'none'
+            Configuration type: 'acforge', 'claude', 'mixed', or 'none'
         """
         has_acf = self.acf_dir.exists()
         has_claude = self.claude_dir.exists()
@@ -179,7 +179,7 @@ class RepositoryAnalyzer:
         if has_acf and has_claude:
             return "mixed"
         elif has_acf:
-            return "acf"
+            return "acforge"
         elif has_claude:
             return "claude"
         else:

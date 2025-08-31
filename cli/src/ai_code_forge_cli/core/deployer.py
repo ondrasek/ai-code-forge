@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 import click
 
 from .. import __version__
-from .state import ACFState, FileInfo, InstallationState, StateManager, TemplateState
+from .state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
 from .templates import TemplateManager
 
 

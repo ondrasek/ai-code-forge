@@ -4,7 +4,7 @@
 
 ## Overview
 
-The AI Code Forge CLI (`acf`) is a configuration management tool for coding agents (Claude Code, Cursor, etc.). It provides hassle-free setup and maintenance of agent configurations in any repository using templates and blueprints from the ai-code-forge project.
+The AI Code Forge CLI (`acforge`) is a configuration management tool for coding agents (Claude Code, Cursor, etc.). It provides hassle-free setup and maintenance of agent configurations in any repository using templates and blueprints from the ai-code-forge project.
 
 ## Core Principles
 
@@ -15,12 +15,12 @@ The AI Code Forge CLI (`acf`) is a configuration management tool for coding agen
 
 ### External Repository Focus
 - CLI operates on target repositories (not ai-code-forge itself)
-- Users run `uvx acf` commands from their project directory
+- Users run `uvx acforge` commands from their project directory
 - No requirement to clone or know about ai-code-forge repository structure
 
 ### Minimal State Management
 - State exists only in `.acforge/` directory within each target repository
-- No global configuration files (`~/.acforge`, `/etc/acf`, etc.)
+- No global configuration files (`~/.acforge`, `/etc/acforge`, etc.)
 - Clean, self-contained per-repository state
 
 ## Architecture Decisions
@@ -38,7 +38,7 @@ Target Repository Configuration
 
 **Key Decisions:**
 - **uvx distribution**: No `pip install`, no `git clone` requirement
-- **PyPI packaging**: Standard Python packaging with entry point `acf`  
+- **PyPI packaging**: Standard Python packaging with entry point `acforge`  
 - **Template bundling**: Build-time inclusion from `/templates` using hatchling
 - **Offline capability**: Self-contained package works without internet
 
@@ -108,7 +108,7 @@ def update():
 
 ### Core Commands
 
-#### `uvx acf init`
+#### `uvx acforge init`
 **Purpose**: Bootstrap new repository with agent configuration
 **Behavior**:
 - Creates `.claude/` directory structure
@@ -121,7 +121,7 @@ def update():
 - `/templates/stacks/*.md` → `.claude/stacks/`
 - Agent and command templates based on user selection
 
-#### `uvx acf update`
+#### `uvx acforge update`
 **Purpose**: Sync with latest bundled templates while preserving customizations
 **Behavior**:
 - Compares current config with bundled templates
@@ -134,7 +134,7 @@ def update():
 - Three-way merge for complex cases
 - User confirmation for breaking changes
 
-#### `uvx acf migrate`
+#### `uvx acforge migrate`
 **Purpose**: Convert existing agent configurations to ACF standard
 **Behavior**:
 - Analyzes existing `.claude/` directory
@@ -142,7 +142,7 @@ def update():
 - Creates `.acforge/` state directory
 - Preserves existing customizations as `.local` files
 
-#### `uvx acf status`
+#### `uvx acforge status`
 **Purpose**: Show configuration state and template drift
 **Output**:
 ```
@@ -152,17 +152,17 @@ Last Update: 2024-08-28
 
 Configuration Status:
   ✓ CLAUDE.md (up to date)
-  ⚠ .claude/agents/researcher.md (modified, use 'acf update' to sync)
-  ✗ .claude/commands/deploy.md (missing, run 'acf update')
+  ⚠ .claude/agents/researcher.md (modified, use 'acforge update' to sync)
+  ✗ .claude/commands/deploy.md (missing, run 'acforge update')
 
 Customizations:
   • .claude/agents/custom-agent.local.md
   • .claude/commands/my-command.local.md
 
-Use 'acf explain' for configuration documentation.
+Use 'acforge explain' for configuration documentation.
 ```
 
-#### `uvx acf factory-reset`
+#### `uvx acforge factory-reset`
 **Purpose**: Nuclear option - full reset to template defaults
 **Behavior**:
 - Backs up current configuration to `.acforge/backup/`
@@ -170,11 +170,11 @@ Use 'acf explain' for configuration documentation.
 - Reinstalls fresh templates
 - Resets `.acforge/` state
 
-#### `uvx acf explain`
+#### `uvx acforge explain`
 **Purpose**: Documentation and help for configuration elements
 **Interactive Interface**:
 ```bash
-$ uvx acf explain
+$ uvx acforge explain
 What would you like to know about?
 1. CLAUDE.md structure and purpose
 2. Agent definitions (.claude/agents/)
@@ -183,7 +183,7 @@ What would you like to know about?
 5. ACF state management
 ```
 
-#### `uvx acf troubleshoot`
+#### `uvx acforge troubleshoot`
 **Purpose**: Diagnostic and validation tool
 **Checks**:
 - Configuration file syntax validation
@@ -191,7 +191,7 @@ What would you like to know about?
 - State consistency checks
 - Agent/command reference validation
 
-#### `uvx acf customize`
+#### `uvx acforge customize`
 **Purpose**: Interactive template modification
 **Workflow**:
 1. Select configuration element to customize
@@ -272,8 +272,8 @@ ai_code_forge/
 
 ### Phase 2: Hybrid Approach (Future)
 ```bash
-uvx acf update --source=github    # Latest from GitHub
-uvx acf update --source=bundled   # Use package templates
+uvx acforge update --source=github    # Latest from GitHub
+uvx acforge update --source=bundled   # Use package templates
 ```
 
 ### Phase 3: Full Discovery (Future)
@@ -312,14 +312,14 @@ def test_init_command():
 4. **Template access**: importlib.resources integration
 
 ### Core Implementation Order
-1. `acf status` - Foundation for state management
-2. `acf init` - Primary user entry point
-3. `acf update` - Template synchronization
-4. `acf migrate` - Existing configuration conversion
-5. `acf factory-reset` - Nuclear option
-6. `acf explain` - Documentation system
-7. `acf troubleshoot` - Diagnostic capabilities
-8. `acf customize` - Interactive modification
+1. `acforge status` - Foundation for state management
+2. `acforge init` - Primary user entry point
+3. `acforge update` - Template synchronization
+4. `acforge migrate` - Existing configuration conversion
+5. `acforge factory-reset` - Nuclear option
+6. `acforge explain` - Documentation system
+7. `acforge troubleshoot` - Diagnostic capabilities
+8. `acforge customize` - Interactive modification
 
 ### Quality Gates
 - All commands work on ai-code-forge repository itself

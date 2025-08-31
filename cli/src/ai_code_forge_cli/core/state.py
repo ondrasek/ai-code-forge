@@ -46,8 +46,8 @@ class CustomizationState(BaseModel):
     )
 
 
-class ACFState(BaseModel):
-    """Complete ACF state representation."""
+class ACForgeState(BaseModel):
+    """Complete ACForge state representation."""
     
     version: str = Field(default="1.0", description="State format version")
     installation: Optional[InstallationState] = Field(
@@ -65,7 +65,7 @@ class ACFState(BaseModel):
 
 
 class StateManager:
-    """Manages ACF state file operations with atomic guarantees."""
+    """Manages ACForge state file operations with atomic guarantees."""
     
     def __init__(self, repo_root: Path) -> None:
         """Initialize state manager for a repository.
@@ -74,47 +74,47 @@ class StateManager:
             repo_root: Root directory of the repository
         """
         self.repo_root = repo_root
-        self.acf_dir = repo_root / ".acforge"
-        self.state_file = self.acf_dir / "state.json"
+        self.acforge_dir = repo_root / ".acforge"
+        self.state_file = self.acforge_dir / "state.json"
         self.backup_file = self.state_file.with_suffix(".json.backup")
     
-    def ensure_acf_dir(self) -> None:
+    def ensure_acforge_dir(self) -> None:
         """Ensure .acforge directory exists."""
-        self.acf_dir.mkdir(exist_ok=True)
+        self.acforge_dir.mkdir(exist_ok=True)
     
-    def load_state(self) -> ACFState:
+    def load_state(self) -> ACForgeState:
         """Load current state from file.
         
         Returns:
             Current ACF state, or default state if no file exists
         """
         if not self.state_file.exists():
-            return ACFState()
+            return ACForgeState()
         
         try:
             with self.state_file.open(encoding="utf-8") as f:
                 data = json.load(f)
-            return ACFState.model_validate(data)
+            return ACForgeState.model_validate(data)
         except (json.JSONDecodeError, Exception) as e:
             # If main state is corrupted, try backup
             if self.backup_file.exists():
                 try:
                     with self.backup_file.open(encoding="utf-8") as f:
                         data = json.load(f)
-                    return ACFState.model_validate(data)
+                    return ACForgeState.model_validate(data)
                 except Exception:
                     pass
             
             # Return default state if both files are corrupted
-            return ACFState()
+            return ACForgeState()
     
-    def save_state(self, state: ACFState) -> None:
+    def save_state(self, state: ACForgeState) -> None:
         """Save state to file with atomic operation.
         
         Args:
             state: State to save
         """
-        self.ensure_acf_dir()
+        self.ensure_acforge_dir()
         
         # Write to temporary file first
         temp_file = self.state_file.with_suffix(".json.tmp")
@@ -135,7 +135,7 @@ class StateManager:
         temp_file.replace(self.state_file)
     
     @contextmanager
-    def atomic_update(self) -> Generator[ACFState, None, None]:
+    def atomic_update(self) -> Generator[ACForgeState, None, None]:
         """Context manager for atomic state updates.
         
         Yields:
@@ -172,7 +172,7 @@ class StateManager:
         """
         info = {
             "state_file_exists": self.state_file.exists(),
-            "acf_dir_exists": self.acf_dir.exists(),
+            "acforge_dir_exists": self.acforge_dir.exists(),
             "backup_exists": self.backup_file.exists(),
         }
         

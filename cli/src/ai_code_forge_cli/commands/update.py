@@ -58,11 +58,11 @@ def update_command(
     TARGET_DIR: Target repository directory (defaults to current directory)
     
     Examples:
-      acf update                    # Update current directory
-      acf update /path/to/repo      # Update specific directory
-      acf update --dry-run          # Preview what would be updated
-      acf update --force            # Update even with conflicts
-      acf update --no-preserve      # Skip customization preservation
+      acforge update                    # Update current directory
+      acforge update /path/to/repo      # Update specific directory
+      acforge update --dry-run          # Preview what would be updated
+      acforge update --force            # Update even with conflicts
+      acforge update --no-preserve      # Skip customization preservation
     """
     try:
         # Resolve target directory
@@ -137,7 +137,7 @@ def _run_update(
         
         # Handle different status cases
         if analysis["status"] == "not_initialized":
-            results["errors"].append("Repository not initialized. Run 'acf init' first.")
+            results["errors"].append("Repository not initialized. Run 'acforge init' first.")
             return results
         
         if analysis["status"] == "up_to_date":
@@ -445,7 +445,7 @@ def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
         
         if status == "not_initialized":
             click.echo("❌ Repository not initialized")
-            click.echo("💡 Run 'acf init' first to set up ACF configuration")
+            click.echo("💡 Run 'acforge init' first to set up ACForge configuration")
             return
         
         if status == "up_to_date":
@@ -517,7 +517,7 @@ def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
                 
                 # Show next steps
                 click.echo("💡 Next steps:")
-                click.echo("  - Run 'acf status' to verify updates")
+                click.echo("  - Run 'acforge status' to verify updates")
                 click.echo("  - Review preserved customizations if needed")
                 click.echo("  - Test your Claude Code configuration")
                 click.echo()

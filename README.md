@@ -11,10 +11,10 @@ A comprehensive template system that enhances Claude Code with specialized AI ag
 
 ## Quick Start
 
-### Method 1: ACF CLI Tool (Recommended)
+### Method 1: ACForge CLI Tool (Recommended)
 
 ```bash
-# Install ACF tool (new package name)
+# Install ACForge tool (new package name)
 uv tool install acforge
 
 # Deploy configuration to your project
@@ -31,14 +31,14 @@ acforge status
 ```bash
 # 1. Clone and build from source
 git clone https://github.com/ondrasek/ai-code-forge.git
-cd ai-code-forge/acf
+cd ai-code-forge/acforge
 
 # 2. Build and install the configuration manager
 ./build.sh
-python -m src.acf.main install
+python -m src.acforge.main install
 
 # 3. Verify installation
-python -m src.acf.main status
+python -m src.acforge.main status
 ```
 
 ### Method 3: Manual Setup
