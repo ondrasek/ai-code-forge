@@ -47,8 +47,7 @@ build/
 logs/
 
 # ACF State
-.acforge/
-.support/logs/claude-code/
+.acforge/logs
 
 # Testing
 .coverage
