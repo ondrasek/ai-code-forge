@@ -3,9 +3,9 @@
 ## Implementation Priority and Sequence
 
 ### Phase 1 Implementation Order (Critical Path)
-1. **`acf status`** - Foundation command (State inspection, validation framework)
-2. **`acf init`** - Repository bootstrap (Template deployment, state creation)  
-3. **`acf update`** - Template synchronization (Customization preservation, conflict resolution)
+1. **`acforge status`** - Foundation command (State inspection, validation framework)
+2. **`acforge init`** - Repository bootstrap (Template deployment, state creation)  
+3. **`acforge update`** - Template synchronization (Customization preservation, conflict resolution)
 
 ### Critical Implementation Dependencies
 - Status command establishes state management patterns used by init/update
@@ -24,9 +24,9 @@ cli/
 │       ├── cli.py              # Main Click CLI entry point
 │       ├── commands/
 │       │   ├── __init__.py
-│       │   ├── status.py       # acf status implementation
-│       │   ├── init.py         # acf init implementation
-│       │   └── update.py       # acf update implementation
+│       │   ├── status.py       # acforge status implementation
+│       │   ├── init.py         # acforge init implementation
+│       │   └── update.py       # acforge update implementation
 │       ├── core/
 │       │   ├── __init__.py
 │       │   ├── state.py        # State management with dataclasses
@@ -59,7 +59,7 @@ dependencies = [
 
 [project.scripts]
 ai-code-forge = "ai_code_forge_cli.cli:main"
-acf = "ai_code_forge_cli.cli:main"
+acforge = "ai_code_forge_cli.cli:main"
 
 [tool.hatch.build.targets.wheel.force-include]
 "../../templates" = "ai_code_forge_cli/templates"
@@ -116,7 +116,7 @@ def get_template_content(template_path: str) -> str:
 
 ### 5. Command Implementation Strategy
 
-#### `acf status` Command
+#### `acforge status` Command
 **Purpose**: State inspection and validation foundation
 **Key Features**:
 - Repository configuration state detection
@@ -126,7 +126,7 @@ def get_template_content(template_path: str) -> str:
 
 **Implementation Priority**: HIGH (Foundation for other commands)
 
-#### `acf init` Command  
+#### `acforge init` Command  
 **Purpose**: Repository bootstrap with template deployment
 **Key Features**:
 - `.acforge/` directory creation
@@ -136,7 +136,7 @@ def get_template_content(template_path: str) -> str:
 
 **Implementation Priority**: MEDIUM (Depends on status patterns)
 
-#### `acf update` Command
+#### `acforge update` Command
 **Purpose**: Template synchronization with customization preservation  
 **Key Features**:
 - Template version comparison
@@ -190,7 +190,7 @@ from click.testing import CliRunner
 import tempfile
 from pathlib import Path
 
-def test_acf_init_full_workflow():
+def test_acforge_init_full_workflow():
     """Test complete init workflow with isolated filesystem."""
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -220,7 +220,7 @@ def test_acf_init_full_workflow():
 - **Selective Bundling**: Future capability for partial template sets
 
 ### Distribution Reliability
-- **Dual Entry Points**: Both `ai-code-forge` and `acf` aliases
+- **Dual Entry Points**: Both `ai-code-forge` and `acforge` aliases
 - **Version Detection**: CLI version validation and compatibility checking
 - **Fallback Modes**: Development mode resource loading
 
@@ -228,9 +228,9 @@ def test_acf_init_full_workflow():
 
 ### Self-Validation on ai-code-forge Repository
 1. **Pre-implementation**: Document current `.claude/` structure
-2. **Test `acf status`**: Verify detection of current configuration
-3. **Test `acf init`**: Verify bootstrap capability in clean directory
-4. **Test `acf update`**: Verify template synchronization
+2. **Test `acforge status`**: Verify detection of current configuration
+3. **Test `acforge init`**: Verify bootstrap capability in clean directory
+4. **Test `acforge update`**: Verify template synchronization
 
 ### Cross-Repository Testing
 - Create test repositories with various configuration states
@@ -264,9 +264,9 @@ def test_acf_init_full_workflow():
 - [ ] Set up testing framework and validation scripts
 
 ### Development Milestones
-- [ ] **Milestone 1**: `acf status` command with full state management
-- [ ] **Milestone 2**: `acf init` command with template deployment
-- [ ] **Milestone 3**: `acf update` command with customization preservation
+- [ ] **Milestone 1**: `acforge status` command with full state management
+- [ ] **Milestone 2**: `acforge init` command with template deployment
+- [ ] **Milestone 3**: `acforge update` command with customization preservation
 - [ ] **Milestone 4**: Integration testing and self-validation
 - [ ] **Milestone 5**: Documentation and packaging for distribution
 

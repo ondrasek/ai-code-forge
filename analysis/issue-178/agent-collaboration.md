@@ -3,7 +3,7 @@
 ## Cross-Agent Findings and Decision Handoffs
 
 ### Context Agent Findings
-- **File Locations Mapped**: `/scripts/worktree/worktree-watch.sh` (main), `/cli/src/ai_code_forge/data/acf/scripts/worktree/worktree-watch.sh` (duplicate)
+- **File Locations Mapped**: `/scripts/worktree/worktree-watch.sh` (main), `/cli/src/ai_code_forge/data/acforge/scripts/worktree/worktree-watch.sh` (duplicate)
 - **Architecture Understanding**: Well-structured implementation with proper error handling and caching
 - **Key Discovery**: Function naming suggests broader scope than implementation provides
 - **Handoff to Stack-Advisor**: Current `pgrep -f "claude"` at line 220 is the root cause

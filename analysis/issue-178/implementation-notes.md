@@ -83,7 +83,7 @@
 
 ### Primary Implementation Files
 - **Main**: `/scripts/worktree/worktree-watch.sh` (lines 213-234 for process discovery)
-- **CLI Duplicate**: `/cli/src/ai_code_forge/data/acf/scripts/worktree/worktree-watch.sh` (keep synchronized)
+- **CLI Duplicate**: `/cli/src/ai_code_forge/data/acforge/scripts/worktree/worktree-watch.sh` (keep synchronized)
 - **Entry Point**: `/scripts/worktree/worktree.sh` (lines 143-149 for command routing)
 
 ### Key Functions to Modify

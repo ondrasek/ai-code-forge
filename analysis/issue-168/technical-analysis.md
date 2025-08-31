@@ -59,7 +59,7 @@ Analysis of the ai-code-forge repository's GitHub Actions setup to understand cu
 - **Trigger Pattern**: Main branch pushes, semantic version tags, manual workflow dispatch
 - **Comprehensive Artifact Management**:
   - **Build Artifacts**: `python-package-distributions` (30-day retention)
-  - **Test Results**: `acf-test-results-${{ github.sha }}` (7-day retention)
+  - **Test Results**: `acforge-test-results-${{ github.sha }}` (7-day retention)
   - **Release Assets**: Wheel files, source distributions, checksums
 - **Security Features**: Sigstore attestations, OIDC authentication, validation checks
 - **Multi-Job Architecture**: build → create-github-release → publish-to-pypi → build-summary
@@ -80,7 +80,7 @@ Analysis of the ai-code-forge repository's GitHub Actions setup to understand cu
 
 2. **Context-Aware Naming**:
    ```yaml
-   name: acf-test-results-${{ github.sha }}
+   name: acforge-test-results-${{ github.sha }}
    ```
 
 3. **Conditional Artifact Upload**:

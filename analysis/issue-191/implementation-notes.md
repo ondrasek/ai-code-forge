@@ -102,7 +102,7 @@ fi
 
 **Files**: 
 - `scripts/launch-claude.sh` (main implementation)
-- `cli/src/ai_code_forge/data/acf/scripts/launch-claude.sh` (CLI data copy)
+- `cli/src/ai_code_forge/data/acforge/scripts/launch-claude.sh` (CLI data copy)
 
 **Action**: Both files are identical copies. Need to fix both or establish which is canonical.
 

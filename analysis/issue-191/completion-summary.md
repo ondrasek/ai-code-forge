@@ -46,7 +46,7 @@ Issue #191 has been fully addressed with comprehensive fixes to the launch-claud
 
 ### Files Modified
 1. **`scripts/launch-claude.sh`** (main implementation)
-2. **`cli/src/ai_code_forge/data/acf/scripts/launch-claude.sh`** (CLI data copy)
+2. **`cli/src/ai_code_forge/data/acforge/scripts/launch-claude.sh`** (CLI data copy)
 
 ### Key Changes Made
 

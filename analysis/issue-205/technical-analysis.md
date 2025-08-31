@@ -4,7 +4,7 @@
 ============================
 
 **SITUATION UNDERSTANDING:**
-Need comprehensive codebase context for CLI Phase 1 rewrite implementing `acf status`, `acf init`, and `acf update` commands. This is a complete rebuild from scratch, replacing the existing CLI implementation.
+Need comprehensive codebase context for CLI Phase 1 rewrite implementing `acforge status`, `acforge init`, and `acforge update` commands. This is a complete rebuild from scratch, replacing the existing CLI implementation.
 
 **RELEVANT CODEBASE CONTEXT:**
 
@@ -16,11 +16,11 @@ cli/
 ├── pyproject.toml              # Current package config (v2.92.0)
 ├── src/ai_code_forge/
 │   ├── main.py                 # Click-based CLI with install/status commands
-│   ├── core/installer.py       # ACFInstaller class with file operations
+│   ├── core/installer.py       # ACForgeInstaller class with file operations
 │   └── data/                   # Bundled template data
 │       ├── CLAUDE.md           # Operational rules template
 │       ├── claude/             # .claude directory contents
-│       └── acf/                # .acforge directory contents (duplicated)
+│       └── acforge/                # .acforge directory contents (duplicated)
 └── tests/                      # Basic test structure
 ```
 
@@ -32,23 +32,23 @@ cli/
 - **Build System**: `hatchling`
 
 #### 3. Current Command Analysis
-**`acf install` Command:**
+**`acforge install` Command:**
 - Creates `.claude/` and `.acforge/` directories
 - Copies bundled data from `src/ai_code_forge/data/`
 - Installs `CLAUDE.md` to project root
 - Has force overwrite option (`--force`)
 - Validates target directory existence
 
-**`acf status` Command:**
+**`acforge status` Command:**
 - Checks for `.claude/`, `.acforge/`, and `CLAUDE.md` presence
 - Lists files in each directory
 - Provides installation completeness assessment
-- Uses ACFInstaller.get_installation_status()
+- Uses ACForgeInstaller.get_installation_status()
 
 #### 4. Template Data Bundling Strategy
 Current implementation bundles templates in `src/ai_code_forge/data/`:
 - **`claude/`**: Contains `.claude` directory structure (agents, commands, settings.json)
-- **`acf/`**: Contains duplicated templates and documentation
+- **`acforge/`**: Contains duplicated templates and documentation
 - **`CLAUDE.md`**: Project-specific operational rules
 
 ### Template Directory Analysis (`templates/`)
@@ -106,12 +106,12 @@ templates/
 ### State Management Requirements
 
 #### Current Installation State Tracking:
-The existing `ACFInstaller.get_installation_status()` tracks:
+The existing `ACForgeInstaller.get_installation_status()` tracks:
 - `claude_dir_exists`: Boolean for `.claude/` presence
-- `acf_dir_exists`: Boolean for `.acforge/` presence  
+- `acforge_dir_exists`: Boolean for `.acforge/` presence  
 - `claude_md_exists`: Boolean for `CLAUDE.md` presence
 - `claude_files`: List of files in `.claude/`
-- `acf_files`: List of files in `.acforge/`
+- `acforge_files`: List of files in `.acforge/`
 
 #### Required State Management for Phase 1:
 Based on issue requirements, need **3 JSON files in `.acforge/`**:
@@ -161,7 +161,7 @@ Based on issue requirements, need **3 JSON files in `.acforge/`**:
 
 ### Lessons Learned:
 - **Resource Loading**: Complex path resolution needed for development vs installed
-- **Template Duplication**: Current `acf/` directory duplicates some template content
+- **Template Duplication**: Current `acforge/` directory duplicates some template content
 - **State Tracking**: Simple boolean tracking insufficient for update operations
 
 ## SITUATIONAL RECOMMENDATIONS:
@@ -212,8 +212,8 @@ Based on issue requirements, need **3 JSON files in `.acforge/`**:
 - **Template Customization**: How preservation works
 
 ### Migration Requirements:
-- **Package Rename**: Consider `ai-code-forge` → `acf` transition
-- **Command Migration**: `ai-code-forge install` → `acf init`
+- **Package Rename**: Consider `ai-code-forge` → `acforge` transition
+- **Command Migration**: `ai-code-forge install` → `acforge init`
 - **Data Migration**: Convert existing installations to new state format
 - **Breaking Change Communication**: Version bump to 3.0.0
 

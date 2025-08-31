@@ -78,7 +78,7 @@ find_worktree_processes() {
 │   ├── worktree-inspect.sh            # Process inspection utilities
 │   └── tests/test-worktree-inspect.sh # Test suite
 │
-├── cli/src/ai_code_forge/data/acf/scripts/worktree/
+├── cli/src/ai_code_forge/data/acforge/scripts/worktree/
 │   └── worktree-watch.sh              # Duplicate CLI version (identical)
 ```
 
@@ -211,7 +211,7 @@ find_worktree_processes() {
 ### Internal Integration
 - **worktree.sh**: Command routing and argument parsing
 - **worktree-inspect.sh**: Process inspection utilities (different scope)
-- **CLI packaging**: Identical copy in `cli/src/ai_code_forge/data/acf/`
+- **CLI packaging**: Identical copy in `cli/src/ai_code_forge/data/acforge/`
 
 ### GitHub API Integration
 - **Rate Limiting**: 1-minute cache TTL (configurable via --ttl)

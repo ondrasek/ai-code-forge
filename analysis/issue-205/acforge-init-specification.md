@@ -1,9 +1,9 @@
-# ACF Init Command Specification
+# ACForge Init Command Specification
 
 ## Overview
 
-The `acf init` command bootstraps a repository with AI Code Forge configuration by:
-1. Creating `.acforge/` directory for ACF state management
+The `acforge init` command bootstraps a repository with AI Code Forge configuration by:
+1. Creating `.acforge/` directory for ACForge state management
 2. Creating `.claude/` directory with Claude Code configuration from templates
 3. Performing template parameter substitution for repository-specific values
 4. Initializing state tracking for future template synchronization
@@ -11,7 +11,7 @@ The `acf init` command bootstraps a repository with AI Code Forge configuration 
 ## Command Signature
 
 ```bash
-acf init [OPTIONS] [TARGET_DIR]
+acforge init [OPTIONS] [TARGET_DIR]
 ```
 
 ## Arguments
@@ -57,7 +57,7 @@ acf init [OPTIONS] [TARGET_DIR]
 **`.acforge/` State Directory:**
 ```
 .acforge/
-├── state.json              # ACF state tracking
+├── state.json              # ACForge state tracking
 ├── template-metadata.json  # Template versions and checksums
 └── customizations.json     # User customization tracking
 ```
@@ -79,7 +79,7 @@ acf init [OPTIONS] [TARGET_DIR]
 - `{{PROJECT_NAME}}` - Repository/project name
 - `{{REPO_URL}}` - Full GitHub repository URL
 - `{{CREATION_DATE}}` - ISO timestamp of initialization
-- `{{ACF_VERSION}}` - ACF CLI version used for initialization
+- `{{ACFORGE_VERSION}}` - ACForge CLI version used for initialization
 - `{{TEMPLATE_VERSION}}` - Template bundle version
 
 **Parameter Detection Logic:**
@@ -139,10 +139,10 @@ acf init [OPTIONS] [TARGET_DIR]
 
 **Standard Output:**
 ```
-🎉 ACF initialization complete!
+🎉 ACForge initialization complete!
 
 📁 Created directories:
-  ✅ .acforge/ (ACF state management)
+  ✅ .acforge/ (ACForge state management)
   ✅ .claude/ (Claude Code configuration)
 
 📦 Deployed templates:
@@ -157,10 +157,10 @@ acf init [OPTIONS] [TARGET_DIR]
   ✅ Creation date: 2025-08-28T10:30:00Z
 
 💡 Next steps:
-  - Run 'acf status' to verify configuration
+  - Run 'acforge status' to verify configuration
   - Open repository in Claude Code to test setup
   - Customize templates by creating .local files
-  - Use 'acf update' to sync with latest templates
+  - Use 'acforge update' to sync with latest templates
 
 🚀 Repository ready for AI-enhanced development!
 ```
@@ -184,13 +184,13 @@ acf init [OPTIONS] [TARGET_DIR]
 3. **Template Access Failure:**
    ```
    ❌ Cannot access bundled templates
-   💡 Try: acf status --verbose to diagnose
+   💡 Try: acforge status --verbose to diagnose
    ```
 
 4. **Existing Configuration Conflict:**
    ```
    ⚠️  Configuration already exists
-   💡 Use --force to overwrite or 'acf update' to sync
+   💡 Use --force to overwrite or 'acforge update' to sync
    ```
 
 ## Implementation Architecture
@@ -214,7 +214,7 @@ acf init [OPTIONS] [TARGET_DIR]
 
 **Conflict Resolution:**
 1. Detect existing files
-2. Compare checksums (if ACF-managed)
+2. Compare checksums (if ACForge-managed)
 3. Prompt user for resolution strategy
 4. Apply user choice (overwrite/skip/diff)
 
@@ -242,9 +242,9 @@ acf init [OPTIONS] [TARGET_DIR]
 - Batch initialization for multiple repositories
 
 **Integration Points:**
-- `acf update` command for template synchronization
-- `acf merge` command for existing configuration integration  
-- `acf customize` command for template modification
+- `acforge update` command for template synchronization
+- `acforge merge` command for existing configuration integration  
+- `acforge customize` command for template modification
 - CI/CD integration for automated repository setup
 
 ## Security Considerations

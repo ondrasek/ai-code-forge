@@ -1,10 +1,10 @@
-# ACF Repository Layout - AI Instructions
+# ACForge Repository Layout - AI Instructions
 
 ## DIRECTORY_STRUCTURE_RULES
 
 ```yaml
 REQUIRED_SEPARATION:
-  acf_directory: ".acforge/"     # ACF tool state and templates
+  acforge_directory: ".acforge/"     # ACForge tool state and templates
   claude_directory: ".claude/" # Claude Code recognized files only
   constraint: "no_overlap_between_directories"
 
@@ -12,26 +12,26 @@ PROJECT_STRUCTURE:
   root: "PROJECT_ROOT/"
   directories:
     - path: ".acforge/"
-      purpose: "acf_tool_state"
+      purpose: "acforge_tool_state"
     - path: ".claude/" 
       purpose: "claude_recognized_files"
       constraint: "claude_code_compatible_only"
 ```
 
-## ACF_DIRECTORY_STRUCTURE
+## ACFORGE_DIRECTORY_STRUCTURE
 
 ```yaml
-CREATE_ACF_STRUCTURE:
+CREATE_ACFORGE_STRUCTURE:
   base_path: ".acforge/"
   subdirectories:
     config:
-      files: ["acf.json", "deployment.json", "overrides.json"]
+      files: ["acforge.json", "deployment.json", "overrides.json"]
       purpose: "tool_configuration"
     templates:
       subdirs: ["agents/", "commands/", "guidelines/", "prompts/", "stacks/"]
       purpose: "deployment_sources"
     backups:
-      subdirs: ["claude/", "acf/"]
+      subdirs: ["claude/", "acforge/"]
       purpose: "configuration_history"
     state:
       files: ["installed.json", "versions.json", "migrations.json", "checksums.json", "conflicts.log"]
@@ -74,10 +74,10 @@ APPLY_CONFIG_HIERARCHY:
       level: "user_override"
     3:
       source: ".acforge/config/deployment.json" 
-      level: "acf_deployment"
+      level: "acforge_deployment"
     4:
-      source: ".acforge/config/acf.json"
-      level: "acf_defaults"
+      source: ".acforge/config/acforge.json"
+      level: "acforge_defaults"
     5:
       source: "system_claude_config"
       level: "global"
@@ -128,11 +128,11 @@ POST_DEPLOYMENT_ACTIONS:
 ## COMPONENT_PLACEMENT_RULES
 
 ```yaml
-ACF_DIRECTORY_RULES:
+ACFORGE_DIRECTORY_RULES:
   path: ".acforge/"
-  management: "acf_tool_only"
+  management: "acforge_tool_only"
   contents:
-    config: "acf_tool_configuration"
+    config: "acforge_tool_configuration"
     templates: "deployment_sources" 
     backups: "automatic_backups"
     state: "tool_state_tracking"
@@ -149,7 +149,7 @@ CLAUDE_DIRECTORY_RULES:
     agents: "active_agent_definitions"
     commands: "active_slash_commands"
     settings: "claude_runtime_config"
-  populated_by: "acf_templates"
+  populated_by: "acforge_templates"
   user_modifications: "preserved"
 ```
 
@@ -197,8 +197,8 @@ LEGACY_MIGRATION:
 
 ```yaml
 NEW_PROJECT_SETUP:
-  - EXECUTE: initialize_acf
-    action: create_acf_structure
+  - EXECUTE: initialize_acforge
+    action: create_acforge_structure
     templates: "default"
   - EXECUTE: deploy_base_config
     source: ".acforge/templates/"
@@ -238,8 +238,8 @@ PROJECT_TYPE_DETECTION:
 ## CONFIGURATION_SCHEMAS
 
 ```yaml
-ACF_CONFIG_SCHEMA:
-  file: ".acforge/config/acf.json"
+ACFORGE_CONFIG_SCHEMA:
+  file: ".acforge/config/acforge.json"
   required_fields:
     version: "string"
     auto_update: "boolean"
@@ -275,7 +275,7 @@ STATE_TRACKING_SCHEMAS:
   installed_components:
     file: ".acforge/state/installed.json"
     schema:
-      acf_version: "string"
+      acforge_version: "string"
       installed_at: "iso_timestamp"
       components:
         agents: "array[string]"
@@ -286,7 +286,7 @@ STATE_TRACKING_SCHEMAS:
   version_management:
     file: ".acforge/state/versions.json"
     schema:
-      acf_version: "string"
+      acforge_version: "string"
       template_versions:
         agents: "string"
         commands: "string"
@@ -307,7 +307,7 @@ GITIGNORE_PATTERNS:
 
 VERSION_CONTROL_STRATEGY:
   include:
-    - ".acforge/config/acf.json"
+    - ".acforge/config/acforge.json"
     - ".acforge/config/deployment.json"
     - ".acforge/templates/"
     - ".claude/"
@@ -342,7 +342,7 @@ DEPLOYMENT_WORKFLOW:
 
 UPDATE_WORKFLOW:
   - EXECUTE: check_updates
-    source: "acf_templates"
+    source: "acforge_templates"
   - EXECUTE: analyze_impact
     on: "user_configuration"
   - EXECUTE: plan_merge
@@ -363,7 +363,7 @@ MIGRATION_FROM_CLAUDE:
   - EXECUTE: create_backup
     target: ".acforge/backups/{timestamp}/"
   - EXECUTE: match_templates
-    identify: "acf_equivalent_components"
+    identify: "acforge_equivalent_components"
   - EXECUTE: flag_custom_components
     user_created: true
   - EXECUTE: create_merge_plan
@@ -371,7 +371,7 @@ MIGRATION_FROM_CLAUDE:
   - EXECUTE: apply_plan
     require_confirmation: true
 
-MIGRATION_FROM_LEGACY_ACF:
+MIGRATION_FROM_LEGACY_ACFORGE:
   - EXECUTE: detect_version
     from: ".acforge/state/"
   - EXECUTE: run_migration_scripts
@@ -388,10 +388,10 @@ MIGRATION_FROM_LEGACY_ACF:
 
 ```yaml
 FILE_PERMISSIONS:
-  acf_directory: "755"
+  acforge_directory: "755"
   claude_directory: "755"
-  acf_config: "600"
-  acf_backups: "600"
+  acforge_config: "600"
+  acforge_backups: "600"
   sensitive_files: "600"
 
 VALIDATION_RULES:
@@ -407,7 +407,7 @@ VALIDATION_RULES:
     for: "file_operations"
   - EXECUTE: scan_malicious_content
     in: "templates"
-  - EXECUTE: verify_acf_signatures
+  - EXECUTE: verify_acforge_signatures
     on: "template_downloads"
 
 SENSITIVE_DATA_RULES:
@@ -442,7 +442,7 @@ ERROR_HANDLING:
 ```yaml
 FUTURE_CAPABILITIES:
   plugin_system:
-    - SUPPORT: custom_acf_components
+    - SUPPORT: custom_acforge_components
   external_integration:
     - SUPPORT: external_template_repositories
     - SUPPORT: programmatic_api
@@ -458,9 +458,9 @@ FUTURE_CAPABILITIES:
 
 ```yaml
 PRIORITY: "high"
-BLOCKS: ["acf_tool_implementation", "user_onboarding"]
+BLOCKS: ["acforge_tool_implementation", "user_onboarding"]
 DEPENDENCIES:
-  - "acf_tool_implementation"
+  - "acforge_tool_implementation"
   - "template_repository_structure"
   - "user_migration_tooling"
 GITHUB_ISSUE: "#61"

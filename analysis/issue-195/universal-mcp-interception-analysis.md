@@ -352,16 +352,16 @@ CREATE TABLE mcp_servers (
 
 ```bash
 # Analyze ANY MCP server usage by sub-agents
-acf analytics mcp-usage --days 7
+acforge analytics mcp-usage --days 7
 
 # Performance analysis for specific MCP server
-acf analytics mcp-performance --server github-mcp
+acforge analytics mcp-performance --server github-mcp
 
 # Cross-server usage patterns
-acf analytics mcp-patterns
+acforge analytics mcp-patterns
 
 # Discover all configured MCP servers
-acf analytics mcp-discovery
+acforge analytics mcp-discovery
 ```
 
 ## 🎯 Key Implementation Questions

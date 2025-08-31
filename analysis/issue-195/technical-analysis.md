@@ -333,7 +333,7 @@ def log_error_with_context(error: Exception, context: dict, recovery_attempted: 
 #### CLI Infrastructure Integration
 
 **Installation System**:
-- Extend ACF installer to include logging configuration
+- Extend ACForge installer to include logging configuration
 - Add logging setup to package data distribution
 - Include log directory creation in installation validation
 - Provide configuration templates and examples

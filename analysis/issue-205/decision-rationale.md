@@ -6,7 +6,7 @@
 **Decision**: Complete rebuild - DELETE entire cli/ directory
 **Rationale**: 
 - Current CLI has fundamental architectural issues (template duplication, inadequate state management)
-- Boolean state tracking insufficient for `acf update` operations
+- Boolean state tracking insufficient for `acforge update` operations
 - Resource loading complexity with fallback logic needs simplification
 - Clean slate allows modern Python packaging practices
 
@@ -45,7 +45,7 @@
 ### 5. Technology Stack Choices
 
 #### uvx Distribution
-**Decision**: PyPI package "ai-code-forge" with "acf" alias via uvx
+**Decision**: PyPI package "ai-code-forge" with "acforge" alias via uvx
 **Rationale**:
 - Modern Python distribution method with 10-100x performance advantage
 - Ephemeral installation model matches CLI usage patterns
@@ -161,5 +161,5 @@
 **Next Steps**:
 1. Update GitHub issue with research summary and implementation plan
 2. Create implementation-notes.md with detailed implementation steps
-3. Begin CLI development with `acf status` command foundation
+3. Begin CLI development with `acforge status` command foundation
 4. Use git-workflow for all changes following mandatory rules

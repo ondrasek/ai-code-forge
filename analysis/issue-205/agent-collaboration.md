@@ -19,7 +19,7 @@ CONFIDENCE: **HIGH** (based on comprehensive evidence from multiple analysis fil
 
 ⚠ **Assumption**: uvx distribution is optimal for this tool type
 ⚠ **Challenge**: uvx is primarily for one-off tool execution, not persistent CLI tools users interact with regularly
-⚠ **Evidence**: Tools like `acf` that manage project state should be installed persistently, not executed ephemerally
+⚠ **Evidence**: Tools like `acforge` that manage project state should be installed persistently, not executed ephemerally
 
 ⚠ **Assumption**: Python 3.13+ requirement is acceptable
 ⚠ **Challenge**: This severely limits adoption when Python 3.9+ would suffice
@@ -33,7 +33,7 @@ CONFIDENCE: **HIGH** (based on comprehensive evidence from multiple analysis fil
 
 **State Management Atomicity** | Impact: **HIGH** | Probability: **HIGH**
 - Evidence: Three separate JSON files create coordination problems
-- Scenario: Partial failures during `acf update` leave inconsistent state across files
+- Scenario: Partial failures during `acforge update` leave inconsistent state across files
 - Mitigation: Single state file with sections, not three separate files
 
 **Template Bundle Distribution Size** | Impact: **MEDIUM** | Probability: **HIGH**
@@ -100,7 +100,7 @@ CONFIDENCE: **HIGH** (based on comprehensive evidence from multiple analysis fil
 
 **CLI Distribution Pattern Mismatch** | Source: uvx documentation analysis
 - uvx designed for "fire and forget" tool execution
-- CLI tools that manage persistent state (like acf) typically installed permanently
+- CLI tools that manage persistent state (like acforge) typically installed permanently
 - Examples: git, docker, terraform use persistent installation, not ephemeral execution
 
 **State Management Anti-Pattern** | Source: CLI design best practices research

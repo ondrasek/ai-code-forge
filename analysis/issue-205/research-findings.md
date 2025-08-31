@@ -9,12 +9,12 @@
 
 ### Issue Description Summary
 This is a comprehensive CLI rewrite focused on **Phase 1 implementation only** - delivering 3 foundation commands:
-1. `acf status` - State inspection and configuration analysis
-2. `acf init` - Bootstrap new repositories with templates  
-3. `acf update` - Template synchronization with customization preservation
+1. `acforge status` - State inspection and configuration analysis
+2. `acforge init` - Bootstrap new repositories with templates  
+3. `acforge update` - Template synchronization with customization preservation
 
 ### Key Architectural Decisions (From Comments)
-- **PyPI Package**: "ai-code-forge" with alias "acf" distributed via uvx
+- **PyPI Package**: "ai-code-forge" with alias "acforge" distributed via uvx
 - **Template Strategy**: Bundled using hatchling force-include from /templates
 - **Target Focus**: External repositories (not ai-code-forge repo itself) 
 - **State Management**: Three-file approach in `.acforge/` directory
@@ -29,7 +29,7 @@ This is a comprehensive CLI rewrite focused on **Phase 1 implementation only** -
 - Validation using ai-code-forge repository itself
 
 **OUT OF SCOPE:**
-- `acf migrate`, `acf factory-reset`, `acf explain`, `acf troubleshoot`, `acf customize`
+- `acforge migrate`, `acforge factory-reset`, `acforge explain`, `acforge troubleshoot`, `acforge customize`
 - Advanced template source selection
 - Interactive customization workflows
 - Comprehensive migration tools
@@ -43,7 +43,7 @@ This is a comprehensive CLI rewrite focused on **Phase 1 implementation only** -
 ### Related Issues Dependencies
 - **#203**: Reverse the self-hosting (depends on this CLI completion)
 - **#204**: DevContainer templates (future integration after Phase 1)
-- **#171**: Package renaming to "acf" (implemented as part of this)
+- **#171**: Package renaming to "acforge" (implemented as part of this)
 - **#198**: CLOSED as obsolete (superseded by this comprehensive rewrite)
 
 ## External Research Required
@@ -82,7 +82,7 @@ uvx --from git+https://github.com/owner/repo tool-name
 ```
 
 **Best Practices for CLI Distribution (2025):**
-- Package should be published to PyPI as "ai-code-forge" with alias "acf"
+- Package should be published to PyPI as "ai-code-forge" with alias "acforge"
 - Use uvx for one-off executions: `uvx ai-code-forge status`
 - Support persistent installation: `uv tool install ai-code-forge`
 - Built in Rust, uv is 10-100x faster than pip, especially with warm cache
@@ -92,7 +92,7 @@ uvx --from git+https://github.com/owner/repo tool-name
 
 **State Management Architecture:**
 ```python
-class ACFState:
+class ACForgeState:
     def __init__(self, repo_path=None, debug=False):
         self.repo_path = os.path.abspath(repo_path or '.')
         self.debug = debug
@@ -103,7 +103,7 @@ class ACFState:
 @click.pass_context
 def cli(ctx, debug):
     ctx.ensure_object(dict)
-    ctx.obj = ACFState(debug=debug)
+    ctx.obj = ACForgeState(debug=debug)
 
 @cli.command()
 @click.pass_obj
@@ -190,7 +190,7 @@ from pydantic import BaseModel, Field
 from pathlib import Path
 import json
 
-class ACFConfig(BaseModel):
+class ACForgeConfig(BaseModel):
     template_source: str = Field(default="bundled")
     last_update: str = Field(default="never")
     customizations: dict = Field(default_factory=dict)
@@ -222,8 +222,8 @@ class ACFConfig(BaseModel):
 **Preservation Strategies:**
 ```python
 class TemplateUpdater:
-    def __init__(self, acf_dir: Path):
-        self.acforge_dir = acf_dir
+    def __init__(self, acforge_dir: Path):
+        self.acforge_dir = acforge_dir
         self.customizations = self.load_customizations()
     
     def update_templates(self, preserve_customizations=True):
@@ -264,7 +264,7 @@ from click.testing import CliRunner
 import pytest
 from ai_code_forge.cli import cli
 
-class TestACFCLI:
+class TestACForgeCLI:
     def setup_method(self):
         self.runner = CliRunner()
     
@@ -352,7 +352,7 @@ version = "1.0.0"
 description = "AI-powered development workflow automation"
 
 [project.scripts]
-acf = "ai_code_forge.cli:main"
+acforge = "ai_code_forge.cli:main"
 ai-code-forge = "ai_code_forge.cli:main"
 
 [build-system]
