@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Setup shell navigation shortcuts
+set -e
+
+echo "🧭 Setting up shell navigation..."
+
+# Create shell aliases and shortcuts for repository navigation
+cat >> /home/vscode/.zshrc << 'EOF'
+
+# Repository navigation shortcuts
+alias repo='cd /workspace/{{PROJECT_NAME}}'
+alias worktrees='cd /workspace/worktrees/{{PROJECT_NAME}}'
+
+EOF
+
+cat >> /home/vscode/.bashrc << 'EOF'
+
+# Repository navigation shortcuts  
+alias repo='cd /workspace/{{PROJECT_NAME}}'
+alias worktrees='cd /workspace/worktrees/{{PROJECT_NAME}}'
+
+EOF
+
+# Change to repository directory by default
+cd /workspace/{{PROJECT_NAME}}
+
+echo "✅ Shell navigation setup completed"

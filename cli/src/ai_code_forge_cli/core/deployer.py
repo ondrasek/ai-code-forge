@@ -125,6 +125,10 @@ class TemplateDeployer:
                         
                         # Write file
                         target_file_path.write_text(processed_content, encoding="utf-8")
+                        
+                        # Set executable permissions for shell scripts
+                        if target_file_path.suffix == ".sh" or template_path.endswith(".sh.template"):
+                            target_file_path.chmod(0o755)
                     
                     results["files_deployed"].append(str(relative_path))
                     
@@ -154,9 +158,9 @@ class TemplateDeployer:
         # Handle DevContainer templates specially
         if template_path.startswith("devcontainer/"):
             devcontainer_dir = self.target_path / ".devcontainer"
-            # Extract filename from devcontainer/filename.json
-            filename = clean_path.split("/", 1)[1]  # Remove "devcontainer/" prefix
-            return devcontainer_dir / filename
+            # Extract path from devcontainer/path (preserves subdirectories like postCreate-scripts/)
+            relative_path = clean_path.split("/", 1)[1]  # Remove "devcontainer/" prefix
+            return devcontainer_dir / relative_path
         
         # Default to .claude directory for other templates
         return self.claude_dir / clean_path
