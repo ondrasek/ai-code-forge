@@ -1,219 +1,169 @@
-# Agent Collaboration Risk Assessment: Repository Auto-Detection Implementation
+# Agent Collaboration Analysis: Issue #209 Repository Hardcoding Removal
 
-**COLLABORATION TARGET**: Multi-agent coordination for removing hardcoded repository references
-**RISK LEVEL**: CRITICAL - Breaking change affecting 3+ specialist agents with complex interdependencies  
-**CONFIDENCE**: HIGH based on agent architecture analysis and workflow dependencies
+## Context for Other Agents
 
-## AGENT INTERDEPENDENCY ANALYSIS
+This analysis provides contextual intelligence for agents working on Issue #209: removing hardcoded "ondrasek/ai-code-forge" repository references.
 
-### AFFECTED SPECIALIST AGENTS
+## Key Contextual Insights
 
-**github-issues-workflow** | **Primary Impact** | **40+ hardcoded references**
-- All GitHub operations depend on explicit repository targeting
-- Issue creation, listing, updating, and closure operations affected
-- Label discovery and validation logic assumes specific repository context
-- Cross-reference detection relies on repository-scoped issue searches
+### Repository Integration Architecture
 
-**git-workflow** | **Secondary Impact** | **Integration dependencies**  
-- Issue validation operations use hardcoded repository for GitHub API calls
-- Branch naming and commit message generation assumes repository context
-- PR creation coordination depends on repository-specific issue lookups
+**Current Pattern (Hardcoded):**
+```bash
+gh issue create --repo ondrasek/ai-code-forge --title "Feature Request"
+```
 
-**github-pr-workflow** | **Secondary Impact** | **Cross-agent coordination**
-- Label discovery inherits repository context from github-issues-workflow  
-- Issue cross-referencing depends on repository-scoped searches
-- PR metadata generation assumes consistent repository targeting
+**Target Pattern (Dynamic):**
+```bash
+gh issue create --repo $(get_repository) --title "Feature Request"
+```
 
-### COLLABORATION FAILURE MODES
+### Primary Affected Systems
 
-**Repository Context Mismatch** | Impact: **CRITICAL** | Probability: **HIGH**
-- Evidence: Agents operating on different repositories simultaneously
-- Scenario: git-workflow detects local repository while github-issues-workflow targets different repository
-- Mitigation: Centralized repository context sharing mechanism required
+1. **GitHub Issues Workflow Agent** - Most impacted (19 references)
+2. **Git Workflow Agent** - Issue auto-detection logic (2 references)  
+3. **Issue Commands Namespace** - All issue/ commands delegate to agents
+4. **Project Configuration** - CLAUDE.md specifications (6 references)
 
-**Silent Cross-Agent Failures** | Impact: **HIGH** | Probability: **MEDIUM**
-- Evidence: Agent A succeeds with auto-detection while Agent B fails silently
-- Scenario: Issue creation succeeds but cross-referencing fails due to repository context mismatch  
-- Mitigation: Shared validation layer for repository context consistency
+### Critical Dependencies
 
-**State Synchronization Loss** | Impact: **MEDIUM** | Probability: **HIGH**
-- Evidence: Agents maintain implicit repository state that becomes inconsistent
-- Scenario: Workflow assumes repository context established by prior agent execution
-- Mitigation: Explicit repository state management across agent boundaries
+**Repository Detection Requirements:**
+- Must work in original repository (ondrasek/ai-code-forge)
+- Must work in any fork or custom repository
+- Must handle authentication and access errors gracefully
+- Must provide clear error messages when repository detection fails
 
-## COORDINATION COMPLEXITY ASSESSMENT
+**Agent Coordination Points:**
+- github-issues-workflow ↔ All issue commands
+- git-workflow ↔ Issue validation and auto-detection
+- Multiple agents ↔ Cross-referencing and validation
 
-### CURRENT COORDINATION PATTERNS
+## Implementation Strategy Recommendations
 
-**Sequential Agent Execution**: Commands delegate through Task tool to specialist agents in sequence
-- `/issue:create` → github-issues-workflow → critic validation
-- `/issue:pr-create` → git-workflow → github-pr-workflow coordination  
-- Repository context implicitly shared through hardcoded references
+### For Implementation Agents
 
-**Cross-Agent Data Flow**: Agents share context through GitHub API state
-- Issue numbers, labels, and metadata passed between agents
-- Repository context assumed consistent across agent execution chain
-- Error propagation relies on consistent repository targeting
+**Phase 1: Repository Detection Infrastructure**
+- Implement centralized repository detection function
+- Add robust error handling for edge cases
+- Create fallback mechanisms (environment variables, config files)
 
-**Implicit State Management**: No explicit repository context coordination
-- Each agent assumes repository context from previous agent or hardcoded values
-- No validation of repository context consistency between agents
-- Failure modes difficult to diagnose due to implicit assumptions
+**Phase 2: Pattern Replacement**
+- Systematic replacement across all affected files
+- Template-based command generation
+- Consistent error handling integration
 
-### POST-CHANGE COORDINATION RISKS
+**Phase 3: Validation and Testing**
+- Multi-repository testing scenarios
+- Fork compatibility validation
+- Authentication edge case handling
 
-**Repository Context Propagation** | Impact: **CRITICAL** | Probability: **HIGH**
-- Auto-detection may produce different results across agent execution chain
-- First agent's repository detection may not persist for subsequent agents
-- No mechanism to validate repository context consistency
+### For Quality Assurance Agents
 
-**Error Attribution Complexity** | Impact: **HIGH** | Probability: **MEDIUM**
-- Failures may occur in any agent due to repository context issues
-- Root cause analysis complicated by multiple auto-detection points
-- Silent failures may mask coordination problems
+**Testing Requirements:**
+- Test in original ondrasek/ai-code-forge repository
+- Test in forked repositories with different owners
+- Test with no git remotes configured
+- Test with authentication failures
+- Test with repository access denied scenarios
 
-**Rollback Coordination** | Impact: **MEDIUM** | Probability: **HIGH**
-- Rolling back changes requires coordinated updates across all affected agents
-- No centralized mechanism for managing agent configuration consistency
-- Partial rollback could create inconsistent agent behavior
+**Validation Criteria:**
+- No remaining hardcoded repository references
+- All GitHub CLI operations function correctly
+- Error messages provide actionable guidance
+- Backward compatibility maintained
 
-## AGENT ARCHITECTURE IMPLICATIONS
+### For Documentation Agents
 
-### REPOSITORY DETECTION CENTRALIZATION OPTIONS
+**Documentation Updates Required:**
+- Update setup instructions for forked repositories
+- Add troubleshooting guide for repository detection issues
+- Update examples throughout documentation
+- Create migration guide for existing customizations
 
-**OPTION 1: Shared Utility Integration**
-- Implement repository detection in shared utility functions
-- All agents import centralized repository context management
-- Requires refactoring agent architecture for shared dependency
+## Risk Mitigation Context
 
-**OPTION 2: Context Passing via Task Tool**
-- Repository context determined once and passed through Task delegations
-- Requires Task tool enhancement to support context preservation
-- May require changes to Task tool delegation patterns
+### High-Risk Operations
+- Batch replacement of `--repo` flags without testing
+- Changes to core agent prompts without validation
+- Authentication context modifications
 
-**OPTION 3: Environment-Based Context**
-- Repository context established through environment variables
-- All agents read context from consistent environment source
-- Simpler implementation but requires environment management
+### Safety Measures
+- Implement repository detection with fallbacks
+- Test each agent independently after changes
+- Validate GitHub CLI functionality at each step
+- Preserve original behavior as default
 
-### TESTING COORDINATION CHALLENGES
+## Agent-Specific Considerations
 
-**Multi-Agent Test Scenarios** | Complexity: **HIGH**
-- Must test agent coordination across different repository contexts
-- Error injection testing to validate failure handling across agents
-- State consistency validation between agent execution steps
+### For github-issues-workflow Agent Updates
+**Primary Concern:** Agent has 19 hardcoded references in critical workflows
+**Approach:** Template-based replacement with dynamic repository injection
+**Testing:** Issue creation, listing, editing, and closure operations
 
-**Integration Test Coverage** | Scope: **EXTENSIVE**
-- End-to-end workflow testing with repository auto-detection
-- Cross-agent error propagation validation  
-- Repository context edge case testing (CI/CD, containers, worktrees)
+### For git-workflow Agent Updates  
+**Primary Concern:** Issue auto-detection relies on repository validation
+**Approach:** Enhance existing dynamic patterns for repository detection
+**Testing:** Branch-based issue detection and validation
 
-**Rollback Testing** | Criticality: **HIGH**
-- Coordinated rollback of agent configuration changes
-- Partial failure recovery across multiple agents
-- Production rollback procedure validation
+### For Command Processing Agents
+**Primary Concern:** All issue/ commands delegate to affected agents
+**Approach:** Ensure delegation works with new dynamic repository detection
+**Testing:** End-to-end command workflows
 
-## COLLABORATION IMPROVEMENT RECOMMENDATIONS
+## Success Patterns
 
-### IMMEDIATE RISK MITIGATION
+### Proven Approaches in Codebase
+- git-workflow agent already has dynamic branch/issue detection
+- Authentication validation patterns exist
+- Error handling templates established
 
-1. **Implement Repository Context Validation**
-   - Add repository context checks at agent boundaries
-   - Validate consistent repository targeting across agent chain
-   - Fail fast with clear errors on repository context mismatches
+### Recommended Implementation Pattern
+```bash
+# Repository detection function
+get_current_repository() {
+    local repo_url=$(git remote get-url origin 2>/dev/null)
+    if [[ $repo_url =~ github\.com[:/]([^/]+/[^/.]+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        echo "ondrasek/ai-code-forge"  # fallback
+    fi
+}
 
-2. **Create Centralized Repository Detection**
-   - Single source of truth for repository context determination
-   - Shared utility functions for repository detection and validation
-   - Consistent error handling across all agents
+# Usage in commands
+REPO=$(get_current_repository)
+gh issue create --repo "$REPO" --title "Dynamic Issue"
+```
 
-3. **Add Cross-Agent State Logging**
-   - Log repository context at each agent execution step
-   - Enable troubleshooting of coordination failures
-   - Provide audit trail for repository targeting decisions
+## Cross-Agent Communication Requirements
 
-### LONG-TERM ARCHITECTURE ENHANCEMENTS
+**Information Sharing:**
+- Repository detection results should be cached/shared
+- Authentication status should be validated once per session
+- Error states should be communicated between agents
 
-1. **Agent Context Management System**
-   - Formal context passing mechanism between agents
-   - State validation and consistency checking
-   - Centralized configuration for cross-agent coordination
+**Coordination Points:**
+- Issue creation → git workflow integration
+- Repository validation → command execution
+- Error handling → user feedback
 
-2. **Repository Configuration Framework**  
-   - Environment-specific repository configuration
-   - Override mechanisms for edge cases
-   - Configuration validation and error handling
+## Quality Checkpoints
 
-3. **Enhanced Error Propagation**
-   - Context-aware error messages across agent boundaries
-   - Root cause analysis support for coordination failures
-   - Recovery suggestions for common failure scenarios
+**Before Implementation:**
+- [ ] Repository detection strategy defined
+- [ ] Error handling patterns established  
+- [ ] Testing scenarios identified
+- [ ] Rollback plan documented
 
-## DEPLOYMENT COORDINATION STRATEGY
+**During Implementation:**
+- [ ] Each agent updated independently
+- [ ] Integration testing after each change
+- [ ] Error cases validated
+- [ ] Documentation updated in parallel
 
-### STAGED ROLLOUT APPROACH
+**After Implementation:**
+- [ ] End-to-end workflow testing
+- [ ] Fork repository validation
+- [ ] Performance impact assessment
+- [ ] User experience validation
 
-**Phase 1: Single Agent Validation**
-- Deploy repository auto-detection to github-issues-workflow only
-- Validate behavior in isolation before cross-agent coordination
-- Establish baseline error handling and fallback mechanisms
-
-**Phase 2: Agent Pair Coordination**
-- Enable coordination between git-workflow and github-issues-workflow  
-- Test cross-agent repository context consistency
-- Validate error propagation and recovery mechanisms
-
-**Phase 3: Full Multi-Agent Deployment**
-- Enable auto-detection across all affected agents
-- Monitor coordination patterns and failure modes
-- Full production validation with rollback capability
-
-### ROLLBACK COORDINATION
-
-**Immediate Rollback Capability**
-- Feature flags to disable auto-detection per agent
-- Revert to hardcoded repository references on demand
-- Independent agent rollback without affecting coordination
-
-**Coordination State Recovery**
-- Mechanism to restore consistent repository context across agents
-- State validation after rollback operations
-- Cross-agent consistency checks post-recovery
-
-## AGENT RESPONSIBILITY MATRIX
-
-| Agent | Repository Detection | Context Validation | Error Handling | Rollback Support |
-|-------|---------------------|-------------------|----------------|------------------|
-| github-issues-workflow | PRIMARY | HIGH | CRITICAL | REQUIRED |
-| git-workflow | SECONDARY | MEDIUM | HIGH | REQUIRED |
-| github-pr-workflow | SECONDARY | MEDIUM | HIGH | REQUIRED |
-| critic | NONE | LOW | LOW | OPTIONAL |
-
-## COLLABORATION TESTING REQUIREMENTS
-
-### Critical Test Scenarios
-1. **Repository Context Consistency**: All agents operate on same repository
-2. **Auto-Detection Failure Cascade**: Handle failures across agent chain
-3. **Partial Success Recovery**: Some agents succeed while others fail
-4. **Environment Context Switching**: Agents handle repository changes mid-workflow
-5. **Error Attribution**: Clear identification of failure source in multi-agent workflows
-
-### Validation Criteria
-- Zero silent failures across agent coordination
-- Consistent error messages with actionable resolution steps  
-- Repository context validation at each agent boundary
-- Successful rollback capability without coordination loss
-- Performance impact assessment of additional validation overhead
-
-## MEMORY STORAGE
-
-**Cross-agent risk patterns identified**:
-- Repository context inconsistency across agent execution chains
-- Silent failure propagation in multi-agent workflows
-- Coordination state loss during auto-detection transitions
-- Complex rollback requirements for distributed agent changes
-
-**Coordination improvements validated**:
-- Centralized repository detection with shared validation
-- Agent context management systems
-- Staged deployment with independent agent rollback capability
+This collaboration context ensures all agents working on Issue #209 understand the broader implications and can coordinate effectively for a successful implementation.
