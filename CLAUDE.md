@@ -92,10 +92,10 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
       - Support version management workflow through GitHub milestones and issue types
     </integration_points>
     <github_commands>
-      - List all issues: gh issue list --repo ondrasek/ai-code-forge
-      - Create new issue: gh issue create --repo ondrasek/ai-code-forge
-      - Update issue: gh issue edit --repo ondrasek/ai-code-forge
-      - Close issue: gh issue close --repo ondrasek/ai-code-forge
+      - List all issues: gh issue list
+      - Create new issue: gh issue create
+      - Update issue: gh issue edit
+      - Close issue: gh issue close
     </github_commands>
   </operational_rules>
 

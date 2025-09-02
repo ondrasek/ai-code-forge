@@ -62,7 +62,7 @@ Technical approach, dependencies, constraints.
 **REPOSITORY**: All issues MUST be created in ondrasek/ai-code-forge repository.
 
 **Dynamic Label Selection (MANDATORY)**:
-ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json name,color,description` before any label operations. NEVER rely on hardcoded or assumed label names:
+ALWAYS discover labels using `gh label list --json name,color,description` before any label operations. NEVER rely on hardcoded or assumed label names:
 
 - **Label Discovery**: MUST execute label discovery command before every issue operation that requires labels
 - **Type Classification**: Map issue content to available type labels discovered from repository
@@ -74,11 +74,11 @@ ALWAYS discover labels using `gh label list --repo ondrasek/ai-code-forge --json
 - **No Assumptions**: NEVER assume specific labels exist - always verify through dynamic discovery
 
 **GitHub CLI Commands**:
-- Discover labels: `gh label list --repo ondrasek/ai-code-forge --json name,color,description`
-- List all issues: `gh issue list --repo ondrasek/ai-code-forge`
-- Create new issue: `gh issue create --repo ondrasek/ai-code-forge --label $(existing_labels_only)`
-- Update issue: `gh issue edit --repo ondrasek/ai-code-forge`
-- Close issue: `gh issue close --repo ondrasek/ai-code-forge`
+- Discover labels: `gh label list --json name,color,description`
+- List all issues: `gh issue list`
+- Create new issue: `gh issue create --label $(existing_labels_only)`
+- Update issue: `gh issue edit`
+- Close issue: `gh issue close`
 - **CRITICAL**: Never use `gh label create` autonomously - only select from existing labels unless explicitly instructed by users
 
 ## Priority Classification Protocol (MANDATORY)
@@ -243,9 +243,9 @@ When creating or updating issues, automatically analyze existing issues for rela
 1. **ALWAYS search for related issues** when creating or updating ANY issue
 2. Extract keywords and technical concepts from new/updated issue content
 3. Search existing issues using multiple strategies:
-   - `gh issue list --search "keyword1 OR keyword2" --repo ondrasek/ai-code-forge`
-   - `gh issue list --search "filename OR filepath" --repo ondrasek/ai-code-forge` (for file-based relationships)
-   - `gh issue list --search "author:username" --repo ondrasek/ai-code-forge` (for context continuity)
+   - `gh issue list --search "keyword1 OR keyword2"`
+   - `gh issue list --search "filename OR filepath"` (for file-based relationships)
+   - `gh issue list --search "author:username"` (for context continuity)
 4. Apply relevance scoring with enhanced criteria:
    - **Direct keyword matches** (high relevance - 90%+)
    - **File/path overlap** (high relevance - 85%+)
@@ -360,7 +360,7 @@ Add to "External References" section:
 #### Step 1: Apply Appropriate Closure Label
 ALWAYS discover and apply relevant closure labels from existing repository labels using:
 ```bash
-gh label list --repo ondrasek/ai-code-forge --json name,description
+gh label list --json name,description
 ```
 
 **Closure Label Discovery Process**:
@@ -405,9 +405,9 @@ ALWAYS add a comprehensive closure comment explaining the decision:
 #### Step 4: GitHub CLI Closure Command Pattern
 ```bash
 # Always combine label addition with closure comment
-gh issue edit <issue_number> --repo ondrasek/ai-code-forge --add-label <closure_label>
-gh issue comment <issue_number> --repo ondrasek/ai-code-forge --body "<detailed_closure_comment>"
-gh issue close <issue_number> --repo ondrasek/ai-code-forge
+gh issue edit <issue_number> --add-label <closure_label>
+gh issue comment <issue_number> --body "<detailed_closure_comment>"
+gh issue close <issue_number>
 ```
 
 ### Closure Category Guidelines
@@ -497,7 +497,7 @@ When delegated duplicate detection tasks:
 #### Step 1: Issue Analysis and Validation
 ```bash
 # Validate target issue exists and is open
-gh issue view $issue_number --repo ondrasek/ai-code-forge --json state,title,body,labels
+gh issue view $issue_number --json state,title,body,labels
 
 # Skip if issue has anti-duplicate protections
 # - not-duplicate label present
@@ -523,16 +523,16 @@ issue_labels=$(gh issue view $issue_number --json labels --jq '.labels[].name')
 #### Step 3: Multi-Pass Search Strategy
 ```bash
 # Pass 1: Title keyword search
-gh issue list --search "keyword1 OR keyword2" --repo ondrasek/ai-code-forge --state open
+gh issue list --search "keyword1 OR keyword2" --state open
 
 # Pass 2: Technical domain search  
-gh issue list --search "domain_term AND component" --repo ondrasek/ai-code-forge --state open
+gh issue list --search "domain_term AND component" --state open
 
 # Pass 3: File/path-based search
-gh issue list --search "filepath OR filename" --repo ondrasek/ai-code-forge --state open
+gh issue list --search "filepath OR filename" --state open
 
 # Pass 4: Error pattern search
-gh issue list --search "error_signature OR exception_type" --repo ondrasek/ai-code-forge --state open
+gh issue list --search "error_signature OR exception_type" --state open
 ```
 
 #### Step 4: Similarity Analysis and Confidence Scoring
