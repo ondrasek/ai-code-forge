@@ -1,29 +1,22 @@
 ---
-description: Create new GitHub Issue with fine-grained step-by-step workflow and comprehensive quality validation.
-argument-hint: Issue description or topic.
+description: Create new GitHub Issue with comprehensive quality validation through mandatory 8-step workflow.
 allowed-tools: Task
 ---
 
-# GitHub Issue Creation - Enhanced 8-Step Workflow
+# GitHub Issue Creation - Mandatory 8-Step Quality Workflow
 
 !`git status`
 !`git branch --show-current`
 
-Create new GitHub Issue with comprehensive quality validation using extended actor/critic pattern for content refinement and intelligent classification.
+Create new GitHub Issue with comprehensive quality validation using extended actor/critic pattern. All issues go through the complete 8-step refinement process for maximum quality assurance.
 
-## Workflow Selection
-
-**Mode Selection** (choose one):
-- `issue:create` - Enhanced 8-step workflow (default)
-- `issue:create --express` - Legacy 2-phase workflow (quick mode)
-
-## Enhanced 8-Step Workflow Instructions
+## Mandatory 8-Step Workflow Instructions
 
 **Extended Actor/Critic Pattern for Content Quality + Priority Validation**:
 
 ### **Step 1: Draft Creation**
 Use Task tool to delegate to github-issues-workflow agent:
-- Analyze $ARGUMENTS (if provided) or prompt user for initial issue description
+- Prompt user for initial issue description and gather requirements
 - Create comprehensive draft with:
   - Clear problem description
   - Initial acceptance criteria
@@ -138,12 +131,6 @@ Use Task tool to delegate to github-issues-workflow agent:
   - Priority Analysis with confidence justification
   - Validation Results from critic reviews
 - Return issue number, URL, and quality assessment summary
-
-## Legacy Express Mode (--express flag)
-
-**Quick 2-Phase Workflow** (backwards compatible):
-1. **Issue Creation**: Direct github-issues-workflow agent with BINARY CONFIDENCE SYSTEM
-2. **Priority Validation**: Critic agent validates priority assignment only
 
 ## Final Confirmation
 
