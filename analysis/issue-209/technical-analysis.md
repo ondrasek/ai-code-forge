@@ -1,340 +1,122 @@
-# GitHub CLI & Bash Scripting Technology Analysis for Issue #209
+# Technical Analysis - Issue #209: Remove Hardcoded Repository References
 
-## Repository Analysis
+## System Architecture Overview
 
-**Technology Stack Detected:**
-- **Primary**: Bash/Shell Scripting (command implementations, GitHub CLI operations)
-- **Secondary**: Markdown (agent definitions, command specifications)
-- **Infrastructure**: Git operations, GitHub API integration
+### Current State Analysis
+The Claude Code system has deep integration with GitHub operations through multiple layers:
 
-**Technology Guidelines Loaded:**
-- `@templates/stacks/bash.md` - Comprehensive shell scripting standards
+#### Agent Architecture
+- **Foundation Agents**: Core system agents with repository-agnostic operations
+- **Specialist Agents**: Repository-specific agents (github-issues-workflow, git-workflow, github-pr-workflow)
+- **Terminal Agents**: Cannot spawn other agents (prevents recursion)
 
-## GitHub CLI Integration Patterns
+#### Integration Points Identified
+- **42 Hardcoded References**: Distributed across agents and commands
+- **3 Critical Specialist Agents**: Primary GitHub integration points
+- **12+ Slash Commands**: All `/issue:*` commands affected
+- **Multi-Agent Workflows**: Coordinated operations across agents
 
-### Current Implementation Analysis
+## File Structure and Location Mapping
 
-Based on analysis of `.claude/agents/specialists/github-issues-workflow.md` and `.claude/commands/issue/` implementations:
+### Primary Affected Components
+```
+.claude/agents/specialists/
+├── github-issues-workflow.md  (20+ hardcoded references)
+├── github-pr-workflow.md      (10+ hardcoded references)
+└── git-workflow.md            (8+ hardcoded references)
 
-**Established Patterns:**
-1. **Dynamic Label Discovery** (MANDATORY):
-   ```bash
-   gh label list --repo ondrasek/ai-code-forge --json name,color,description
-   ```
-   - NEVER hardcode label names
-   - Always verify labels exist before operations
+.claude/commands/issue/
+├── create.md
+├── update.md
+├── review.md
+├── cleanup.md
+└── [9 additional issue commands]
 
-2. **Issue Operations Pattern**:
-   ```bash
-   gh issue list --repo ondrasek/ai-code-forge --search "keyword"
-   gh issue view $issue_number --repo ondrasek/ai-code-forge --json state,title,body
-   gh issue create --repo ondrasek/ai-code-forge --title "..." --body "..."
-   gh issue edit --repo ondrasek/ai-code-forge --add-label <label>
-   gh issue comment --repo ondrasek/ai-code-forge --body "..."
-   ```
-
-3. **Repository Context Pattern**:
-   ```bash
-   REPO="ondrasek/ai-code-forge"  # Central repository target
-   ```
-
-### Error Handling Patterns from Current Architecture
-
-**Authentication Diagnostics**:
-```bash
-gh auth status
-gh auth list  
-gh repo view ondrasek/ai-code-forge --json name,owner
+.claude/commands/
+├── git.md
+├── pr.md
+└── tag.md
 ```
 
-**Network Connectivity Testing**:
+### Repository Reference Patterns
+Current hardcoded patterns found:
 ```bash
-ping -c 3 github.com
-curl -I https://github.com
+--repo ondrasek/ai-code-forge
+gh issue create --repo ondrasek/ai-code-forge
+gh pr create --repo ondrasek/ai-code-forge
+gh repo view ondrasek/ai-code-forge
 ```
 
-**Issue Validation with Recovery**:
+## Technology Stack Guidelines Applied
+
+### Bash Scripting Standards (from templates/stacks/bash.md)
+- **Error Handling**: `set -euo pipefail` mandatory for all scripts
+- **Input Validation**: Whitelist character checking and path traversal prevention
+- **Signal Handling**: Proper cleanup and user confirmation for destructive operations
+- **Security Patterns**: No hardcoded credentials, secure file operations
+
+### GitHub CLI Integration Best Practices
+- **Authentication Validation**: Always check `gh auth status` before operations
+- **Error Recovery**: Comprehensive error handling with actionable messages
+- **Rate Limiting**: Consider API rate limits for bulk operations
+- **Permission Checking**: Validate repository access before operations
+
+## Architectural Challenges and Solutions
+
+### Challenge 1: Multi-Agent Coordination
+**Problem**: Repository context must be consistent across coordinated agent workflows
+**Solution**: Shared repository detection utility with caching
+
+### Challenge 2: Terminal Agent Restrictions
+**Problem**: github-issues-workflow is marked as terminal but needs coordination
+**Solution**: Repository detection must be self-contained within each agent
+
+### Challenge 3: Error Propagation
+**Problem**: Repository detection failures need clear error propagation
+**Solution**: Standardized error codes and messages across all integration points
+
+## Repository Detection Implementation Design
+
+### Core Detection Function
 ```bash
-if ! gh issue view "$ISSUE_NUM" --repo ondrasek/ai-code-forge >/dev/null 2>&1; then
-    echo "🔍 Issue #$ISSUE_NUM not accessible. Running diagnostics..."
-    # Systematic diagnostic approach
-fi
-```
-
-## Bash Scripting Standards (from `@templates/stacks/bash.md`)
-
-### Mandatory Security Requirements
-
-**Script Header Pattern**:
-```bash
-#!/bin/bash
-set -euo pipefail  # MANDATORY: Exit on error, undefined vars, pipe failures
-```
-
-**Error Handling Framework**:
-```bash
-cleanup() {
-    local exit_code=$?
-    echo "Cleaning up..." >&2
+# Enhanced repository detection with validation
+detect_and_validate_repository() {
+    local repo_context
+    local validation_result
     
-    # Kill child processes
-    for pid in "${CHILD_PIDS[@]}"; do
-        kill "$pid" 2>/dev/null || true
-    done
+    # Primary detection
+    repo_context=$(gh repo view --json nameWithOwner --jq '.nameWithOwner' 2>/dev/null)
     
-    # Remove temp files
-    [[ -n "${TEMP_DIR:-}" ]] && rm -rf "$TEMP_DIR"
-    exit $exit_code
-}
-
-trap cleanup EXIT
-trap 'cleanup; exit 130' INT
-trap 'cleanup; exit 143' TERM
-```
-
-**Input Validation (SECURITY CRITICAL)**:
-```bash
-validate_input() {
-    local input="$1"
-    
-    # Prevent path traversal
-    if [[ "$input" == *".."* ]] || [[ "$input" =~ ^/ ]]; then
-        echo "ERROR: Invalid input contains unsafe characters" >&2
+    if [[ -z "$repo_context" ]]; then
+        handle_detection_failure
         return 1
     fi
     
-    # Whitelist allowed characters
-    if [[ ! "$input" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
-        echo "ERROR: Invalid characters in input" >&2
+    # Validation checks
+    validate_repository_access "$repo_context"
+    validation_result=$?
+    
+    if [[ $validation_result -ne 0 ]]; then
+        handle_access_failure "$repo_context"
         return 1
     fi
     
-    return 0
+    echo "$repo_context"
 }
-```
 
-### Variable Handling Standards
-
-**Always Quote Variables**:
-```bash
-# Correct patterns
-echo "$variable"
-cp "$source_file" "$destination_dir"
-CONFIG_FILE="${CONFIG_FILE:-config.json}"
-: "${REQUIRED_VAR:?REQUIRED_VAR must be set}"
-```
-
-### API Integration Patterns
-
-**Robust HTTP Operations**:
-```bash
-api_call() {
-    local url="$1"
-    local method="${2:-GET}"
-    local max_retries=3
-    local retry_count=0
+# Validation helper
+validate_repository_access() {
+    local repo="$1"
     
-    while [[ $retry_count -lt $max_retries ]]; do
-        local response
-        response=$(curl -s -w "%{http_code}" -X "$method" "$url")
-        
-        local http_code="${response: -3}"
-        response="${response%???}"
-        
-        case "$http_code" in
-            200|201|204)
-                echo "$response"
-                return 0
-                ;;
-            5*)
-                log_warn "Server error ($http_code), retrying..."
-                ;;
-            *)
-                log_error "API call failed with status $http_code"
-                return 1
-                ;;
-        esac
-        
-        ((retry_count++))
-        sleep $((retry_count * 2))
-    done
-    
-    return 1
-}
-```
-
-## Cross-Repository Portability Patterns
-
-### Repository Detection Framework
-
-**Safe Repository Detection**:
-```bash
-detect_repository() {
-    local repo_url=""
-    
-    # Try multiple detection methods
-    if command -v gh >/dev/null 2>&1; then
-        repo_url=$(gh repo view --json owner,name --jq '"owner.login + "/" + .name"' 2>/dev/null)
-    fi
-    
-    if [[ -z "$repo_url" ]] && [[ -d ".git" ]]; then
-        repo_url=$(git config --get remote.origin.url | sed -E 's/.*github\.com[:/]([^/]+\/[^/]+)\.git/\1/')
-    fi
-    
-    echo "${repo_url:-unknown}"
-}
-```
-
-**Environment-Agnostic Configuration**:
-```bash
-# Detect and adapt to different environments
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"
-REPO_NAME="$(detect_repository)"
-
-# Flexible configuration loading
-CONFIG_FILE="${CONFIG_FILE:-$REPO_ROOT/.claude/config.json}"
-```
-
-### Portable GitHub CLI Patterns
-
-**Authentication Detection**:
-```bash
-ensure_github_auth() {
-    if ! gh auth status >/dev/null 2>&1; then
-        echo "ERROR: GitHub CLI authentication required" >&2
-        echo "Run: gh auth login" >&2
+    # Check authentication
+    if ! gh auth status --hostname github.com &>/dev/null; then
+        echo "ERROR: GitHub authentication required" >&2
         return 1
     fi
     
-    # Verify repository access
-    if ! gh repo view "$REPO_NAME" >/dev/null 2>&1; then
-        echo "ERROR: Cannot access repository $REPO_NAME" >&2
-        echo "Check repository permissions" >&2
-        return 1
-    fi
-}
-```
-
-## Agent Architecture Patterns
-
-### Current Agent Structure Analysis
-
-**Agent Definition Pattern** (from analysis):
-```yaml
----
-name: agent-name
-description: "Agent purpose and trigger conditions"  
-tools: Bash, Grep, Glob, Read, Edit, MultiEdit
----
-```
-
-**Task Delegation Pattern**:
-```markdown
-Use Task tool to delegate to [agent-name] agent:
-- Specific instructions for agent
-- Expected outcomes
-- Integration requirements
-```
-
-### Cross-Agent Communication Standards
-
-**Context Isolation Protocol** (from git-workflow agent):
-```markdown
-<operational_rules priority="CRITICAL">
-<context_separation>All complex analysis MUST happen in agent context</context_separation>
-<autonomous_operation>Agent makes independent decisions without requiring main context confirmation</autonomous_operation>
-</operational_rules>
-```
-
-**Output Format Standardization**:
-```
-OPERATION RESULT: [SUCCESS/FAILURE]
-
-DETAILS:
-- Status: [specific status information]
-- Actions: [actions taken]  
-- Results: [measurable outcomes]
-
-NEXT STEPS: [clear action items]
-```
-
-## Security & Error Handling Recommendations
-
-### GitHub CLI Security Patterns
-
-**Safe Command Execution**:
-```bash
-safe_gh_command() {
-    local cmd="$1"
-    shift
-    local -a args=("$@")
-    
-    # Validate GitHub CLI is available
-    if ! command -v gh >/dev/null 2>&1; then
-        echo "ERROR: GitHub CLI not found" >&2
-        return 1
-    fi
-    
-    # Validate authentication
-    ensure_github_auth || return 1
-    
-    # Execute with error handling
-    if ! gh "$cmd" "${args[@]}" 2>/dev/null; then
-        echo "ERROR: gh $cmd command failed" >&2
-        echo "Attempting diagnostic recovery..." >&2
-        diagnose_gh_error "$cmd" "${args[@]}"
-        return 1
-    fi
-}
-```
-
-### Cross-Repository Error Recovery
-
-**Repository State Validation**:
-```bash
-validate_repository_state() {
-    # Check if we're in a git repository
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        echo "ERROR: Not in a git repository" >&2
-        return 1
-    fi
-    
-    # Check for unsaved changes that might interfere
-    if [[ -n "$(git status --porcelain)" ]]; then
-        echo "WARNING: Unsaved changes detected" >&2
-        echo "Commit or stash changes before GitHub operations" >&2
-    fi
-    
-    # Validate remote connectivity
-    if ! git fetch --dry-run >/dev/null 2>&1; then
-        echo "WARNING: Cannot reach remote repository" >&2
-        echo "Check network connectivity and authentication" >&2
-    fi
-    
-    return 0
-}
-```
-
-## Technology Stack Recommendations
-
-### Required Tools Verification
-
-**Dependency Checking Pattern**:
-```bash
-check_dependencies() {
-    local -a required_tools=("gh" "git" "jq" "curl")
-    local missing_tools=()
-    
-    for tool in "${required_tools[@]}"; do
-        if ! command -v "$tool" >/dev/null 2>&1; then
-            missing_tools+=("$tool")
-        fi
-    done
-    
-    if [[ ${#missing_tools[@]} -gt 0 ]]; then
-        echo "ERROR: Missing required tools: ${missing_tools[*]}" >&2
-        echo "Install missing tools and retry" >&2
+    # Check repository access
+    if ! gh repo view "$repo" --json id &>/dev/null; then
+        echo "ERROR: No access to repository: $repo" >&2
         return 1
     fi
     
@@ -342,49 +124,106 @@ check_dependencies() {
 }
 ```
 
-### Version Compatibility Patterns
+### Error Handling Strategy
+- **Detection Failures**: Clear instructions to run from git repository or use configuration
+- **Authentication Failures**: Actionable steps for `gh auth login`
+- **Permission Failures**: Explicit repository access requirements
+- **Network Failures**: Retry logic with exponential backoff
 
-**GitHub CLI Version Detection**:
-```bash
-verify_gh_version() {
-    local min_version="2.0.0"
-    local current_version
-    
-    current_version=$(gh --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
-    
-    if ! version_compare "$current_version" "$min_version"; then
-        echo "WARNING: GitHub CLI version $current_version may not support all features" >&2
-        echo "Consider upgrading to $min_version or later" >&2
-    fi
-}
+## Integration Patterns
 
-version_compare() {
-    local version1="$1"
-    local version2="$2"
-    
-    # Simple version comparison for major.minor.patch format
-    [[ "$(printf '%s\n' "$version1" "$version2" | sort -V | head -n1)" == "$version2" ]]
-}
-```
+### Agent Integration Pattern
+Each affected agent will implement:
+1. **Repository Detection**: Call detection function at agent initialization
+2. **Context Caching**: Store repository context for agent session
+3. **Error Propagation**: Return standardized error codes
+4. **Fallback Behavior**: Graceful degradation when possible
 
-## Implementation Priorities
+### Command Integration Pattern
+Each affected command will implement:
+1. **Context Inheritance**: Use agent-provided repository context
+2. **Override Support**: Accept explicit repository parameters
+3. **Validation**: Confirm repository context before operations
+4. **User Confirmation**: Prompt for potentially destructive operations
 
-### High Priority Patterns (Apply First)
-1. **Strict Error Handling**: All scripts must use `set -euo pipefail`
-2. **Input Validation**: Security-critical for all external inputs  
-3. **GitHub Authentication**: Mandatory verification before operations
-4. **Dynamic Label Discovery**: Never hardcode GitHub labels
+## Security Considerations
 
-### Medium Priority Patterns (Architecture)
-1. **Repository Detection**: Portable cross-repository patterns
-2. **Agent Communication**: Standardized output formats
-3. **Logging Framework**: Comprehensive operation tracking  
-4. **Process Management**: Child process tracking and cleanup
+### Security Boundary Analysis
+- **Current State**: Hardcoded repository provides implicit security isolation
+- **New State**: Dynamic detection requires explicit access validation
+- **Risk Mitigation**: Enhanced authentication and permission checking
 
-### Low Priority Optimizations (Performance)
-1. **API Rate Limiting**: Conservative request budgeting
-2. **Caching Strategies**: Reduce redundant GitHub API calls
-3. **Parallel Processing**: Batch operations for efficiency
-4. **Connection Pooling**: Optimize network resource usage
+### Access Control Implementation
+- **Authentication Validation**: Mandatory `gh auth status` checks
+- **Repository Access Verification**: Explicit permission validation
+- **Operation Confirmation**: User prompts for destructive operations
+- **Audit Logging**: Enhanced logging for repository operations
 
-This analysis provides comprehensive technology guidelines for implementing robust GitHub CLI scripting with proper bash standards, error handling, and cross-repository portability patterns suitable for Claude Code agent architecture.
+## Performance Considerations
+
+### Detection Performance
+- **Caching Strategy**: Repository context caching within agent sessions
+- **Network Optimization**: Minimize GitHub API calls through batching
+- **Error Handling**: Fast failure for common error conditions
+
+### Scalability Factors
+- **Multi-Repository Support**: Efficient context switching
+- **Concurrent Operations**: Thread-safe repository context handling
+- **Resource Management**: Proper cleanup of authentication resources
+
+## Testing Strategy Requirements
+
+### Unit Testing
+- Repository detection function testing with mocked environments
+- Error handling validation across all failure modes
+- Authentication state testing with various token configurations
+
+### Integration Testing
+- Multi-agent workflow testing with repository context consistency
+- Cross-repository operation validation
+- End-to-end workflow testing in realistic environments
+
+### Environment Testing
+- CI/CD environment validation (GitHub Actions, Jenkins)
+- Container environment testing (Docker, podman)
+- Git worktree scenario validation
+- Multi-remote repository configuration testing
+
+## Deployment Strategy
+
+### Phased Rollout Plan
+1. **Phase 1**: Core detection function implementation and testing
+2. **Phase 2**: Primary agent updates (github-issues-workflow, git-workflow)
+3. **Phase 3**: Secondary agent and command updates
+4. **Phase 4**: Documentation and user guidance updates
+
+### Rollback Capability
+- **Feature Flags**: Environment-based feature enablement
+- **Configuration Override**: Explicit repository specification option
+- **Backward Compatibility**: Preserve existing behavior as fallback
+
+## Dependencies and Constraints
+
+### Technical Dependencies
+- GitHub CLI v2.76.0+ for improved auto-detection reliability
+- Git repository context with proper remote configuration
+- Network connectivity for GitHub API operations
+
+### Operational Constraints
+- Must maintain existing ondrasek/ai-code-forge functionality
+- Zero regression requirement for current user workflows
+- Coordination required across 40+ integration points
+
+## Success Metrics
+
+### Functional Metrics
+- 100% success rate in ondrasek/ai-code-forge repository (no regression)
+- >95% success rate in standard git repository environments
+- <5% false positive rate in repository detection
+
+### User Experience Metrics
+- Clear error messages for all failure scenarios
+- <2 second response time for repository detection
+- Positive user feedback on cross-repository portability
+
+This technical analysis provides the architectural foundation for implementing robust repository detection while maintaining system reliability and security.

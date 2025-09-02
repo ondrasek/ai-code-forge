@@ -1,263 +1,232 @@
-# Critical Analysis: Remove Hardcoded Repository References
+# Decision Rationale - Issue #209: Remove Hardcoded Repository References
+
+## Problem Statement Validation
+
+### Original Issue Assessment
+The GitHub issue claims that hardcoded `ondrasek/ai-code-forge` references create a "fundamental reusability limitation" that prevents Claude Code from being "truly portable."
+
+### Critical Analysis of Problem Statement
+**Valid Concerns:**
+- Users who fork the repository cannot use GitHub integration features
+- Configuration is not reusable across organizations
+- Creates barrier to adoption for external users
+
+**Questionable Assumptions:**
+- Assumes significant demand for cross-repository usage (unvalidated)
+- Labels current approach as "fundamental limitation" rather than design choice
+- Implies portability is more valuable than reliability and simplicity
+
+## Solution Analysis and Trade-offs
+
+### Proposed Solution Evaluation
+**Original Proposal**: "Simply remove all `--repo ondrasek/ai-code-forge` parameters"
+
+**Critical Evaluation:**
+- **Oversimplified**: Ignores error handling, validation, and edge cases
+- **High Risk**: No rollback plan or gradual deployment strategy
+- **Poor UX**: Auto-detection failures will confuse users
+- **Security Risk**: May execute operations on unintended repositories
+
+### Enhanced Solution Design
+**Recommended Approach**: Repository detection with validation and fallback
+
+**Design Principles:**
+1. **Reliability First**: Maintain existing functionality for primary use case
+2. **Explicit Validation**: Clear error messages and user confirmation
+3. **Gradual Deployment**: Feature flags and rollback capability
+4. **Security Boundaries**: Maintain access control and authentication validation
+
+## Alternative Approaches Considered
+
+### Option 1: Configuration-Based Repository Specification
+**Implementation:**
+```yaml
+# .acforge/config.yml
+repository: "user/custom-repo"
+github:
+  default_labels: ["bug", "enhancement"]
+```
+
+**Pros:**
+- Explicit user control over repository context
+- Maintains predictable behavior
+- Easy to understand and debug
+- Preserves security boundaries
+
+**Cons:**
+- Requires additional configuration step
+- Another file to maintain and document
+- Not automatically portable without configuration
+
+**Decision:** Consider as fallback option
+
+### Option 2: Environment Variable Override
+**Implementation:**
+```bash
+export ACFORGE_REPO="user/custom-repo"
+# All GitHub operations use this repository
+```
+
+**Pros:**
+- Simple deployment configuration
+- CI/CD friendly
+- Preserves defaults for local development
+- Easy rollback (unset variable)
+
+**Cons:**
+- Not discoverable by users
+- Environment state dependency
+- Potential for forgotten overrides
+
+**Decision:** Implement as supplementary feature
+
+### Option 3: Per-Command Repository Parameters
+**Implementation:**
+```bash
+/issue:create --repo user/custom-repo "New issue title"
+/pr:create --repo user/custom-repo --title "PR title"
+```
+
+**Pros:**
+- Maximum flexibility and explicit control
+- No ambiguity about target repository
+- Backward compatible with current behavior
+
+**Cons:**
+- Verbose and repetitive
+- Breaks current UX expectations
+- High maintenance burden across all commands
+
+**Decision:** Reject due to UX degradation
+
+### Option 4: Hybrid Auto-Detection with Validation
+**Implementation:**
+Auto-detect repository context but validate and confirm before operations
 
-**ANALYSIS TARGET**: Proposed solution to remove `--repo ondrasek/ai-code-forge` parameters and rely on GitHub CLI auto-detection
-**RISK LEVEL**: HIGH - Critical portability feature with multiple failure scenarios
-**CONFIDENCE**: HIGH based on extensive codebase analysis and GitHub CLI behavior patterns
+**Pros:**
+- Best user experience when detection works
+- Explicit validation prevents silent failures
+- Clear error messages for troubleshooting
+- Maintains security through validation
 
-## CORE ASSUMPTIONS CHALLENGED
-
-⚠ **Assumption**: "GitHub CLI auto-detection will work reliably across all deployment contexts"
-⚠ **Challenge**: Auto-detection fails in numerous real-world scenarios including CI/CD, containerized environments, and complex git setups
-⚠ **Evidence**: GitHub CLI documentation warns about auto-detection limitations; fails when `origin` remote is non-standard or missing
-
-⚠ **Assumption**: "This is a trivial find-and-replace operation"
-⚠ **Challenge**: 40+ hardcoded references across critical agents require coordinated updates with proper error handling
-⚠ **Evidence**: Grep analysis shows deep integration in github-issues-workflow, git-workflow, and github-pr-workflow agents
-
-⚠ **Assumption**: "Current workflows will continue to work unchanged"
-⚠ **Challenge**: Breaking change impacts all issue management operations and could cause silent failures
-⚠ **Evidence**: All issue operations rely on explicit repository targeting - removal creates implicit dependencies
-
-⚠ **Assumption**: "Auto-detection provides equivalent functionality"
-⚠ **Challenge**: Explicit repository targeting provides security boundaries and predictable behavior that auto-detection cannot guarantee
-⚠ **Evidence**: Analysis of issue #185 shows repository lock-in was considered a security feature, not a limitation
-
-## RISK ASSESSMENT
-
-### TECHNICAL RISKS
-
-**Silent Failure Risk** | Impact: **CRITICAL** | Probability: **HIGH**
-- Evidence: GitHub CLI auto-detection fails silently in many environments, proceeding with wrong repository or failing with cryptic errors
-- Mitigation: Implement repository validation checks before all operations
-
-**Environment Compatibility Risk** | Impact: **HIGH** | Probability: **HIGH**  
-- Evidence: Auto-detection breaks in CI/CD environments, Docker containers, git worktrees, and non-standard remote configurations
-- Mitigation: Add fallback detection mechanisms and environment-specific configuration
-
-**Security Boundary Erosion** | Impact: **HIGH** | Probability: **MEDIUM**
-- Evidence: Hardcoded repository references provided security isolation - removal could allow operations on unintended repositories
-- Mitigation: Add repository validation whitelist and confirmation prompts
-
-**Error Handling Inadequacy** | Impact: **MEDIUM** | Probability: **HIGH**
-- Evidence: Current error messages assume known repository context - auto-detection failures produce confusing error messages
-- Mitigation: Implement context-aware error handling with suggested resolutions
-
-### BUSINESS RISKS
-
-**User Experience Degradation** | Impact: **HIGH** | Probability: **MEDIUM**
-- Evidence: Silent failures and cryptic errors will frustrate users, especially in edge case environments
-- Mitigation: Comprehensive testing across deployment scenarios and improved error messaging
-
-**Migration Complexity** | Impact: **MEDIUM** | Probability: **HIGH**
-- Evidence: 40+ file changes across critical workflow agents require coordinated deployment and testing
-- Mitigation: Staged rollout with feature flags and rollback capabilities
-
-**Documentation Debt** | Impact: **MEDIUM** | Probability: **HIGH**
-- Evidence: All examples and workflows assume hardcoded repository - extensive documentation updates required
-- Mitigation: Automated documentation scanning and systematic update process
-
-### TEAM RISKS
-
-**Testing Scope Expansion** | Impact: **HIGH** | Probability: **HIGH**
-- Evidence: Testing must cover multiple repository contexts, CI/CD environments, and edge cases not previously considered
-- Mitigation: Create comprehensive test matrix covering all deployment scenarios
-
-**Knowledge Gap Risk** | Impact: **MEDIUM** | Probability: **MEDIUM**  
-- Evidence: Team may not fully understand GitHub CLI auto-detection limitations and failure modes
-- Mitigation: Document auto-detection behavior and create troubleshooting guides
-
-### FUTURE RISKS
-
-**Maintenance Burden Increase** | Impact: **MEDIUM** | Probability: **HIGH**
-- Evidence: Repository detection logic adds complexity that must be maintained across multiple agents
-- Mitigation: Centralize repository detection logic in shared utility functions
-
-**Edge Case Proliferation** | Impact: **MEDIUM** | Probability: **HIGH**
-- Evidence: Auto-detection introduces environment-specific behaviors that create new support scenarios
-- Mitigation: Document known limitations and provide environment-specific configuration options
-
-## COUNTER-EVIDENCE RESEARCH
-
-### PROBLEMS FOUND
-
-**GitHub CLI Auto-Detection Failures** | Source: GitHub CLI documentation and issue reports
-- Fails when `origin` remote is not the target repository
-- Breaks in CI/CD environments without proper git configuration  
-- Inconsistent behavior across different git remote configurations
-- Silent failures in containerized environments
-
-**Breaking Change Impact** | Source: Codebase analysis
-- 40+ explicit repository references across 8 critical agent files
-- All issue management operations become environment-dependent
-- Error messages lose contextual clarity about repository targeting
-- Workflow reliability depends on correct environment setup
-
-**Security Implications** | Source: Issue #185 analysis
-- Repository lock-in was previously identified as intentional security feature
-- Removal creates potential for operations on unintended repositories
-- Loss of explicit repository boundaries in multi-repo environments
-
-### SUCCESS LIMITATIONS
-
-**Auto-Detection Works** vs **Auto-Detection Fails**
-- ✅ Standard git repositories with `origin` pointing to target repo
-- ❌ CI/CD environments with non-standard remote configurations
-- ❌ Git worktrees where auto-detection may target wrong repository  
-- ❌ Containerized environments with incomplete git context
-- ❌ Multi-remote repositories where `origin` is not the target
-
-**Portability Gained** vs **Reliability Lost**
-- ✅ Configuration can be used across different repositories
-- ❌ Silent failures in unsupported environments
-- ❌ Loss of predictable repository targeting
-- ❌ Environment-dependent behavior creates support burden
-
-## ALTERNATIVE APPROACHES
-
-### OPTION 1: Configuration-Based Repository Detection
-
-✓ **Advantages**: 
-- Maintains explicit repository control while enabling portability
-- Allows per-environment configuration with sensible defaults
-- Preserves security boundaries while enabling flexibility
-- Provides clear upgrade path from hardcoded approach
-
-⚠ **Disadvantages**: 
-- Requires configuration management complexity
-- Initial setup overhead for new repositories
-- Need to define configuration precedence rules
-
-**Evidence**: Similar pattern used by tools like Terraform and Kubernetes for environment-specific targeting
-
-### OPTION 2: Repository Detection with Validation
-
-✓ **Advantages**:
-- Combines auto-detection convenience with explicit validation
-- Fails fast with clear error messages when detection fails
-- Maintains security through confirmation prompts for unknown repositories
-- Provides fallback mechanisms for edge cases
-
-⚠ **Disadvantages**:
-- Adds execution overhead for validation checks
-- Requires comprehensive validation logic development
-- More complex error handling and recovery paths
-
-**Evidence**: Pattern used by AWS CLI and other cloud tools for resource targeting
-
-### OPTION 3: Hybrid Approach with Feature Flags
-
-✓ **Advantages**: 
-- Allows gradual migration with rollback capability
-- Enables testing in production environments safely
-- Supports both hardcoded and auto-detection modes
-- Reduces deployment risk through controlled rollout
-
-⚠ **Disadvantages**:
-- Temporary complexity supporting dual modes
-- Feature flag management overhead
-- Extended migration timeline
-
-**Evidence**: Standard practice for breaking changes in production systems
-
-### OPTION 4: Environment-Specific Configuration Files
-
-✓ **Advantages**:
-- Explicit configuration per deployment environment  
-- Supports complex multi-repository workflows
-- Clear audit trail of repository targeting decisions
-- Enables environment-specific behavior customization
-
-⚠ **Disadvantages**:
-- Configuration file management complexity
-- Risk of configuration drift between environments
-- Additional deployment artifacts to manage
-
-**Evidence**: Pattern used by deployment tools like Ansible and Helm
-
-## RECOMMENDATION MATRIX
-
-### PROCEED WITH SIMPLE AUTO-DETECTION IF:
-- ❌ **Cannot meet**: Comprehensive testing across all deployment environments is completed
-- ❌ **Cannot meet**: Error handling covers all auto-detection failure modes
-- ❌ **Cannot meet**: Rollback mechanism is implemented and tested
-- ❌ **Cannot meet**: Security implications are fully understood and mitigated
-
-### RECONSIDER IF:
-- ⚠ **Present**: Limited testing resources for comprehensive environment coverage
-- ⚠ **Present**: Tight timeline pressure preventing proper validation
-- ⚠ **Present**: Unclear understanding of all deployment environments using Claude Code
-- ⚠ **Present**: No rollback plan for auto-detection failures
-
-### ABSOLUTELY AVOID IF:
-- 🚨 **Present**: Production deployments in CI/CD environments without validation
-- 🚨 **Present**: No error handling for auto-detection failures
-- 🚨 **Present**: Security implications not reviewed and approved
-- 🚨 **Present**: Breaking change deployed without user communication
-
-## CONSTRUCTIVE CRITICISM
-
-### STRONG POINTS
-✓ **Clear Problem Identification**: Issue correctly identifies repository portability as fundamental limitation
-✓ **Valid Use Case**: Claude Code should indeed work across different repositories
-✓ **Simple Solution Appeal**: Auto-detection appears to solve portability cleanly
-
-### WEAK POINTS
-
-⚠ **Oversimplified Assessment**: "Trivial fix" assumption ignores 40+ integration points and complex failure modes
-- **Alternative**: Treat as major architecture change requiring comprehensive testing and fallback mechanisms
-
-⚠ **Insufficient Risk Analysis**: Focus on happy path ignores numerous failure scenarios and edge cases
-- **Alternative**: Implement repository detection with validation and clear error handling
-
-⚠ **Missing Security Review**: Removal of repository boundaries creates unanalyzed security implications  
-- **Alternative**: Replace hardcoded references with configurable but explicit repository targeting
-
-⚠ **Inadequate Testing Strategy**: No mention of comprehensive environment testing or edge case validation
-- **Alternative**: Define comprehensive test matrix covering all deployment scenarios before implementation
-
-## IMPROVEMENT SUGGESTIONS
-
-1. **Implement Repository Detection with Validation** - Combine auto-detection with explicit validation checks to fail fast with clear errors rather than proceeding with wrong repository
-
-2. **Add Configuration Override Mechanism** - Provide environment variable or configuration file option to explicitly set repository when auto-detection is insufficient
-
-3. **Create Comprehensive Test Matrix** - Test across CI/CD environments, Docker containers, git worktrees, and multi-remote configurations before deployment
-
-4. **Develop Staged Rollout Plan** - Use feature flags or gradual deployment to enable rollback if auto-detection causes production issues
-
-5. **Implement Enhanced Error Handling** - Replace cryptic auto-detection failures with actionable error messages suggesting specific resolution steps
-
-6. **Add Repository Validation Whitelist** - Allow configuration of approved repositories to maintain security boundaries while enabling portability
-
-## DECISION SUPPORT
-
-**Based on analysis**: **REJECT simple auto-detection approach**
-**Alternative recommendation**: **Implement repository detection with validation**
-
-**Key factors**: 
-- High probability of silent failures in production environments
-- 40+ integration points require coordinated update with proper error handling  
-- Security implications of removing explicit repository boundaries
-- Complexity hidden behind "trivial fix" assumption
-
-**Next steps before proceeding**:
-1. **Define comprehensive test matrix** covering all deployment environments
-2. **Implement repository detection with validation and fallback mechanisms**
-3. **Create rollback plan** for production deployments
-4. **Security review** of removing repository boundaries
-5. **Staged deployment strategy** with feature flags or environment-specific rollout
-
-## MEMORY STORAGE
-
-**Risk patterns identified**:
-- Auto-detection reliability assumptions in distributed systems
-- Breaking change complexity hidden by "simple fix" framing  
-- Security boundary removal without adequate analysis
-- Production deployment risk from insufficient testing scope
-
-**Alternative approaches validated**:
-- Configuration-based repository targeting with validation
-- Hybrid approaches enabling gradual migration
-- Enhanced error handling for auto-detection failures
-
-**Decision outcome**: Recommend enhanced approach over simple auto-detection removal
+**Cons:**
+- Most complex implementation
+- Higher testing burden
+- Multiple failure modes to handle
+
+**Decision:** Selected as primary approach
+
+## Risk Assessment and Mitigation
+
+### High-Risk Factors
+1. **Silent Detection Failures**: Auto-detection may fail without clear indication
+2. **Multi-Agent Coordination**: Repository context must be consistent across workflows
+3. **Authentication Complexity**: Different repositories require different access levels
+4. **Deployment Risk**: 40+ integration points increase chance of regression
+
+### Risk Mitigation Strategies
+
+#### Detection Failure Mitigation
+- **Explicit Validation**: Always validate repository access before operations
+- **Clear Error Messages**: Actionable guidance for common failure scenarios
+- **Fallback Options**: Configuration-based override mechanisms
+- **User Confirmation**: Prompt for confirmation of detected repository context
+
+#### Coordination Risk Mitigation
+- **Shared Context**: Implement repository context caching within agent sessions
+- **Consistent Interface**: Standardized repository detection across all agents
+- **Error Propagation**: Clear error code standards for coordination failures
+
+#### Authentication Risk Mitigation
+- **Pre-flight Checks**: Validate authentication and permissions before operations
+- **Graceful Degradation**: Clear messaging when operations cannot be completed
+- **Scope Validation**: Ensure authentication scope includes necessary repository access
+
+#### Deployment Risk Mitigation
+- **Phased Rollout**: Gradual deployment with rollback capability
+- **Feature Flags**: Environment-based enable/disable functionality
+- **Comprehensive Testing**: Multi-environment validation before deployment
+
+## Security Decision Analysis
+
+### Current Security Model
+- **Explicit Repository Scope**: Operations clearly bounded to specific repository
+- **Predictable Behavior**: No ambiguity about operation targets
+- **Simple Authentication**: Single repository authentication requirements
+
+### Proposed Security Model
+- **Dynamic Repository Scope**: Operations target auto-detected repository
+- **Validation Requirements**: Explicit access and permission checking
+- **Complex Authentication**: Multi-repository authentication management
+
+### Security Trade-off Assessment
+**Acceptable Trade-offs:**
+- Increased validation complexity for improved portability
+- More sophisticated error handling for better user experience
+
+**Unacceptable Trade-offs:**
+- Silent failures that could target wrong repository
+- Reduced security boundary enforcement
+- Complex authentication without clear user guidance
+
+**Decision:** Implement enhanced validation to maintain security while enabling portability
+
+## Performance Impact Analysis
+
+### Current Performance Profile
+- **Predictable**: Known repository context eliminates detection overhead
+- **Fast**: No validation or detection network calls required
+- **Reliable**: No external dependencies for repository context
+
+### Proposed Performance Profile
+- **Detection Overhead**: Initial repository detection call per agent session
+- **Validation Overhead**: Authentication and access validation calls
+- **Caching Benefits**: Repository context caching reduces subsequent calls
+
+### Performance Optimization Strategy
+- **Session Caching**: Cache repository context within agent sessions
+- **Batch Operations**: Combine authentication and access validation
+- **Async Validation**: Parallel validation where possible
+
+**Decision:** Accept minor performance overhead for portability benefits
+
+## Implementation Decision Summary
+
+### Primary Decision: Enhanced Auto-Detection Approach
+Implement repository auto-detection with comprehensive validation, fallback mechanisms, and enhanced error handling.
+
+### Supporting Decisions:
+1. **Environment Variable Support**: `ACFORGE_REPO` for deployment flexibility
+2. **Configuration File Support**: `.acforge/config.yml` for explicit repository specification
+3. **Phased Deployment**: Gradual rollout with feature flags and rollback capability
+4. **Comprehensive Testing**: Multi-environment validation across deployment scenarios
+
+### Rejected Approaches:
+1. **Simple Auto-Detection**: Too risky without validation and error handling
+2. **Per-Command Parameters**: UX degradation outweighs benefits
+3. **Pure Configuration Approach**: Reduces convenience without sufficient benefit
+
+## Success Criteria Definition
+
+### Functional Success Criteria
+- Zero regression in existing ondrasek/ai-code-forge workflows
+- Successful operation in at least 3 different repository contexts
+- Clear error messages for all common failure scenarios
+- User confirmation workflow for potentially destructive operations
+
+### Performance Success Criteria
+- Repository detection completes within 2 seconds
+- No significant impact on existing workflow performance
+- Caching effectiveness >90% for repeated operations
+
+### Security Success Criteria
+- No operations execute on unintended repositories
+- Authentication validation prevents unauthorized operations
+- Clear audit trail for all repository operations
+
+### User Experience Success Criteria
+- Positive user feedback on cross-repository portability
+- Error messages provide actionable resolution steps
+- Documentation clearly explains new behavior and configuration options
+
+This decision rationale provides the foundation for implementing repository detection that balances portability, security, reliability, and user experience requirements.
