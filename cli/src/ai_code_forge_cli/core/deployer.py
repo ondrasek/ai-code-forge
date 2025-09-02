@@ -94,6 +94,14 @@ class TemplateDeployer:
             
             # Get all template files
             template_files = self.template_manager.list_template_files()
+            
+            # Check if we have DevContainer templates and create .devcontainer directory
+            has_devcontainer_templates = any(f.startswith("devcontainer/") for f in template_files)
+            if has_devcontainer_templates:
+                devcontainer_dir = self.target_path / ".devcontainer"
+                if not dry_run:
+                    devcontainer_dir.mkdir(exist_ok=True)
+                results["directories_created"].append(".devcontainer/")
             substitutor = ParameterSubstitutor(parameters)
             
             for template_path in template_files:
@@ -135,11 +143,20 @@ class TemplateDeployer:
         """Convert template path to target file path.
         
         Args:
-            template_path: Template file path (e.g., "agents/foundation/context.md")
+            template_path: Template file path (e.g., "agents/foundation/context.md" or "devcontainer/devcontainer.json.template")
             
         Returns:
-            Target file path in .claude directory
+            Target file path in appropriate directory (.claude/ or .devcontainer/)
         """
         # Remove .template suffix if present
         clean_path = template_path.replace(".template", "")
+        
+        # Handle DevContainer templates specially
+        if template_path.startswith("devcontainer/"):
+            devcontainer_dir = self.target_path / ".devcontainer"
+            # Extract filename from devcontainer/filename.json
+            filename = clean_path.split("/", 1)[1]  # Remove "devcontainer/" prefix
+            return devcontainer_dir / filename
+        
+        # Default to .claude directory for other templates
         return self.claude_dir / clean_path
