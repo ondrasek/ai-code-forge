@@ -10,6 +10,7 @@ from .. import __version__
 from ..core.detector import RepositoryDetector
 from ..core.deployer import TemplateDeployer
 from ..core.state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
+from ..core.static import StaticContentManager, StaticContentDeployer
 from ..core.templates import TemplateManager
 
 
@@ -149,6 +150,7 @@ def _run_init(
         # Initialize components
         detector = RepositoryDetector(target_path)
         template_manager = TemplateManager()
+        static_manager = StaticContentManager()
         state_manager = StateManager(target_path)
         
         # Check existing configuration
@@ -188,11 +190,20 @@ def _run_init(
             click.echo(f"🔧 Using parameters: {list(parameters.keys())}")
         
         # Deploy templates
-        deployer = TemplateDeployer(target_path, template_manager)
-        deploy_results = deployer.deploy_templates(parameters, dry_run)
+        template_deployer = TemplateDeployer(target_path, template_manager)
+        template_results = template_deployer.deploy_templates(parameters, dry_run)
         
-        results["files_created"] = deploy_results["files_deployed"] + deploy_results["directories_created"]
-        results["errors"].extend(deploy_results["errors"])
+        # Deploy static content  
+        static_deployer = StaticContentDeployer(target_path, static_manager)
+        static_results = static_deployer.deploy_static_content(dry_run)
+        
+        # Combine results
+        results["files_created"] = (
+            template_results["files_deployed"] + template_results["directories_created"] +
+            static_results["files_deployed"] + static_results["directories_created"]
+        )
+        results["errors"].extend(template_results["errors"])
+        results["errors"].extend(static_results["errors"])
         
         # Initialize ACF state (if not dry run)
         if not dry_run and not results["errors"]:

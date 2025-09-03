@@ -12,12 +12,12 @@ postCreateEnvFile=$devcontainerDir/postCreate.env.tmp
 }
 
 eval "$(grep -v '^#' $postCreateEnvFile | sed 's/^/export /')"
-export workingCopy=/workspace/test-repo
-export worktreesDir=/workspace/worktrees/test-repo
+export workingCopy=/workspace/$repositoryName
+export worktreesDir=/workspace/worktrees/$repositoryName
 
 echo "Configuration from initializeCommand:"
-echo "repositoryName: test-repo"
-echo "repositoryNameWithOwner: testuser/test-repo"
+echo "repositoryName: $repositoryName"
+echo "repositoryNameWithOwner: $repositoryNameWithOwner"
 echo "gitUserName: $gitUserName"
 echo "gitUserEmail: $gitUserEmail"
 echo "workingCopy: $workingCopy"

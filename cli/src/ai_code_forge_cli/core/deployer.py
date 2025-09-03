@@ -63,7 +63,7 @@ class TemplateDeployer:
         """
         self.target_path = target_path
         self.template_manager = template_manager
-        self.claude_dir = target_path / ".claude"
+        self.acforge_dir = target_path / ".acforge"
     
     def deploy_templates(
         self, 
@@ -87,10 +87,10 @@ class TemplateDeployer:
         }
         
         try:
-            # Create .claude directory
+            # Create .acforge directory  
             if not dry_run:
-                self.claude_dir.mkdir(exist_ok=True)
-            results["directories_created"].append(".claude/")
+                self.acforge_dir.mkdir(exist_ok=True)
+            results["directories_created"].append(".acforge/")
             
             # Get all template files
             template_files = self.template_manager.list_template_files()
@@ -162,5 +162,9 @@ class TemplateDeployer:
             relative_path = clean_path.split("/", 1)[1]  # Remove "devcontainer/" prefix
             return devcontainer_dir / relative_path
         
-        # Default to .claude directory for other templates
-        return self.claude_dir / clean_path
+        # Handle CLAUDE.md specially - goes to repository root
+        if clean_path == "CLAUDE.md":
+            return self.target_path / "CLAUDE.md"
+        
+        # Default to .acforge directory for other templates  
+        return self.acforge_dir / clean_path

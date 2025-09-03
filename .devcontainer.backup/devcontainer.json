@@ -1,5 +1,5 @@
 {
-  "name": "test-repo DevContainer",
+  "name": "AI Code Forge DevContainer",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "."
@@ -38,8 +38,8 @@
         "terminal.integrated.defaultProfile.linux": "zsh",
         "python.defaultInterpreterPath": "/usr/local/python/current/bin/python",
         "python.terminal.activateEnvironment": false,
-        "git.openRepositoryInParentFolders": "always",
-        "terminal.integrated.defaultLocation": "editor"
+	      "git.openRepositoryInParentFolders": "always",
+	      "terminal.integrated.defaultLocation": "editor"
       }
     }
   },
@@ -50,8 +50,7 @@
 
   "runArgs": [
     "--env-file", ".env",
-    "--label", "my.repositoryName=test-repo",
-    "--label", "my.repositoryOwner=testuser"
+    "--label", "my.repositoryName=${localWorkspaceFolderBasename}"
   ],
 
   "remoteEnv": {
@@ -75,6 +74,6 @@
 
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer,target=/tmp/.devcontainer,type=bind,consistency=cached",
-    "source=test-repo,target=/workspace,type=volume"
+    "source=${localWorkspaceFolderBasename},target=/workspace,type=volume"
   ]
 }
