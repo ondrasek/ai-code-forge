@@ -280,7 +280,7 @@ def _initialize_acf_state(
             template_files[template_path] = template_info
     
     # Create initial state
-    initial_state = ACFState(
+    initial_state = ACForgeState(
         installation=InstallationState(
             template_version=parameters.get("TEMPLATE_VERSION", "unknown"),
             installed_at=datetime.now(),
