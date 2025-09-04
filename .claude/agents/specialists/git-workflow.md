@@ -71,7 +71,7 @@ ISSUE_NUM=$(echo "$BRANCH" | grep -oE 'issue-[0-9]+' | grep -oE '[0-9]+' || echo
 
 # 2. Intelligent Issue Validation with Diagnostics
 if [ -n "$ISSUE_NUM" ]; then
-  gh issue view "$ISSUE_NUM" --repo ondrasek/ai-code-forge >/dev/null 2>&1
+  gh issue view "$ISSUE_NUM" >/dev/null 2>&1
   if [ $? -eq 0 ]; then
     ISSUE_REF="(closes #$ISSUE_NUM)"
   else
@@ -82,13 +82,13 @@ if [ -n "$ISSUE_NUM" ]; then
     EXECUTE: gh auth status
 
     echo "Testing repository access..."
-    EXECUTE: gh repo view ondrasek/ai-code-forge --json name,owner
+    EXECUTE: gh repo view --json name,owner
 
     echo "Searching for similar issues..."
-    EXECUTE: gh issue list --repo ondrasek/ai-code-forge --search "$ISSUE_NUM" --limit 5
+    EXECUTE: gh issue list --search "$ISSUE_NUM" --limit 5
 
     echo "📋 RESOLUTION OPTIONS:"
-    echo "1. Create missing issue: gh issue create --repo ondrasek/ai-code-forge --title '[Title]'"
+    echo "1. Create missing issue: gh issue create --title '[Title]'"
     echo "2. Use different issue number in branch name"
     echo "3. Proceed with manual commit format (no issue reference)"
     echo "4. Fix authentication if needed: gh auth login"
@@ -118,19 +118,19 @@ if [ -z "$ISSUE_REF" ]; then
     echo "Found potential issue numbers in branch name: $POTENTIAL_NUMS"
     echo "Checking if any match existing issues..."
     for NUM in $POTENTIAL_NUMS; do
-      EXECUTE: gh issue view "$NUM" --repo ondrasek/ai-code-forge --json number,title 2>/dev/null || echo "Issue #$NUM: Not found"
+      EXECUTE: gh issue view "$NUM" --json number,title 2>/dev/null || echo "Issue #$NUM: Not found"
     done
   fi
 
   echo "🛠️  AVAILABLE ACTIONS:"
   echo "1. Rename branch to proper format: git branch -m claude/issue-XX-$(date +%Y%m%d-%H%M)"
-  echo "2. Create new issue for this work: gh issue create --repo ondrasek/ai-code-forge"
+  echo "2. Create new issue for this work: gh issue create"
   echo "3. Use manual commit format: 'type(scope): description (closes #XX)'"
   echo "4. Proceed without issue reference (not recommended)"
 
   echo "💡 SMART SUGGESTIONS:"
   echo "Based on recent changes, this might relate to existing issues:"
-  EXECUTE: gh issue list --repo ondrasek/ai-code-forge --state open --limit 5 --json number,title
+  EXECUTE: gh issue list --state open --limit 5 --json number,title
 
   echo "❓ Would you like me to help with any of these actions?"
   echo "⚠️  SAFETY: I will ask for confirmation before any destructive git operations."
@@ -162,7 +162,7 @@ git log --oneline --grep="closes #" --grep="fixes #" --grep="resolves #" --grep=
 
 # 2. Categorize issues by type using GitHub labels
 for issue_num in $(git log --oneline --grep="closes #" --grep="fixes #" | grep -oE '#[0-9]+' | tr -d '#'); do
-  LABELS=$(gh issue view "$issue_num" --repo ondrasek/ai-code-forge --json labels --jq '.labels[].name' 2>/dev/null)
+  LABELS=$(gh issue view "$issue_num" --json labels --jq '.labels[].name' 2>/dev/null)
   if echo "$LABELS" | grep -q "feat"; then
     FEAT_ISSUES="$FEAT_ISSUES #$issue_num"
   elif echo "$LABELS" | grep -q "fix"; then

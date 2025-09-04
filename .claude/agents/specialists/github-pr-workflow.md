@@ -127,7 +127,7 @@ $(git diff --name-only HEAD ^origin/$BASE_BRANCH | head -10 | sed 's/^/- /')
 ## Related Issues
 $(for issue_num in $(echo $RELATED_ISSUES | tr ' ' '\n' | sort -u); do
     if [[ -n "$issue_num" ]]; then
-        ISSUE_TITLE=$(gh issue view "$issue_num" --repo ondrasek/ai-code-forge --json title --jq '.title' 2>/dev/null || echo "")
+        ISSUE_TITLE=$(gh issue view "$issue_num" --json title --jq '.title' 2>/dev/null || echo "")
         echo "- Relates to #$issue_num: $ISSUE_TITLE"
     fi
 done)
@@ -151,7 +151,7 @@ rm -f /tmp/pr_body.md
 
 ```bash
 # 1. Discover available labels dynamically and detect appropriate labels based on file changes
-AVAILABLE_LABELS=$(gh label list --repo ondrasek/ai-code-forge --json name --jq '.[].name' 2>/dev/null | tr '\n' ' ')
+AVAILABLE_LABELS=$(gh label list --json name --jq '.[].name' 2>/dev/null | tr '\n' ' ')
 
 # MANDATORY: Cross-reference related issues when creating PR
 echo "🔗 Searching for related issues..."
@@ -163,13 +163,13 @@ FILE_PATHS=$(git diff --name-only HEAD ^origin/$BASE_BRANCH | head -5)
 # Search for related issues using multiple strategies
 RELATED_ISSUES=$()
 for keyword in $COMMIT_KEYWORDS; do
-    FOUND_ISSUES=$(gh issue list --search "$keyword" --repo ondrasek/ai-code-forge --json number,title --jq '.[].number' 2>/dev/null | head -3)
+    FOUND_ISSUES=$(gh issue list --search "$keyword" --json number,title --jq '.[].number' 2>/dev/null | head -3)
     RELATED_ISSUES="$RELATED_ISSUES $FOUND_ISSUES"
 done
 
 # Search by file paths
 for filepath in $FILE_PATHS; do
-    FOUND_ISSUES=$(gh issue list --search "$filepath" --repo ondrasek/ai-code-forge --json number,title --jq '.[].number' 2>/dev/null | head -2)
+    FOUND_ISSUES=$(gh issue list --search "$filepath" --json number,title --jq '.[].number' 2>/dev/null | head -2)
     RELATED_ISSUES="$RELATED_ISSUES $FOUND_ISSUES"
 done
 
@@ -180,7 +180,7 @@ if [[ "$CURRENT_BRANCH" =~ issue-([0-9]+) ]]; then
     
     # Add work-in-progress indicators using existing labels only
     if [[ "$AVAILABLE_LABELS" =~ "human feedback needed" ]]; then
-        gh issue edit "$ISSUE_NUMBER" --add-label "human feedback needed" --repo ondrasek/ai-code-forge 2>/dev/null || true
+        gh issue edit "$ISSUE_NUMBER" --add-label "human feedback needed" 2>/dev/null || true
     fi
     
     # Add PR creation status comment with cross-references (append-only)
@@ -191,7 +191,7 @@ if [[ "$CURRENT_BRANCH" =~ issue-([0-9]+) ]]; then
         fi
     done
     
-    gh issue comment "$ISSUE_NUMBER" --body "🚀 **PR Created**: Pull request created from branch \`$CURRENT_BRANCH\`. Review and feedback requested.$CROSS_REFS" --repo ondrasek/ai-code-forge 2>/dev/null || true
+    gh issue comment "$ISSUE_NUMBER" --body "🚀 **PR Created**: Pull request created from branch \`$CURRENT_BRANCH\`. Review and feedback requested.$CROSS_REFS" 2>/dev/null || true
 fi
 LABELS=()
 
@@ -387,7 +387,7 @@ MEMORY STATUS: Authentication failure pattern stored for recognition
 - Maintain commit message consistency across PR lifecycle
 
 ### Intelligent Label Detection (MANDATORY DYNAMIC DISCOVERY)
-- **Dynamic Discovery**: ALWAYS fetch current repository labels using `gh label list --repo ondrasek/ai-code-forge --json name,color,description` before any label operations
+- **Dynamic Discovery**: ALWAYS fetch current repository labels using `gh label list --json name,color,description` before any label operations
 - **No Hardcoded Labels**: NEVER assume specific labels exist - always verify through dynamic discovery
 - **Issue Label Updates**: When PR relates to an issue, update issue labels to reflect PR workflow status using only discovered labels
 - **File Extension Analysis**: Map file types to discovered technology-specific labels from repository
