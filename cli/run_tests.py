@@ -9,7 +9,8 @@ from pathlib import Path
 
 def run_pytest_with_coverage():
     """Run pytest with coverage reporting."""
-    print("🧪 Running AI Code Forge CLI Test Suite")
+    print("🧪 Running Focused AI Code Forge CLI Test Suite")
+    print("🎯 9 meaningful tests (no test theater)")
     print("=" * 50)
     
     start_time = time.time()
@@ -61,7 +62,8 @@ def run_pytest_with_coverage():
 
 def run_quick_tests():
     """Run quick tests without coverage for fast feedback."""
-    print("⚡ Running Quick Test Suite (No Coverage)")
+    print("⚡ Running Focused Test Suite (No Coverage)")
+    print("🎯 9 meaningful tests - no theater")
     print("=" * 50)
     
     cli_dir = Path(__file__).parent

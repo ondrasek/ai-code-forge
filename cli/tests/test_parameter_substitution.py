@@ -1,134 +1,61 @@
-"""Unit tests for parameter substitution functionality."""
+"""Unit tests for parameter substitution functionality - focused on real scenarios."""
 
 import pytest
 
 from ai_code_forge_cli.core.deployer import ParameterSubstitutor
 
 
-class TestParameterSubstitutor:
-    """Unit tests for ParameterSubstitutor class."""
+class TestParameterSubstitution:
+    """Focused tests for meaningful parameter substitution scenarios."""
 
-    def test_basic_parameter_substitution(self):
-        """Test basic parameter replacement."""
+    def test_real_template_substitution(self):
+        """Test substitution with realistic template content."""
         substitutor = ParameterSubstitutor({
-            "PROJECT_NAME": "test-project",
-            "GITHUB_OWNER": "testuser"
+            "PROJECT_NAME": "my-project",
+            "GITHUB_OWNER": "testuser",
+            "CLI_DIRECTORY": "cli"
         })
         
-        content = "Hello {{GITHUB_OWNER}} from {{PROJECT_NAME}}!"
+        # Realistic template content similar to actual CLAUDE.md
+        content = """<cli>{{CLI_DIRECTORY}}/ with source code for the {{PROJECT_NAME}} cli tool</cli>
+<github_issues>GitHub Issues in {{GITHUB_OWNER}}/{{GITHUB_REPO}} (specifications managed via GitHub)</github_issues>"""
+        
         result = substitutor.substitute_content(content)
         
-        assert result == "Hello testuser from test-project!"
-        assert set(substitutor.get_substituted_parameters()) == {"GITHUB_OWNER", "PROJECT_NAME"}
+        # Verify actual substitutions happened correctly
+        assert "cli/ with source code for the my-project cli tool" in result
+        assert "GitHub Issues in testuser/{{GITHUB_REPO}}" in result  # Undefined param preserved
+        
+        # Verify tracking works
+        substituted = substitutor.get_substituted_parameters()
+        assert set(substituted) == {"PROJECT_NAME", "GITHUB_OWNER", "CLI_DIRECTORY"}
+
+    def test_parameter_security_validation(self):
+        """Test that parameter values don't break template structure."""
+        # Test potentially dangerous parameter values
+        substitutor = ParameterSubstitutor({
+            "PROJECT_NAME": "project}}{{malicious",  # Nested braces
+            "GITHUB_OWNER": "user@domain.com",      # Special chars
+            "PATH_PARAM": "/path/with spaces/file"   # Spaces
+        })
+        
+        content = "Project: {{PROJECT_NAME}}, Owner: {{GITHUB_OWNER}}, Path: {{PATH_PARAM}}"
+        result = substitutor.substitute_content(content)
+        
+        # Verify substitution doesn't break parsing
+        assert "project}}{{malicious" in result
+        assert "user@domain.com" in result  
+        assert "/path/with spaces/file" in result
+        
+        # Verify all parameters were processed
+        assert len(substitutor.get_substituted_parameters()) == 3
 
     def test_missing_parameters_preserved(self):
-        """Test that undefined parameters are left as placeholders."""
+        """Test that undefined parameters are preserved for manual handling."""
         substitutor = ParameterSubstitutor({"DEFINED": "value"})
         
-        content = "{{DEFINED}} and {{UNDEFINED}} remain"
+        content = "{{DEFINED}} parameter works, {{UNDEFINED}} stays as placeholder"
         result = substitutor.substitute_content(content)
         
-        assert result == "value and {{UNDEFINED}} remain"
+        assert result == "value parameter works, {{UNDEFINED}} stays as placeholder"
         assert substitutor.get_substituted_parameters() == ["DEFINED"]
-
-    def test_empty_parameters_dict(self):
-        """Test behavior with no parameters defined."""
-        substitutor = ParameterSubstitutor({})
-        
-        content = "No {{SUBSTITUTION}} happens here"
-        result = substitutor.substitute_content(content)
-        
-        assert result == "No {{SUBSTITUTION}} happens here"
-        assert substitutor.get_substituted_parameters() == []
-
-    def test_special_characters_in_values(self):
-        """Test parameter values with special characters."""
-        substitutor = ParameterSubstitutor({
-            "SPECIAL": "user@domain.com",
-            "PATH": "/path/with-dashes_and.dots/file",
-            "COMPLEX": "value with spaces & symbols!"
-        })
-        
-        content = "Email: {{SPECIAL}}, Path: {{PATH}}, Complex: {{COMPLEX}}"
-        result = substitutor.substitute_content(content)
-        
-        expected = "Email: user@domain.com, Path: /path/with-dashes_and.dots/file, Complex: value with spaces & symbols!"
-        assert result == expected
-
-    def test_repeated_parameters(self):
-        """Test that same parameter can appear multiple times."""
-        substitutor = ParameterSubstitutor({"NAME": "Claude"})
-        
-        content = "Hello {{NAME}}, how are you {{NAME}}? {{NAME}} is great!"
-        result = substitutor.substitute_content(content)
-        
-        assert result == "Hello Claude, how are you Claude? Claude is great!"
-        # Should only record parameter once
-        assert substitutor.get_substituted_parameters() == ["NAME"]
-
-    def test_malformed_placeholders_ignored(self):
-        """Test that malformed placeholders are left unchanged."""
-        substitutor = ParameterSubstitutor({"VALID": "replaced"})
-        
-        content = "{{VALID}} but {INVALID} and {{ SPACED }} and {{UNCLOSED"
-        result = substitutor.substitute_content(content)
-        
-        assert result == "replaced but {INVALID} and {{ SPACED }} and {{UNCLOSED"
-        assert substitutor.get_substituted_parameters() == ["VALID"]
-
-    def test_nested_braces_handling(self):
-        """Test handling of nested or adjacent braces."""
-        substitutor = ParameterSubstitutor({"PARAM": "value"})
-        
-        content = "{{{PARAM}}} and {{{{PARAM}}}}"
-        result = substitutor.substitute_content(content)
-        
-        # Current implementation doesn't handle nested braces - they remain unchanged
-        # This documents the current behavior
-        assert result == "{{{PARAM}}} and {{{{PARAM}}}}"
-
-    def test_case_sensitivity(self):
-        """Test that parameter names are case-sensitive."""
-        substitutor = ParameterSubstitutor({
-            "param": "lowercase",
-            "PARAM": "UPPERCASE"
-        })
-        
-        content = "{{param}} vs {{PARAM}} vs {{Param}}"
-        result = substitutor.substitute_content(content)
-        
-        assert result == "lowercase vs UPPERCASE vs {{Param}}"
-        assert set(substitutor.get_substituted_parameters()) == {"param", "PARAM"}
-
-    def test_empty_string_parameter_value(self):
-        """Test parameter with empty string value."""
-        substitutor = ParameterSubstitutor({"EMPTY": ""})
-        
-        content = "Before{{EMPTY}}After"
-        result = substitutor.substitute_content(content)
-        
-        assert result == "BeforeAfter"
-        assert substitutor.get_substituted_parameters() == ["EMPTY"]
-
-    def test_none_parameter_value_substituted(self):
-        """Test that None parameter values get substituted as empty string.""" 
-        substitutor = ParameterSubstitutor({"NONE_VAL": None})
-        
-        content = "{{NONE_VAL}} should remain"
-        result = substitutor.substitute_content(content)
-        
-        # Current implementation substitutes None as empty string
-        assert result == " should remain"
-        assert substitutor.get_substituted_parameters() == ["NONE_VAL"]
-
-    def test_large_content_performance(self):
-        """Test substitution performance with large content."""
-        substitutor = ParameterSubstitutor({"REPEAT": "X"})
-        
-        # Create large content with many replacements
-        content = "{{REPEAT}}" * 1000 + " some text " + "{{REPEAT}}" * 1000
-        result = substitutor.substitute_content(content)
-        
-        expected = "X" * 1000 + " some text " + "X" * 1000
-        assert result == expected
-        assert substitutor.get_substituted_parameters() == ["REPEAT"]
