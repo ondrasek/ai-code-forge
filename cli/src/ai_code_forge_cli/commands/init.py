@@ -9,6 +9,7 @@ import click
 from .. import __version__
 from ..core.detector import RepositoryDetector
 from ..core.deployer import TemplateDeployer
+from ..core.git import GitCommitManager, get_current_acf_version
 from ..core.state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
 from ..core.static import StaticContentManager, StaticContentDeployer
 from ..core.templates import TemplateManager
@@ -51,6 +52,11 @@ from ..core.templates import TemplateManager
     is_flag=True,
     help="Show detailed progress information"
 )
+@click.option(
+    "--git",
+    is_flag=True,
+    help="Automatically commit changes to git with version-based commit messages"
+)
 @click.pass_obj
 def init_command(
     acf_ctx: Any,
@@ -61,6 +67,7 @@ def init_command(
     github_owner: str,
     project_name: str,
     verbose: bool,
+    git: bool,
 ) -> None:
     """Initialize repository with ACF configuration and Claude Code templates.
     
@@ -216,6 +223,26 @@ def _run_init(
                 results["message"] = f"Would create {len(results['files_created'])} files"
             else:
                 results["message"] = "Repository initialized successfully"
+                
+                # Handle git integration if requested
+                if git and not dry_run:
+                    click.echo(f"🔧 Debug: Git integration requested, git={git}, dry_run={dry_run}")
+                    # Get old version before it's overwritten
+                    acforge_dir = target_path / ".acforge"
+                    old_version = get_current_acf_version(acforge_dir) if acforge_dir.exists() else None
+                    
+                    git_result = _handle_git_integration(
+                        target_path, 
+                        parameters.get("TEMPLATE_VERSION", "unknown"),
+                        old_version
+                    )
+                    if git_result["success"]:
+                        results["message"] += f" (committed: {git_result['commit_message']})"
+                    else:
+                        results["warnings"] = results.get("warnings", [])
+                        results["warnings"].append(f"Git commit failed: {git_result['error']}")
+                        if verbose:
+                            click.echo(f"🔧 Git integration failed: {git_result['error']}")
         else:
             results["message"] = "Initialization completed with errors"
             
@@ -296,6 +323,51 @@ def _initialize_acf_state(
     with state_manager.atomic_update() as state:
         state.installation = initial_state.installation
         state.templates = initial_state.templates
+
+
+def _handle_git_integration(target_path: Path, new_version: str, old_version: Optional[str] = None) -> Dict[str, any]:
+    """Handle git commit for ACF deployment.
+    
+    Args:
+        target_path: Repository path
+        new_version: New ACF configuration version
+        
+    Returns:
+        Dictionary with success status and commit info
+    """
+    result = {"success": False, "error": None, "commit_message": None}
+    
+    try:
+        git_manager = GitCommitManager(target_path)
+        
+        # Check if this is a git repository
+        if not git_manager.is_git_repository():
+            result["error"] = "Not a git repository"
+            return result
+        
+        # Ensure git is configured
+        if not git_manager.ensure_git_configured():
+            result["error"] = "Failed to configure git user settings"
+            return result
+        
+        # Use the old version passed in (already retrieved before deployment)
+        
+        # Create commit
+        if git_manager.create_acf_deployment_commit(old_version, new_version, "initialize"):
+            if old_version is None:
+                commit_msg = f"v{new_version}"
+            else:
+                commit_msg = f"{old_version} → {new_version}"
+            
+            result["success"] = True
+            result["commit_message"] = commit_msg
+        else:
+            result["error"] = "Failed to create git commit"
+            
+    except Exception as e:
+        result["error"] = str(e)
+    
+    return result
 
 
 def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
