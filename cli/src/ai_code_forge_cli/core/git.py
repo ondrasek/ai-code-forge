@@ -116,48 +116,13 @@ class GitCommitManager:
         return self.commit_changes(commit_message)
     
     def ensure_git_configured(self) -> bool:
-        """Ensure git has user name and email configured.
+        """Check if we're in a git repository - do not modify git configuration.
         
         Returns:
-            True if configured or successfully set defaults
+            True if in a git repository, False otherwise
         """
-        try:
-            # Check if user.name is configured
-            result = subprocess.run(
-                ["git", "config", "user.name"],
-                cwd=self.repo_path,
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode != 0 or not result.stdout.strip():
-                # Set default name
-                subprocess.run(
-                    ["git", "config", "user.name", "ACForge CLI"],
-                    cwd=self.repo_path,
-                    check=True
-                )
-            
-            # Check if user.email is configured
-            result = subprocess.run(
-                ["git", "config", "user.email"],
-                cwd=self.repo_path,
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode != 0 or not result.stdout.strip():
-                # Set default email
-                subprocess.run(
-                    ["git", "config", "user.email", "acforge-cli@noreply.local"],
-                    cwd=self.repo_path,
-                    check=True
-                )
-            
-            return True
-            
-        except subprocess.CalledProcessError:
-            return False
+        # Only check if we're in a git repository - never modify configuration
+        return self.is_git_repository()
 
 
 def get_current_acf_version(acforge_dir: Path) -> Optional[str]:

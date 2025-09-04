@@ -65,9 +65,9 @@ class GitCommandWrapper:
             return result
         
         try:
-            # Ensure git is configured
+            # Check if git is configured - don't modify anything
             if not self.git_manager.ensure_git_configured():
-                result["error"] = "Failed to configure git user settings"
+                result["error"] = "Not a git repository or git not available"
                 return result
             
             # Determine commit message
