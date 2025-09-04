@@ -94,6 +94,7 @@ def init_command(
             github_owner=github_owner,
             project_name=project_name,
             verbose=verbose or acf_ctx.verbose,
+            acf_ctx=acf_ctx,
         )
         
         # Display results
@@ -118,6 +119,7 @@ def _run_init(
     github_owner: Optional[str] = None,
     project_name: Optional[str] = None,
     verbose: bool = False,
+    acf_ctx: Any = None,
 ) -> Dict[str, Any]:
     """Execute the init command logic.
     
@@ -129,6 +131,7 @@ def _run_init(
         github_owner: Override GitHub owner detection
         project_name: Override project name detection
         verbose: Show detailed output
+        acf_ctx: CLI context object containing global flags
         
     Returns:
         Dictionary with command results
@@ -219,6 +222,7 @@ def _run_init(
                 results["message"] = "Repository initialized successfully"
                 
                 # Handle git integration if requested
+                click.echo(f"🔧 Debug: acf_ctx.git={acf_ctx.git}, dry_run={dry_run}")
                 if acf_ctx.git and not dry_run:
                     git_wrapper = create_git_wrapper(acf_ctx, verbose)
                     old_version = git_wrapper.get_current_version()
