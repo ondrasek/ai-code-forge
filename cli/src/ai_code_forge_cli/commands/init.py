@@ -222,8 +222,7 @@ def _run_init(
                 results["message"] = "Repository initialized successfully"
                 
                 # Handle git integration if requested
-                click.echo(f"🔧 Debug: acf_ctx.git={acf_ctx.git}, dry_run={dry_run}")
-                if acf_ctx.git and not dry_run:
+                if acf_ctx and acf_ctx.git and not dry_run:
                     git_wrapper = create_git_wrapper(acf_ctx, verbose)
                     old_version = git_wrapper.get_current_version()
                     new_version = parameters.get("TEMPLATE_VERSION", "unknown")
