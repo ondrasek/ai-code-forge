@@ -79,21 +79,22 @@ Create semantic version tag from commit analysis with automatic version determin
 
 7. **Synchronize All Version-Bearing Files** (CRITICAL - Before Tagging):
    ```bash
-   # Update version in pyproject.toml files manually before tagging
-   echo "📦 Version synchronization to $NEXT_VERSION must be done manually..."
+   # Use comprehensive sync script to update ALL version-bearing files
+   echo "📦 Synchronizing all version-bearing files to $NEXT_VERSION..."
    
    # Remove 'v' prefix for version number
    VERSION_NUMBER="${NEXT_VERSION#v}"
    
-   echo "⚠️  MANUAL STEP REQUIRED: Update version to $VERSION_NUMBER in:"
-   echo "  - cli/pyproject.toml"
-   echo "  - dist/mcp-servers/*/pyproject.toml" 
-   echo "  - **/__init__.py files"
-   echo ""
-   echo "💡 Use validate-versions.sh to verify consistency before continuing:"
-   echo "   ./scripts/validate-versions.sh"
-   echo ""
-   read -p "Press Enter after manually updating all version files..."
+   # Run comprehensive version synchronization script
+   if [ -f "scripts/sync-versions.sh" ]; then
+     echo "🔄 Running comprehensive version synchronization..."
+     ./scripts/sync-versions.sh "$VERSION_NUMBER"
+     echo "✅ All version-bearing files synchronized to $VERSION_NUMBER"
+   else
+     echo "❌ ERROR: scripts/sync-versions.sh not found"
+     echo "Cannot synchronize versions automatically"
+     exit 1
+   fi
    ```
 
 8. **Commit Version Updates** (CRITICAL - Before Tagging):
