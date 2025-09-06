@@ -8,58 +8,64 @@ allowed-tools: Bash, Task(git-workflow)
 !`git branch --show-current`
 !`git tag --list | tail -5`
 
-```bash
-CURRENT_BRANCH=$(git branch --show-current)
-if [[ "$CURRENT_BRANCH" != "main" ]]; then
-    echo "ERROR: Must be on main branch (currently: $CURRENT_BRANCH)"
-    exit 1
-fi
+## Execution Sequence
 
-if ! git diff --quiet || ! git diff --staged --quiet; then
-    echo "ERROR: Working directory must be clean"
-    exit 1
-fi
+1. **Validate Branch**
+   - Execute: `git branch --show-current`
+   - Requirement: Output must be "main"
+   - If not "main": Exit with error
 
-VERSION_TYPE="${ARGUMENTS:-auto}"
+2. **Validate Working Directory**
+   - Execute: `git diff --quiet`
+   - Execute: `git diff --staged --quiet`
+   - Requirement: Both must succeed (exit code 0)
+   - If either fails: Exit with error
 
-if [[ "$VERSION_TYPE" == "auto" ]]; then
-    LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-    
-    if git log "$LAST_TAG"..HEAD --oneline | grep -E "(break:|BREAKING)"; then
-        VERSION_TYPE="major"
-    elif git log "$LAST_TAG"..HEAD --oneline | grep "feat:"; then
-        VERSION_TYPE="minor"
-    else
-        VERSION_TYPE="patch"
-    fi
-fi
+3. **Get Version Type**
+   - Parse ARGUMENTS variable
+   - If empty or "auto": Set VERSION_TYPE = "auto"
+   - If "major|minor|patch": Set VERSION_TYPE = argument value
+   - If invalid: Exit with error
 
-LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-IFS='.' read -r MAJOR MINOR PATCH <<< "${LAST_TAG#v}"
+4. **Get Last Tag**
+   - Execute: `git describe --tags --abbrev=0`
+   - If fails: Set LAST_TAG = "v0.0.0"
+   - If succeeds: Set LAST_TAG = output
 
-case "$VERSION_TYPE" in
-    "major") NEXT_VERSION="v$((MAJOR + 1)).0.0" ;;
-    "minor") NEXT_VERSION="v$MAJOR.$((MINOR + 1)).0" ;;
-    "patch") NEXT_VERSION="v$MAJOR.$MINOR.$((PATCH + 1))" ;;
-    *) echo "ERROR: Invalid version type: $VERSION_TYPE"; exit 1 ;;
-esac
+5. **Determine Version Type (if auto)**
+   - If VERSION_TYPE != "auto": Skip this step
+   - Execute: `git log LAST_TAG..HEAD --oneline`
+   - If output contains "break:" or "BREAKING": Set VERSION_TYPE = "major"
+   - Else if output contains "feat:": Set VERSION_TYPE = "minor"  
+   - Else: Set VERSION_TYPE = "patch"
 
-if git tag --list | grep -q "^$NEXT_VERSION$"; then
-    echo "ERROR: Tag $NEXT_VERSION already exists"
-    exit 1
-fi
+6. **Calculate Next Version**
+   - Parse LAST_TAG to extract MAJOR.MINOR.PATCH (remove 'v' prefix)
+   - If VERSION_TYPE = "major": NEXT_VERSION = "v{MAJOR+1}.0.0"
+   - If VERSION_TYPE = "minor": NEXT_VERSION = "v{MAJOR}.{MINOR+1}.0"
+   - If VERSION_TYPE = "patch": NEXT_VERSION = "v{MAJOR}.{MINOR}.{PATCH+1}"
 
-TAG_MESSAGE="Release $NEXT_VERSION
+7. **Validate Tag Uniqueness**
+   - Execute: `git tag --list`
+   - If NEXT_VERSION exists in output: Exit with error
 
-Previous Version: $LAST_TAG
+8. **Generate Tag Message**
+   - Execute: `git log LAST_TAG..HEAD --oneline --pretty="- %s"`
+   - Build message:
+     ```
+     Release NEXT_VERSION
+     
+     Previous Version: LAST_TAG
+     
+     Changes in this release:
+     {commit log output}
+     
+     Full changelog: https://github.com/ondrasek/ai-code-forge/compare/LAST_TAG...NEXT_VERSION
+     ```
 
-Changes in this release:
-$(git log "$LAST_TAG"..HEAD --oneline --pretty="- %s")
+9. **Create Tag**
+   - Execute: `git tag -a NEXT_VERSION -m "TAG_MESSAGE"`
 
-Full changelog: https://github.com/ondrasek/ai-code-forge/compare/$LAST_TAG...$NEXT_VERSION"
-
-git tag -a "$NEXT_VERSION" -m "$TAG_MESSAGE"
-git push origin "$NEXT_VERSION"
-
-echo "Tag created and pushed: $NEXT_VERSION"
-```
+10. **Push Tag**
+    - Execute: `git push origin NEXT_VERSION`
+    - Output: "Tag created and pushed: NEXT_VERSION"
