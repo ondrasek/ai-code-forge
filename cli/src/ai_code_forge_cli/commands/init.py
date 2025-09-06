@@ -38,16 +38,6 @@ from ..core.templates import TemplateManager
     help="Prompt for template parameters interactively"
 )
 @click.option(
-    "--github-owner",
-    type=str,
-    help="Override GitHub owner detection"
-)
-@click.option(
-    "--project-name",
-    type=str,
-    help="Override project name detection"
-)
-@click.option(
     "--verbose", "-v",
     is_flag=True,
     help="Show detailed progress information"
@@ -59,8 +49,6 @@ def init_command(
     force: bool,
     dry_run: bool,
     interactive: bool,
-    github_owner: str,
-    project_name: str,
     verbose: bool,
 ) -> None:
     """Initialize repository with ACF configuration and Claude Code templates.
@@ -91,8 +79,6 @@ def init_command(
             force=force,
             dry_run=dry_run,
             interactive=interactive,
-            github_owner=github_owner,
-            project_name=project_name,
             verbose=verbose or acf_ctx.verbose,
             acf_ctx=acf_ctx,
         )
@@ -116,8 +102,6 @@ def _run_init(
     force: bool = False,
     dry_run: bool = False,
     interactive: bool = False,
-    github_owner: Optional[str] = None,
-    project_name: Optional[str] = None,
     verbose: bool = False,
     acf_ctx: Any = None,
 ) -> Dict[str, Any]:
@@ -128,8 +112,6 @@ def _run_init(
         force: Overwrite existing configuration
         dry_run: Show what would be done without changes
         interactive: Prompt for parameters
-        github_owner: Override GitHub owner detection
-        project_name: Override project name detection
         verbose: Show detailed output
         acf_ctx: CLI context object containing global flags
         
@@ -168,11 +150,7 @@ def _run_init(
         # Detect repository information
         repo_info = detector.detect_github_info()
         
-        # Override with explicit parameters
-        if github_owner:
-            repo_info["github_owner"] = github_owner
-        if project_name:
-            repo_info["project_name"] = project_name
+        # Repository info detection complete - no manual overrides
         
         # Prepare template parameters
         parameters = {
