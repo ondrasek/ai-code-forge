@@ -9,8 +9,9 @@ import click
 from .. import __version__
 from ..core.detector import RepositoryDetector
 from ..core.deployer import TemplateDeployer
-from ..core.git_wrapper import create_git_wrapper
+from ..core.git_wrapper import create_git_wrapper  
 from ..core.state import StateManager
+from ..core.static import StaticContentManager, StaticContentDeployer
 from ..core.templates import TemplateManager
 
 
@@ -125,6 +126,8 @@ def _run_update(
         "files_preserved": [],
         "warnings": [],
         "errors": [],
+        "git_used": False,
+        "pre_commit_made": False,
     }
     
     try:
@@ -168,6 +171,16 @@ def _run_update(
             )
             return results
         
+        # Handle pre-update git commit if git integration is enabled
+        if acf_ctx and acf_ctx.git and not dry_run:
+            results["git_used"] = True
+            git_wrapper = create_git_wrapper(acf_ctx, verbose)
+            pre_commit_result = git_wrapper.commit_existing_state_before_init()  # Reuse same method
+            if pre_commit_result["success"]:
+                results["pre_commit_made"] = True
+            elif verbose:
+                click.echo(f"⚠️  Pre-update commit skipped: {pre_commit_result['error']}")
+        
         # Preserve customizations before updating
         backups = {}
         if preserve_customizations and analysis["preserved_customizations"]:
@@ -177,7 +190,7 @@ def _run_update(
                 )
             results["files_preserved"] = analysis["preserved_customizations"]
         
-        # Perform template updates
+        # Perform template and static content updates
         update_results = _perform_update(
             target_path, state_manager, template_manager, analysis, dry_run, verbose
         )
@@ -203,7 +216,8 @@ def _run_update(
             # Handle git integration if requested
             if acf_ctx and acf_ctx.git and not dry_run:
                 git_wrapper = create_git_wrapper(acf_ctx, verbose)
-                old_version = current_state.installation.template_version if current_state else None
+                current_state = state_manager.load_state()  # Fix: Load state properly
+                old_version = current_state.installation.template_version if current_state and current_state.installation else None
                 new_version = template_manager.calculate_bundle_checksum()[:8]
                 
                 git_result = git_wrapper.commit_command_changes(
@@ -392,7 +406,7 @@ def _perform_update(
         }
     
     # Use TemplateDeployer to update templates
-    deployer = TemplateDeployer(target_path, template_manager)
+    template_deployer = TemplateDeployer(target_path, template_manager)
     
     # Filter templates to update
     templates_to_update = (
@@ -404,13 +418,25 @@ def _perform_update(
         click.echo(f"🔄 Updating {len(templates_to_update)} templates")
     
     # Deploy updated templates
-    deploy_results = deployer.deploy_templates(parameters, dry_run)
+    template_results = template_deployer.deploy_templates(parameters, dry_run)
     
-    results["files_updated"] = [
-        f for f in deploy_results["files_deployed"]
+    # Deploy static content (always update all static content)
+    static_manager = StaticContentManager()
+    static_deployer = StaticContentDeployer(target_path, static_manager)
+    static_results = static_deployer.deploy_static_content(dry_run)
+    
+    if verbose:
+        click.echo(f"🔄 Updating static content")
+    
+    # Combine results
+    all_template_files = [
+        f for f in template_results["files_deployed"]
         if any(template in f for template in templates_to_update)
     ]
-    results["errors"] = deploy_results["errors"]
+    all_static_files = static_results["files_deployed"]
+    
+    results["files_updated"] = all_template_files + all_static_files
+    results["errors"] = template_results["errors"] + static_results["errors"]
     
     return results
 
@@ -545,6 +571,18 @@ def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
                 click.echo("  - Run 'acforge status' to verify updates")
                 click.echo("  - Review preserved customizations if needed")
                 click.echo("  - Test your Claude Code configuration")
+                
+                # Show git rollback instructions if git was used
+                if results.get("git_used", False):
+                    click.echo()
+                    click.echo("🔄 Git rollback options:")
+                    if results.get("pre_commit_made", False):
+                        click.echo("  - Undo update: git reset --hard HEAD~1")
+                        click.echo("  - Keep changes but unstage: git reset --soft HEAD~1")
+                    else:
+                        click.echo("  - Undo update: git reset --hard HEAD~1")
+                    click.echo("  - View changes: git log --oneline -3")
+                
                 click.echo()
                 click.echo("🚀 Templates updated successfully!")
     else:
