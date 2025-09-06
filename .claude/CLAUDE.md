@@ -39,20 +39,20 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
   <commands>.claude/commands/ and subdirectories for namespaces, e.g. /issue:create is in .claude/commands/issue/create.md (ONLY location for slash commands)</commands>
   <prompts>templates/prompts/ (template prompts for distribution)</prompts>
   <guidelines>templates/guidelines/ (template guidelines for distribution)</guidelines>
-  <github_issues>GitHub Issues in testuser/{{GITHUB_REPO}} (specifications managed via GitHub)</github_issues>
+  <github_issues>GitHub Issues in ondrasek/ai-code-forge (specifications managed via GitHub)</github_issues>
   <mcp_servers>mcp-servers/[mcp-name]/ (MCP server source code and integration tests)</mcp_servers>
   <analysis>analysis/[github-issue] where github-issue is a subfolder corresponding to an existing github issue</analysis>
   <scripts>scripts/ and subfolders under scripts/</scripts>
-  <cli>{{CLI_DIRECTORY}}/ with source code for the test-repo cli tool</cli>
+  <cli>{{CLI_DIRECTORY}}/ with source code for the ai-code-forge cli tool</cli>
 </locations>
 <enforcement>NEVER search elsewhere for these file types</enforcement>
 </file_structure>
 
 <specification_management priority="CRITICAL">
 <github_issues_protocol>
-  <definition>Specifications are detailed planning documents that define requirements, implementation approaches, and project deliverables managed through GitHub Issues in testuser/{{GITHUB_REPO}} repository</definition>
+  <definition>Specifications are detailed planning documents that define requirements, implementation approaches, and project deliverables managed through GitHub Issues in ondrasek/ai-code-forge repository</definition>
 
-  <location>GitHub Issues in testuser/{{GITHUB_REPO}} (ABSOLUTE - never use local files)</location>
+  <location>GitHub Issues in ondrasek/ai-code-forge (ABSOLUTE - never use local files)</location>
 
   <agent_delegation>
     <primary_agent>github-issues-workflow (PROACTIVELY use when user mentions tasks, specs, requirements, or asks 'create issue', 'track progress', 'remember to do')</primary_agent>
@@ -92,10 +92,10 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
       - Support version management workflow through GitHub milestones and issue types
     </integration_points>
     <github_commands>
-      - List all issues: gh issue list --repo testuser/{{GITHUB_REPO}}
-      - Create new issue: gh issue create --repo testuser/{{GITHUB_REPO}}
-      - Update issue: gh issue edit --repo testuser/{{GITHUB_REPO}}
-      - Close issue: gh issue close --repo testuser/{{GITHUB_REPO}}
+      - List all issues: gh issue list
+      - Create new issue: gh issue create
+      - Update issue: gh issue edit
+      - Close issue: gh issue close
     </github_commands>
   </operational_rules>
 
