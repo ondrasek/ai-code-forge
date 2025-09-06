@@ -77,52 +77,19 @@ Create semantic version tag from commit analysis with automatic version determin
    📋 Full changelog: https://github.com/ondrasek/ai-code-forge/compare/$LAST_TAG...$NEXT_VERSION"
    ```
 
-7. **Synchronize All Version-Bearing Files** (CRITICAL - Before Tagging):
+7. **Version Synchronization Note**:
    ```bash
-   # Use comprehensive sync script to update ALL version-bearing files
-   echo "📦 Synchronizing all version-bearing files to $NEXT_VERSION..."
-   
-   # Remove 'v' prefix for version number
-   VERSION_NUMBER="${NEXT_VERSION#v}"
-   
-   # Run comprehensive version synchronization script
-   if [ -f "scripts/sync-versions.sh" ]; then
-     echo "🔄 Running comprehensive version synchronization..."
-     ./scripts/sync-versions.sh "$VERSION_NUMBER"
-     echo "✅ All version-bearing files synchronized to $VERSION_NUMBER"
-   else
-     echo "❌ ERROR: scripts/sync-versions.sh not found"
-     echo "Cannot synchronize versions automatically"
-     exit 1
-   fi
+   echo "📦 Version synchronization will happen automatically..."
+   echo "🔄 When you push the tag, GitHub Actions will:"
+   echo "  1. Sync all version files to match tag version"
+   echo "  2. Commit any changes automatically" 
+   echo "  3. Validate version consistency"
+   echo "  4. Continue with release process"
+   echo ""
+   echo "✅ No manual version updates needed!"
    ```
 
-8. **Commit Version Updates** (CRITICAL - Before Tagging):
-   ```bash
-   # Stage all version-bearing files that may have been updated
-   echo "📝 Staging version-bearing files for commit..."
-   git add -A '*.toml' '**/__init__.py'
-   
-   # Check if there are changes to commit
-   if git diff --cached --quiet; then
-     echo "ℹ️ No version changes to commit"
-   else
-     echo "📝 Committing comprehensive version synchronization..."
-     git commit -m "chore: synchronize all version-bearing files to $NEXT_VERSION
-
-🔖 Preparing for release $NEXT_VERSION
-- Synchronized all pyproject.toml files to $VERSION_NUMBER
-- Synchronized all __init__.py files to $VERSION_NUMBER  
-- Applied comprehensive version consistency across all components
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-     echo "✅ Comprehensive version synchronization committed"
-   fi
-   ```
-
-9. **Create and Push Tag**:
+8. **Create and Push Tag**:
    ```bash
    echo "🏷️ Creating tag: $NEXT_VERSION"
    git tag -a "$NEXT_VERSION" -m "$TAG_MESSAGE"

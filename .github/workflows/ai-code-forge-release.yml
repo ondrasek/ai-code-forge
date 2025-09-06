@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read   # Minimal permissions for security
+      contents: write  # Required for version sync commits
       actions: read
     env:
       PACKAGE_NAME: "acforge"  # Centralized package name configuration
@@ -45,14 +45,33 @@ jobs:
               exit 1
             fi
 
+            # Synchronize all version-bearing files to match tag version
+            echo "🔄 Synchronizing all version-bearing files to tag version: $TAG_VERSION"
+            chmod +x scripts/sync-versions.sh
+            ./scripts/sync-versions.sh "$TAG_VERSION"
+            
+            # Commit any version synchronization changes
+            if ! git diff --quiet; then
+              echo "📝 Committing version synchronization changes..."
+              git config --local user.name "github-actions[bot]"
+              git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add -A
+              git commit -m "chore: sync versions to $TAG_VERSION for release
+              
+              🤖 Automated version synchronization via GitHub Actions"
+              git push origin HEAD
+            else
+              echo "ℹ️ All versions already synchronized with tag"
+            fi
+
             # Comprehensive version consistency validation across all pyproject.toml files
             echo "🔍 Running comprehensive version consistency validation..."
             chmod +x scripts/validate-versions.sh
             if ./scripts/validate-versions.sh "$TAG_VERSION"; then
               echo "✅ Comprehensive version validation passed: $TAG_VERSION"
             else
-              echo "❌ ERROR: Version consistency validation failed"
-              echo "All pyproject.toml files must have synchronized versions matching the tag"
+              echo "❌ ERROR: Version consistency validation failed after sync"
+              echo "This should not happen - sync may have failed"
               exit 1
             fi
           fi
