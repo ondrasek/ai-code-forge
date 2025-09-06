@@ -1,0 +1,1 @@
+"""Test package for OpenAI Structured MCP server."""

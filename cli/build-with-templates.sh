@@ -23,11 +23,8 @@ fi
 if [ -d "../dist" ]; then
     cp -r ../dist src/ai_code_forge_cli/dist
     echo "✅ Copied dist from ../dist"
-elif [ -d "../../dist" ]; then
-    cp -r ../../dist src/ai_code_forge_cli/dist
-    echo "✅ Copied dist from ../../dist"
 else
-    echo "❌ ERROR: dist directory not found at ../dist or ../../dist"
+    echo "❌ ERROR: dist directory not found at ../dist"
     echo "Current directory: $(pwd)"
     echo "Available directories:"
     ls -la ../
