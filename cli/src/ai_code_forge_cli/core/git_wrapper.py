@@ -154,6 +154,69 @@ class GitCommandWrapper:
         acforge_dir = self.repo_path / ".acforge"
         return get_current_acf_version(acforge_dir) if acforge_dir.exists() else None
 
+    def commit_existing_state_before_init(self) -> Dict[str, Any]:
+        """Commit existing ACF/Claude configuration before init overwrites it.
+        
+        This preserves any existing .acforge/ and .claude/ state before initialization
+        destroys it, ensuring no work is lost and creating a clean diff.
+        
+        Returns:
+            Dictionary with success status and commit info
+        """
+        result = {"success": False, "error": None, "commit_message": None}
+        
+        try:
+            # Check if we have any ACF/Claude files to commit
+            acforge_dir = self.repo_path / ".acforge"
+            claude_dir = self.repo_path / ".claude" 
+            
+            has_acf_files = acforge_dir.exists() and any(acforge_dir.iterdir())
+            has_claude_files = claude_dir.exists() and any(claude_dir.iterdir())
+            
+            if not has_acf_files and not has_claude_files:
+                result["error"] = "No existing ACF/Claude configuration to commit"
+                return result
+                
+            # Add ACF/Claude files to staging (includes both tracked and untracked files)
+            paths_to_add = []
+            if has_acf_files:
+                paths_to_add.append(".acforge/")
+            if has_claude_files:
+                paths_to_add.append(".claude/")
+                
+            for path in paths_to_add:
+                add_result = self.git_manager.stage_files([path])
+                if not add_result["success"]:
+                    result["error"] = f"Failed to stage {path}: {add_result['error']}"
+                    return result
+                    
+            # Check if there are any staged changes after adding files
+            status_result = self.git_manager.get_repo_status()
+            if not status_result["success"]:
+                result["error"] = f"Failed to get repository status: {status_result['error']}"
+                return result
+                
+            has_staged_changes = status_result.get("staged_files", [])
+            if not has_staged_changes:
+                result["error"] = "No changes to commit after staging ACF/Claude files"  
+                return result
+            
+            # Create commit message
+            commit_msg = "chore: preserve existing ACF/Claude configuration before init\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+            
+            # Commit the changes
+            commit_result = self.git_manager.commit_changes(commit_msg)
+            if commit_result["success"]:
+                result["success"] = True
+                result["commit_message"] = commit_msg
+            else:
+                result["error"] = f"Failed to commit: {commit_result['error']}"
+                
+        except Exception as e:
+            result["error"] = f"Pre-init commit failed: {e}"
+            
+        return result
+
 
 def create_git_wrapper(ctx_or_path, verbose: bool = False) -> GitCommandWrapper:
     """Create git wrapper from CLI context or path.

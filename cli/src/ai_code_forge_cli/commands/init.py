@@ -171,6 +171,13 @@ def _run_init(
         if verbose:
             click.echo(f"🔧 Using parameters: {list(parameters.keys())}")
         
+        # Handle pre-init git commit if git integration is enabled
+        if acf_ctx and acf_ctx.git and not dry_run:
+            git_wrapper = create_git_wrapper(acf_ctx, verbose)
+            pre_commit_result = git_wrapper.commit_existing_state_before_init()
+            if not pre_commit_result["success"] and verbose:
+                click.echo(f"⚠️  Pre-init commit skipped: {pre_commit_result['error']}")
+        
         # Deploy templates
         template_deployer = TemplateDeployer(target_path, template_manager)
         template_results = template_deployer.deploy_templates(parameters, dry_run)
