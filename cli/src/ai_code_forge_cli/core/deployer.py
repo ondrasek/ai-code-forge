@@ -6,12 +6,19 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import click
-from jinja2 import StrictUndefined, DebugUndefined
+from jinja2 import StrictUndefined, DebugUndefined, Undefined
 from jinja2.sandbox import SandboxedEnvironment
 
 from .. import __version__
 from .state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
 from .templates import TemplateManager
+
+
+class PreservingUndefined(Undefined):
+    """Custom undefined class that preserves original template syntax without spaces."""
+    
+    def __str__(self):
+        return f"{{{{{self._undefined_name}}}}}"
 
 
 class ParameterSubstitutor:
@@ -29,7 +36,7 @@ class ParameterSubstitutor:
         # Create sandboxed Jinja2 environment for secure template processing
         self.jinja_env = SandboxedEnvironment(
             # Compatibility: Keep undefined variables as-is for backward compatibility
-            undefined=DebugUndefined,  # This will render undefined vars as {{VARNAME}} 
+            undefined=PreservingUndefined,  # This will render undefined vars as {{VARNAME}}
             # Security: Disable auto-escaping for file content (not HTML)
             autoescape=False,
             # Compatibility: Keep original whitespace for exact template reproduction
@@ -91,15 +98,13 @@ class ParameterSubstitutor:
         Returns:
             True if value looks suspicious
         """
-        # Check for common injection patterns
-        suspicious_patterns = [
+        # Check for dangerous injection patterns (but allow normal template nesting)
+        dangerous_patterns = [
             '__import__',
             'exec(',
             'eval(',
             'os.system',
             'subprocess',
-            '{{',  # Nested template injection
-            '}}',
             '{%',  # Jinja2 blocks
             '%}',
             'getattr',
@@ -108,7 +113,17 @@ class ParameterSubstitutor:
         ]
         
         value_lower = value.lower()
-        return any(pattern in value_lower for pattern in suspicious_patterns)
+        
+        # Check for dangerous patterns
+        for pattern in dangerous_patterns:
+            if pattern in value_lower:
+                return True
+                
+        # Check for excessive template nesting (more than 2 levels)
+        if value.count('{{') > 2 or value.count('}}') > 2:
+            return True
+            
+        return False
     
     def _safe_regex_substitute(self, content: str) -> str:
         """Safely substitute parameters using regex with validated values.

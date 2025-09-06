@@ -141,6 +141,7 @@ class GitCommandWrapper:
         """
         return [
             ".acforge/",
+            ".claude/",
             ".devcontainer/", 
             "CLAUDE.md"
         ]

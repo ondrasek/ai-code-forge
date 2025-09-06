@@ -176,12 +176,19 @@ def _run_init(
         # Handle pre-init git commit if git integration is enabled
         if acf_ctx and acf_ctx.git and not dry_run:
             results["git_used"] = True
-            git_wrapper = create_git_wrapper(acf_ctx, verbose)
-            pre_commit_result = git_wrapper.commit_existing_state_before_init()
-            if pre_commit_result["success"]:
-                results["pre_commit_made"] = True
-            elif verbose:
-                click.echo(f"⚠️  Pre-init commit skipped: {pre_commit_result['error']}")
+            # Set repo_root to target_path for git operations
+            original_repo_root = acf_ctx.repo_root
+            acf_ctx.repo_root = target_path
+            try:
+                git_wrapper = create_git_wrapper(acf_ctx, verbose)
+                pre_commit_result = git_wrapper.commit_existing_state_before_init()
+                if pre_commit_result["success"]:
+                    results["pre_commit_made"] = True
+                elif verbose:
+                    click.echo(f"⚠️  Pre-init commit skipped: {pre_commit_result['error']}")
+            finally:
+                # Restore original repo_root
+                acf_ctx.repo_root = original_repo_root
         
         # Deploy templates
         template_deployer = TemplateDeployer(target_path, template_manager)
@@ -213,24 +220,31 @@ def _run_init(
                 
                 # Handle git integration if requested
                 if acf_ctx and acf_ctx.git and not dry_run:
-                    git_wrapper = create_git_wrapper(acf_ctx, verbose)
-                    old_version = git_wrapper.get_current_version()
-                    new_version = parameters.get("TEMPLATE_VERSION", "unknown")
-                    
-                    git_result = git_wrapper.commit_command_changes(
-                        command_name="init",
-                        git_enabled=True,
-                        old_version=old_version,
-                        new_version=new_version
-                    )
-                    
-                    if git_result["success"]:
-                        results["message"] += f" (committed: {git_result['commit_message']})"
-                    else:
-                        results["warnings"] = results.get("warnings", [])
-                        results["warnings"].append(f"Git commit failed: {git_result['error']}")
-                        if verbose:
-                            click.echo(f"🔧 Git integration failed: {git_result['error']}")
+                    # Set repo_root to target_path for git operations
+                    original_repo_root = acf_ctx.repo_root
+                    acf_ctx.repo_root = target_path
+                    try:
+                        git_wrapper = create_git_wrapper(acf_ctx, verbose)
+                        old_version = git_wrapper.get_current_version()
+                        new_version = parameters.get("TEMPLATE_VERSION", "unknown")
+                        
+                        git_result = git_wrapper.commit_command_changes(
+                            command_name="init",
+                            git_enabled=True,
+                            old_version=old_version,
+                            new_version=new_version
+                        )
+                        
+                        if git_result["success"]:
+                            results["message"] += f" (committed: {git_result['commit_message']})"
+                        else:
+                            results["warnings"] = results.get("warnings", [])
+                            results["warnings"].append(f"Git commit failed: {git_result['error']}")
+                            if verbose:
+                                click.echo(f"🔧 Git integration failed: {git_result['error']}")
+                    finally:
+                        # Restore original repo_root
+                        acf_ctx.repo_root = original_repo_root
         else:
             results["message"] = "Initialization completed with errors"
             
