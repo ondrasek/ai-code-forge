@@ -125,6 +125,8 @@ def _run_init(
         "parameters_used": {},
         "warnings": [],
         "errors": [],
+        "git_used": False,
+        "pre_commit_made": False,
     }
     
     try:
@@ -173,9 +175,12 @@ def _run_init(
         
         # Handle pre-init git commit if git integration is enabled
         if acf_ctx and acf_ctx.git and not dry_run:
+            results["git_used"] = True
             git_wrapper = create_git_wrapper(acf_ctx, verbose)
             pre_commit_result = git_wrapper.commit_existing_state_before_init()
-            if not pre_commit_result["success"] and verbose:
+            if pre_commit_result["success"]:
+                results["pre_commit_made"] = True
+            elif verbose:
                 click.echo(f"⚠️  Pre-init commit skipped: {pre_commit_result['error']}")
         
         # Deploy templates
@@ -376,6 +381,18 @@ def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
             click.echo("  - Open repository in Claude Code to test setup")
             click.echo("  - Customize templates by creating .local files")
             click.echo("  - Use 'acforge update' to sync with latest templates")
+            
+            # Show git rollback instructions if git was used
+            if results.get("git_used", False):
+                click.echo()
+                click.echo("🔄 Git rollback options:")
+                if results.get("pre_commit_made", False):
+                    click.echo("  - Undo initialization: git reset --hard HEAD~1")
+                    click.echo("  - Keep changes but unstage: git reset --soft HEAD~1")
+                else:
+                    click.echo("  - Undo initialization: git reset --hard HEAD~1")
+                click.echo("  - View changes: git log --oneline -3")
+            
             click.echo()
             click.echo("🚀 Repository ready for AI-enhanced development!")
     else:
