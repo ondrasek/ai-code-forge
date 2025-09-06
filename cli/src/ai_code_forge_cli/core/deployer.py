@@ -189,6 +189,15 @@ class TemplateDeployer:
                 if not dry_run:
                     devcontainer_dir.mkdir(exist_ok=True)
                 results["directories_created"].append(".devcontainer/")
+                
+            # Check if we have Claude Code templates and create .claude directory
+            has_claude_templates = any(f.startswith("_claude/") for f in template_files)
+            if has_claude_templates:
+                claude_dir = self.target_path / ".claude"
+                if not dry_run:
+                    claude_dir.mkdir(exist_ok=True)
+                results["directories_created"].append(".claude/")
+                
             substitutor = ParameterSubstitutor(parameters)
             
             for template_path in template_files:
@@ -234,10 +243,10 @@ class TemplateDeployer:
         """Convert template path to target file path.
         
         Args:
-            template_path: Template file path (e.g., "agents/foundation/context.md" or "devcontainer/devcontainer.json.template")
+            template_path: Template file path (e.g., "_claude/agents/foundation/context.md" or "devcontainer/devcontainer.json.template")
             
         Returns:
-            Target file path in appropriate directory (.claude/ or .devcontainer/)
+            Target file path in appropriate directory (.claude/, .devcontainer/, or .acforge/)
         """
         # Remove .template suffix if present
         clean_path = template_path.replace(".template", "")
@@ -248,6 +257,13 @@ class TemplateDeployer:
             # Extract path from devcontainer/path (preserves subdirectories like postCreate-scripts/)
             relative_path = clean_path.split("/", 1)[1]  # Remove "devcontainer/" prefix
             return devcontainer_dir / relative_path
+        
+        # Handle Claude Code templates specially - go to .claude/ directory
+        if template_path.startswith("_claude/"):
+            claude_dir = self.target_path / ".claude"
+            # Extract path from _claude/path (preserves subdirectories like agents/foundation/)
+            relative_path = clean_path.split("/", 1)[1]  # Remove "_claude/" prefix
+            return claude_dir / relative_path
         
         # Handle CLAUDE.md specially - goes to repository root
         if clean_path == "CLAUDE.md":
