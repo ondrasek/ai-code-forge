@@ -9,7 +9,9 @@ import click
 from .. import __version__
 from ..core.detector import RepositoryDetector
 from ..core.deployer import TemplateDeployer
+from ..core.git_wrapper import create_git_wrapper
 from ..core.state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
+from ..core.static import StaticContentManager, StaticContentDeployer
 from ..core.templates import TemplateManager
 
 
@@ -92,6 +94,7 @@ def init_command(
             github_owner=github_owner,
             project_name=project_name,
             verbose=verbose or acf_ctx.verbose,
+            acf_ctx=acf_ctx,
         )
         
         # Display results
@@ -116,6 +119,7 @@ def _run_init(
     github_owner: Optional[str] = None,
     project_name: Optional[str] = None,
     verbose: bool = False,
+    acf_ctx: Any = None,
 ) -> Dict[str, Any]:
     """Execute the init command logic.
     
@@ -127,6 +131,7 @@ def _run_init(
         github_owner: Override GitHub owner detection
         project_name: Override project name detection
         verbose: Show detailed output
+        acf_ctx: CLI context object containing global flags
         
     Returns:
         Dictionary with command results
@@ -149,6 +154,7 @@ def _run_init(
         # Initialize components
         detector = RepositoryDetector(target_path)
         template_manager = TemplateManager()
+        static_manager = StaticContentManager()
         state_manager = StateManager(target_path)
         
         # Check existing configuration
@@ -188,11 +194,20 @@ def _run_init(
             click.echo(f"🔧 Using parameters: {list(parameters.keys())}")
         
         # Deploy templates
-        deployer = TemplateDeployer(target_path, template_manager)
-        deploy_results = deployer.deploy_templates(parameters, dry_run)
+        template_deployer = TemplateDeployer(target_path, template_manager)
+        template_results = template_deployer.deploy_templates(parameters, dry_run)
         
-        results["files_created"] = deploy_results["files_deployed"] + deploy_results["directories_created"]
-        results["errors"].extend(deploy_results["errors"])
+        # Deploy static content  
+        static_deployer = StaticContentDeployer(target_path, static_manager)
+        static_results = static_deployer.deploy_static_content(dry_run)
+        
+        # Combine results
+        results["files_created"] = (
+            template_results["files_deployed"] + template_results["directories_created"] +
+            static_results["files_deployed"] + static_results["directories_created"]
+        )
+        results["errors"].extend(template_results["errors"])
+        results["errors"].extend(static_results["errors"])
         
         # Initialize ACF state (if not dry run)
         if not dry_run and not results["errors"]:
@@ -205,6 +220,27 @@ def _run_init(
                 results["message"] = f"Would create {len(results['files_created'])} files"
             else:
                 results["message"] = "Repository initialized successfully"
+                
+                # Handle git integration if requested
+                if acf_ctx and acf_ctx.git and not dry_run:
+                    git_wrapper = create_git_wrapper(acf_ctx, verbose)
+                    old_version = git_wrapper.get_current_version()
+                    new_version = parameters.get("TEMPLATE_VERSION", "unknown")
+                    
+                    git_result = git_wrapper.commit_command_changes(
+                        command_name="init",
+                        git_enabled=True,
+                        old_version=old_version,
+                        new_version=new_version
+                    )
+                    
+                    if git_result["success"]:
+                        results["message"] += f" (committed: {git_result['commit_message']})"
+                    else:
+                        results["warnings"] = results.get("warnings", [])
+                        results["warnings"].append(f"Git commit failed: {git_result['error']}")
+                        if verbose:
+                            click.echo(f"🔧 Git integration failed: {git_result['error']}")
         else:
             results["message"] = "Initialization completed with errors"
             
@@ -269,7 +305,7 @@ def _initialize_acf_state(
             template_files[template_path] = template_info
     
     # Create initial state
-    initial_state = ACFState(
+    initial_state = ACForgeState(
         installation=InstallationState(
             template_version=parameters.get("TEMPLATE_VERSION", "unknown"),
             installed_at=datetime.now(),
@@ -285,6 +321,7 @@ def _initialize_acf_state(
     with state_manager.atomic_update() as state:
         state.installation = initial_state.installation
         state.templates = initial_state.templates
+
 
 
 def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:

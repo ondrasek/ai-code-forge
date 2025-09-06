@@ -1,5 +1,6 @@
 """Test configuration and fixtures."""
 
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -36,3 +37,29 @@ def existing_acf_config(temp_repo):
     acf_dir.mkdir()
     (acf_dir / "state.json").write_text("{}")
     return temp_repo
+
+
+@pytest.fixture
+def real_git_repo(temp_repo):
+    """Create a real git repository with proper git initialization."""
+    # Initialize real git repository
+    subprocess.run(["git", "init"], cwd=temp_repo, check=True, capture_output=True)
+    
+    # Configure git user for testing
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=temp_repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=temp_repo, check=True)
+    
+    return temp_repo
+
+
+@pytest.fixture
+def git_repo_with_commits(real_git_repo):
+    """Create a git repository with some initial commits."""
+    # Create initial file and commit
+    test_file = real_git_repo / "README.md"
+    test_file.write_text("# Test Repository")
+    
+    subprocess.run(["git", "add", "README.md"], cwd=real_git_repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=real_git_repo, check=True)
+    
+    return real_git_repo

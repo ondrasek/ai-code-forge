@@ -13,15 +13,23 @@ if [ -d "src/ai_code_forge_cli/templates" ]; then
 fi
 cp -r ../templates src/ai_code_forge_cli/templates
 
+# Copy dist directory for build
+echo "📦 Copying dist directory for build..."
+if [ -d "src/ai_code_forge_cli/dist" ]; then
+    rm -rf src/ai_code_forge_cli/dist
+fi
+cp -r ../dist src/ai_code_forge_cli/dist
+
 # Build the package
 echo "📦 Building package..."
 uv build
 
-# Clean up copied templates (maintain single source of truth)
-echo "🧹 Cleaning up temporary template copy..."
+# Clean up copied content (maintain single source of truth)
+echo "🧹 Cleaning up temporary copies..."
 rm -rf src/ai_code_forge_cli/templates
+rm -rf src/ai_code_forge_cli/dist
 
 echo "✅ Build complete! Package available in dist/"
 echo "🧪 Test with: uvx --from dist/ai_code_forge-3.0.0-py3-none-any.whl acf status"
 echo ""
-echo "⚠️  Remember: /templates is the source of truth - never modify cli/src/ai_code_forge_cli/templates/"
+echo "⚠️  Remember: /templates and /dist are the source of truth - never modify cli/src/ai_code_forge_cli/ directories"

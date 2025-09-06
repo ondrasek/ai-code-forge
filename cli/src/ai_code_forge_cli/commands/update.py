@@ -9,6 +9,7 @@ import click
 from .. import __version__
 from ..core.detector import RepositoryDetector
 from ..core.deployer import TemplateDeployer
+from ..core.git_wrapper import create_git_wrapper
 from ..core.state import StateManager
 from ..core.templates import TemplateManager
 
@@ -78,6 +79,7 @@ def update_command(
             force=force,
             preserve_customizations=not no_preserve,
             verbose=verbose or acf_ctx.verbose,
+            acf_ctx=acf_ctx,
         )
         
         # Display results
@@ -100,6 +102,7 @@ def _run_update(
     force: bool = False,
     preserve_customizations: bool = True,
     verbose: bool = False,
+    acf_ctx: Any = None,
 ) -> Dict[str, Any]:
     """Execute the update command logic.
     
@@ -109,6 +112,7 @@ def _run_update(
         force: Update even if conflicts are detected
         preserve_customizations: Preserve .local files and customizations
         verbose: Show detailed output
+        acf_ctx: CLI context object containing global flags
         
     Returns:
         Dictionary with command results
@@ -195,6 +199,27 @@ def _run_update(
             results["message"] = f"Would update {len(results['files_updated'])} templates"
         else:
             results["message"] = f"Updated {len(results['files_updated'])} templates"
+            
+            # Handle git integration if requested
+            if acf_ctx and acf_ctx.git and not dry_run:
+                git_wrapper = create_git_wrapper(acf_ctx, verbose)
+                old_version = current_state.installation.template_version if current_state else None
+                new_version = template_manager.calculate_bundle_checksum()[:8]
+                
+                git_result = git_wrapper.commit_command_changes(
+                    command_name="update",
+                    git_enabled=True,
+                    old_version=old_version,
+                    new_version=new_version
+                )
+                
+                if git_result["success"]:
+                    results["message"] += f" (committed: {git_result['commit_message']})"
+                else:
+                    results["warnings"] = results.get("warnings", [])
+                    results["warnings"].append(f"Git commit failed: {git_result['error']}")
+                    if verbose:
+                        click.echo(f"🔧 Git integration failed: {git_result['error']}")
         
     except Exception as e:
         results["errors"].append(f"Update failed: {e}")

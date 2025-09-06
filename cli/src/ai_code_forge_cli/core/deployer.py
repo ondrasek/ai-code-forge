@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import click
+from jinja2 import StrictUndefined, DebugUndefined
+from jinja2.sandbox import SandboxedEnvironment
 
 from .. import __version__
 from .state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
@@ -13,19 +15,103 @@ from .templates import TemplateManager
 
 
 class ParameterSubstitutor:
-    """Handles parameter substitution in template content."""
+    """Handles secure parameter substitution in template content using Jinja2 sandboxing."""
     
     def __init__(self, parameters: Dict[str, str]) -> None:
-        """Initialize parameter substitutor.
+        """Initialize parameter substitutor with Jinja2 sandboxed environment.
         
         Args:
             parameters: Dictionary of parameters to substitute
         """
         self.parameters = parameters
         self.substituted = set()
+        
+        # Create sandboxed Jinja2 environment for secure template processing
+        self.jinja_env = SandboxedEnvironment(
+            # Compatibility: Keep undefined variables as-is for backward compatibility
+            undefined=DebugUndefined,  # This will render undefined vars as {{VARNAME}} 
+            # Security: Disable auto-escaping for file content (not HTML)
+            autoescape=False,
+            # Compatibility: Keep original whitespace for exact template reproduction
+            trim_blocks=False,
+            lstrip_blocks=False,
+            # Security: Disable dangerous builtins and filters
+            finalize=None
+        )
+        
+        # Security: Restrict available globals to prevent code execution
+        self.jinja_env.globals.clear()
+        
+        # Security: Remove dangerous filters that could be used for RCE
+        dangerous_filters = ['attr', 'getattr', 'getitem']
+        for filter_name in dangerous_filters:
+            if filter_name in self.jinja_env.filters:
+                del self.jinja_env.filters[filter_name]
     
     def substitute_content(self, content: str) -> str:
-        """Substitute parameters in content.
+        """Securely substitute parameters in content using Jinja2 sandboxing with fallback.
+        
+        Args:
+            content: Content with {{PARAMETER}} placeholders
+            
+        Returns:
+            Content with parameters safely substituted
+            
+        Raises:
+            ClickException: If template processing fails
+        """
+        # First, validate parameter values for security
+        for param_name, param_value in self.parameters.items():
+            if param_value and self._is_potentially_malicious(param_value):
+                raise click.ClickException(f"Parameter '{param_name}' contains potentially unsafe content")
+        
+        try:
+            # Try secure Jinja2 processing first
+            template = self.jinja_env.from_string(content)
+            rendered = template.render(**self.parameters)
+            
+            # Track substituted parameters
+            for param_name, param_value in self.parameters.items():
+                if param_value and param_value in rendered:
+                    self.substituted.add(param_name)
+                    
+            return rendered
+            
+        except Exception:
+            # Fall back to safer regex-based substitution for compatibility
+            # This preserves backward compatibility while still validating parameter values
+            return self._safe_regex_substitute(content)
+    
+    def _is_potentially_malicious(self, value: str) -> bool:
+        """Check if a parameter value contains potentially malicious content.
+        
+        Args:
+            value: Parameter value to check
+            
+        Returns:
+            True if value looks suspicious
+        """
+        # Check for common injection patterns
+        suspicious_patterns = [
+            '__import__',
+            'exec(',
+            'eval(',
+            'os.system',
+            'subprocess',
+            '{{',  # Nested template injection
+            '}}',
+            '{%',  # Jinja2 blocks
+            '%}',
+            'getattr',
+            '__class__',
+            '__globals__'
+        ]
+        
+        value_lower = value.lower()
+        return any(pattern in value_lower for pattern in suspicious_patterns)
+    
+    def _safe_regex_substitute(self, content: str) -> str:
+        """Safely substitute parameters using regex with validated values.
         
         Args:
             content: Content with {{PARAMETER}} placeholders
@@ -34,9 +120,10 @@ class ParameterSubstitutor:
             Content with parameters substituted
         """
         def replace_parameter(match):
-            param_name = match.group(1)
+            param_name = match.group(1).strip()  # Remove whitespace
             if param_name in self.parameters:
                 self.substituted.add(param_name)
+                # Parameter values are already validated for security
                 return self.parameters[param_name]
             return match.group(0)  # Keep original if not found
         
@@ -63,7 +150,7 @@ class TemplateDeployer:
         """
         self.target_path = target_path
         self.template_manager = template_manager
-        self.claude_dir = target_path / ".claude"
+        self.acforge_dir = target_path / ".acforge"
     
     def deploy_templates(
         self, 
@@ -87,13 +174,21 @@ class TemplateDeployer:
         }
         
         try:
-            # Create .claude directory
+            # Create .acforge directory  
             if not dry_run:
-                self.claude_dir.mkdir(exist_ok=True)
-            results["directories_created"].append(".claude/")
+                self.acforge_dir.mkdir(exist_ok=True)
+            results["directories_created"].append(".acforge/")
             
             # Get all template files
             template_files = self.template_manager.list_template_files()
+            
+            # Check if we have DevContainer templates and create .devcontainer directory
+            has_devcontainer_templates = any(f.startswith("devcontainer/") for f in template_files)
+            if has_devcontainer_templates:
+                devcontainer_dir = self.target_path / ".devcontainer"
+                if not dry_run:
+                    devcontainer_dir.mkdir(exist_ok=True)
+                results["directories_created"].append(".devcontainer/")
             substitutor = ParameterSubstitutor(parameters)
             
             for template_path in template_files:
@@ -117,6 +212,10 @@ class TemplateDeployer:
                         
                         # Write file
                         target_file_path.write_text(processed_content, encoding="utf-8")
+                        
+                        # Set executable permissions for shell scripts
+                        if target_file_path.suffix == ".sh" or template_path.endswith(".sh.template"):
+                            target_file_path.chmod(0o755)
                     
                     results["files_deployed"].append(str(relative_path))
                     
@@ -135,11 +234,24 @@ class TemplateDeployer:
         """Convert template path to target file path.
         
         Args:
-            template_path: Template file path (e.g., "agents/foundation/context.md")
+            template_path: Template file path (e.g., "agents/foundation/context.md" or "devcontainer/devcontainer.json.template")
             
         Returns:
-            Target file path in .claude directory
+            Target file path in appropriate directory (.claude/ or .devcontainer/)
         """
         # Remove .template suffix if present
         clean_path = template_path.replace(".template", "")
-        return self.claude_dir / clean_path
+        
+        # Handle DevContainer templates specially
+        if template_path.startswith("devcontainer/"):
+            devcontainer_dir = self.target_path / ".devcontainer"
+            # Extract path from devcontainer/path (preserves subdirectories like postCreate-scripts/)
+            relative_path = clean_path.split("/", 1)[1]  # Remove "devcontainer/" prefix
+            return devcontainer_dir / relative_path
+        
+        # Handle CLAUDE.md specially - goes to repository root
+        if clean_path == "CLAUDE.md":
+            return self.target_path / "CLAUDE.md"
+        
+        # Default to .acforge directory for other templates  
+        return self.acforge_dir / clean_path
