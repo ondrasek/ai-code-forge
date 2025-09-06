@@ -1,7 +1,7 @@
 ---
-description: Create semantic version tag from commit analysis with automatic version determination, pyproject.toml synchronization, and tag creation (main branch only).
-argument-hint: Optional version type (auto|major|minor|patch) - defaults to auto.
-allowed-tools: Task(git-workflow), Read, Edit, Write, Bash(git status), Bash(git log), Bash(git tag), Bash(git push)
+description: Create semantic version tag with automatic version determination and tag creation (main branch only)
+argument-hint: Optional version type (auto|major|minor|patch) - defaults to auto
+allowed-tools: Bash, Task(git-workflow)
 ---
 
 # Tag Creation Command
@@ -10,184 +10,92 @@ allowed-tools: Task(git-workflow), Read, Edit, Write, Bash(git status), Bash(git
 !`git branch --show-current`
 !`git tag --list | tail -5`
 
-Create semantic version tag from commit analysis with automatic version determination, pyproject.toml synchronization, and tag creation. **MAIN BRANCH ONLY.**
+## Execution Steps
 
-**CRITICAL**: This command automatically synchronizes ALL version-bearing files (pyproject.toml AND __init__.py) across all components to match the repository tag before creating the tag, ensuring comprehensive version consistency.
-
-## Instructions
-
-1. **Branch Validation (CRITICAL)**:
-   ```bash
-   CURRENT_BRANCH=$(git branch --show-current)
-   if [[ "$CURRENT_BRANCH" != "main" ]]; then
-       echo "❌ ERROR: /tag command only works on main branch"
-       echo "Current branch: $CURRENT_BRANCH"
-       echo "Switch to main branch: git checkout main"
-       exit 1
-   fi
-   ```
-
-2. **Parse Arguments**: Determine version type from $ARGUMENTS
-   - `auto` (default): Automatically detect version bump from recent commits
-   - `major`: Force major version bump (x.0.0) 
-   - `minor`: Force minor version bump (0.x.0)
-   - `patch`: Force patch version bump (0.0.x)
-
-3. **Analyze Recent Commits**: Scan commits since last tag for version determination
-   ```bash
-   # Get last version tag
-   LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-   
-   # Analyze commit messages since last tag
-   COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --grep="feat:" --grep="fix:" --grep="break:" --grep="BREAKING")
-   
-   # Categorize commits:
-   # - feat: → MINOR version
-   # - fix: → PATCH version  
-   # - BREAKING/break: → MAJOR version
-   # - docs:/refactor:/test:/chore: → PATCH version
-   ```
-
-4. **Version Bump Logic**:
-   ```
-   MAJOR (x.0.0): Any BREAKING changes or "break:" commits found
-   MINOR (0.x.0): Any "feat:" commits found (if no MAJOR)
-   PATCH (0.0.x): Only "fix:", "docs:", "refactor:", "test:", "chore:" commits
-   ```
-
-5. **Calculate Next Version**:
-   ```bash
-   IFS='.' read MAJOR MINOR PATCH <<< "${LAST_TAG#v}"
-   case "$VERSION_TYPE" in
-     "major") NEXT_VERSION="v$((MAJOR + 1)).0.0" ;;
-     "minor") NEXT_VERSION="v$MAJOR.$((MINOR + 1)).0" ;;
-     "patch") NEXT_VERSION="v$MAJOR.$MINOR.$((PATCH + 1))" ;;
-   esac
-   ```
-
-6. **Generate Tag Message**:
-   ```bash
-   TAG_MESSAGE="Release $NEXT_VERSION
-
-   Previous Version: $LAST_TAG
-   
-   Changes in this release:
-   $(git log "$LAST_TAG"..HEAD --oneline --pretty="- %s")
-   
-   📋 Full changelog: https://github.com/ondrasek/ai-code-forge/compare/$LAST_TAG...$NEXT_VERSION"
-   ```
-
-7. **Version Synchronization Note**:
-   ```bash
-   echo "📦 Version synchronization will happen automatically..."
-   echo "🔄 When you push the tag, GitHub Actions will:"
-   echo "  1. Sync all version files to match tag version"
-   echo "  2. Commit any changes automatically" 
-   echo "  3. Validate version consistency"
-   echo "  4. Continue with release process"
-   echo ""
-   echo "✅ No manual version updates needed!"
-   ```
-
-8. **Create and Push Tag**:
-   ```bash
-   echo "🏷️ Creating tag: $NEXT_VERSION"
-   git tag -a "$NEXT_VERSION" -m "$TAG_MESSAGE"
-   
-   echo "📤 Pushing commits and tag to origin..."
-   git push origin main
-   git push origin "$NEXT_VERSION"
-   
-   echo "✅ Tag created and pushed: $NEXT_VERSION"
-   echo "📦 All version-bearing files synchronized to version $VERSION_NUMBER"
-   echo "🚀 GitHub Actions workflow will now trigger for release"
-   ```
-
-## Security Validations
-
-**Pre-Tag Checks (MANDATORY)**:
-- ✅ Must be on main branch
-- ✅ Working directory must be clean (no uncommitted changes)
-- ✅ Must be up-to-date with origin/main
-- ✅ Tag name must not already exist
-- ✅ Must have commits since last tag
-- ✅ Version synchronization script must exist and be executable
-- ✅ All version-bearing files must be synchronized before tag creation
-
-## Automatic Version Detection
-
-Scans commit messages since last release:
-
-```
-MAJOR (x.0.0): Any commits with:
-  - "break:" prefix
-  - "BREAKING CHANGE:" in message
-  - API removal or major architectural changes
-  
-MINOR (0.x.0): Any commits with:
-  - "feat:" prefix (new features)
-  - New commands, agents, or significant functionality
-  
-PATCH (0.0.x): Only commits with:
-  - "fix:" prefix (bug fixes)
-  - "docs:" prefix (documentation)
-  - "refactor:", "test:", "chore:" prefixes
-```
-
-## Integration with Release Workflow
-
-This command triggers the complete release automation:
-
-1. **Comprehensive Version Synchronization**: Updates ALL version-bearing files (pyproject.toml + __init__.py) to match new tag version
-2. **Version Commit**: Commits all synchronized version changes with proper commit message
-3. **Tag Creation**: `/tag` creates and pushes version tag referencing updated files
-4. **GitHub Actions**: Tag push triggers `ai-code-forge-release.yml` workflow
-5. **Automated Pipeline**: 
-   - Build and test packages with synchronized versions
-   - Create GitHub release with assets
-   - Publish to PyPI via OIDC with Sigstore attestations
-   - Generate build summary
-
-## Error Handling
-
-- **Not on main branch**: Command exits with error and instructions
-- **Uncommitted changes**: Must clean working directory first  
-- **No commits since last tag**: Reports no changes to release
-- **Tag already exists**: Prevents duplicate tag creation
-- **Network/push failures**: Provides manual commands for retry
-
-## Example Usage
-
+### 1. Validate Branch and State
 ```bash
-# Automatic version detection (recommended)
-/tag
+CURRENT_BRANCH=$(git branch --show-current)
+if [[ "$CURRENT_BRANCH" != "main" ]]; then
+    echo "❌ ERROR: Must be on main branch (currently: $CURRENT_BRANCH)"
+    exit 1
+fi
 
-# Force specific version type
-/tag major
-/tag minor  
-/tag patch
+if ! git diff --quiet || ! git diff --staged --quiet; then
+    echo "❌ ERROR: Working directory must be clean"
+    exit 1
+fi
 ```
 
-## Expected Outcomes
+### 2. Parse Arguments and Determine Version Type
+```bash
+VERSION_TYPE="${ARGUMENTS:-auto}"
 
-- **Comprehensive version synchronization** across all version-bearing files (pyproject.toml + __init__.py)
-- **Version commit** with standardized commit message
-- **Semantic version tag** created based on commit analysis  
-- **Tag pushed to origin** triggering GitHub Actions workflow
-- **Complete release pipeline** automatically executed
-- **PyPI packages published** with synchronized versions and Sigstore attestations
-- **GitHub release created** with assets and changelog
+if [[ "$VERSION_TYPE" == "auto" ]]; then
+    LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+    
+    # Check for breaking changes
+    if git log "$LAST_TAG"..HEAD --oneline | grep -E "(break:|BREAKING)"; then
+        VERSION_TYPE="major"
+    # Check for features
+    elif git log "$LAST_TAG"..HEAD --oneline | grep "feat:"; then
+        VERSION_TYPE="minor"
+    # Default to patch
+    else
+        VERSION_TYPE="patch"
+    fi
+fi
+```
 
-## Security Features
+### 3. Calculate Next Version
+```bash
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+IFS='.' read -r MAJOR MINOR PATCH <<< "${LAST_TAG#v}"
 
-- **Main branch restriction**: Prevents accidental releases from feature branches
-- **Clean working directory**: Ensures no uncommitted changes in release
-- **Tag uniqueness**: Prevents duplicate version tags
-- **OIDC Publishing**: Secure PyPI publishing without API keys
-- **Sigstore Attestations**: Cryptographic package signing for supply chain security
+case "$VERSION_TYPE" in
+    "major") NEXT_VERSION="v$((MAJOR + 1)).0.0" ;;
+    "minor") NEXT_VERSION="v$MAJOR.$((MINOR + 1)).0" ;;
+    "patch") NEXT_VERSION="v$MAJOR.$MINOR.$((PATCH + 1))" ;;
+    *) echo "❌ ERROR: Invalid version type: $VERSION_TYPE"; exit 1 ;;
+esac
 
-## Related Commands
+# Check if tag already exists
+if git tag --list | grep -q "^$NEXT_VERSION$"; then
+    echo "❌ ERROR: Tag $NEXT_VERSION already exists"
+    exit 1
+fi
 
-- `/issue start` - Start GitHub issue implementation
-- `/issue pr` - Create pull request for completed work
-- Git workflow commands for commit management
+echo "🏷️ Next version: $NEXT_VERSION (type: $VERSION_TYPE)"
+```
+
+### 4. Generate Tag Message
+```bash
+TAG_MESSAGE="Release $NEXT_VERSION
+
+Previous Version: $LAST_TAG
+
+Changes in this release:
+$(git log "$LAST_TAG"..HEAD --oneline --pretty="- %s")
+
+📋 Full changelog: https://github.com/ondrasek/ai-code-forge/compare/$LAST_TAG...$NEXT_VERSION"
+```
+
+### 5. Create and Push Tag
+```bash
+echo "📦 Note: Version synchronization will happen automatically via GitHub Actions"
+echo ""
+
+echo "🏷️ Creating tag: $NEXT_VERSION"
+git tag -a "$NEXT_VERSION" -m "$TAG_MESSAGE"
+
+echo "📤 Pushing tag to origin..."
+git push origin "$NEXT_VERSION"
+
+echo "✅ Tag created and pushed: $NEXT_VERSION"
+echo "🚀 GitHub Actions will now sync versions and create release"
+```
+
+## Error Conditions
+- Not on main branch → exit 1
+- Uncommitted changes → exit 1  
+- Tag already exists → exit 1
+- No commits since last tag → continue with patch version
