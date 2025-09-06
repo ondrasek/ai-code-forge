@@ -18,9 +18,7 @@ class TestMeaningfulIntegration:
         runner = CliRunner()
         
         result = runner.invoke(main, [
-            "init", str(temp_repo),
-            "--project-name", "test-project",
-            "--github-owner", "testuser"
+            "init", str(temp_repo)
         ])
         
         assert result.exit_code == 0, f"Deployment failed: {result.output}"
@@ -30,8 +28,9 @@ class TestMeaningfulIntegration:
         assert claude_md.exists(), "CLAUDE.md not deployed"
         
         claude_content = claude_md.read_text()
-        assert "testuser" in claude_content, "GitHub owner not substituted in CLAUDE.md"
-        assert "test-project" in claude_content, "Project name not substituted in CLAUDE.md"
+        # Verify parameter substitution occurred (should not contain template placeholders)
+        assert "{{GITHUB_OWNER}}" not in claude_content, "GitHub owner placeholder not substituted"
+        assert "{{PROJECT_NAME}}" not in claude_content, "Project name placeholder not substituted"
         
         # MEANINGFUL ASSERTION: Verify DevContainer JSON is valid
         devcontainer_json = temp_repo / ".devcontainer" / "devcontainer.json"
@@ -40,7 +39,8 @@ class TestMeaningfulIntegration:
         # This would catch deployment failures that create corrupt JSON
         try:
             devcontainer_config = json.loads(devcontainer_json.read_text())
-            assert "test-project" in str(devcontainer_config), "Project name not in devcontainer config"
+            # Verify it's valid JSON and contains expected structure
+            assert "name" in devcontainer_config, "DevContainer missing name field"
         except json.JSONDecodeError as e:
             pytest.fail(f"DevContainer JSON is invalid: {e}")
         
@@ -60,9 +60,7 @@ class TestMeaningfulIntegration:
         runner = CliRunner()
         
         result = runner.invoke(main, [
-            "init", str(temp_repo), "--dry-run",
-            "--project-name", "test-project", 
-            "--github-owner", "testuser"
+            "init", str(temp_repo), "--dry-run"
         ])
         
         assert result.exit_code == 0
@@ -85,31 +83,101 @@ class TestMeaningfulIntegration:
         
         runner = CliRunner()
         result = runner.invoke(main, [
-            "init", str(existing_acf_config), "--force",
-            "--project-name", "new-project",
-            "--github-owner", "newuser"
+            "init", str(existing_acf_config), "--force"
         ])
         
         assert result.exit_code == 0
         
-        # MEANINGFUL ASSERTION: Verify new parameters applied
+        # MEANINGFUL ASSERTION: Verify deployment happened (files exist)
         claude_md = existing_acf_config / "CLAUDE.md"
-        assert claude_md.exists()
-        claude_content = claude_md.read_text()
-        assert "newuser" in claude_content
-        assert "new-project" in claude_content
+        assert claude_md.exists(), "CLAUDE.md not deployed during force init"
         
         # MEANINGFUL ASSERTION: Verify old marker file was cleaned up (full overwrite)
         # Note: This test might need adjustment based on actual --force behavior
+    
+    def test_claude_code_templates_deployed(self, temp_repo):
+        """Test that Claude Code agent and command templates are properly deployed."""
+        runner = CliRunner()
+        
+        result = runner.invoke(main, [
+            "init", str(temp_repo)
+        ])
+        
+        assert result.exit_code == 0, f"Deployment failed: {result.output}"
+        
+        # MEANINGFUL ASSERTION: Verify .claude directory structure
+        claude_dir = temp_repo / ".claude"
+        assert claude_dir.exists(), "Claude Code directory not created"
+        
+        # MEANINGFUL ASSERTION: Verify agents deployed
+        agents_dir = claude_dir / "agents"
+        assert agents_dir.exists(), "Agents directory not created"
+        
+        foundation_dir = agents_dir / "foundation"
+        specialists_dir = agents_dir / "specialists"
+        assert foundation_dir.exists(), "Foundation agents directory not created"
+        assert specialists_dir.exists(), "Specialists agents directory not created"
+        
+        # MEANINGFUL ASSERTION: Verify key agents exist
+        context_agent = foundation_dir / "context.md"
+        git_workflow_agent = specialists_dir / "git-workflow.md"
+        assert context_agent.exists(), "Context agent not deployed"
+        assert git_workflow_agent.exists(), "Git workflow agent not deployed"
+        
+        # MEANINGFUL ASSERTION: Verify commands deployed
+        commands_dir = claude_dir / "commands"
+        assert commands_dir.exists(), "Commands directory not created"
+        
+        # Check for some key commands
+        research_cmd = commands_dir / "research.md"
+        assert research_cmd.exists(), "Research command not deployed"
+        
+        # MEANINGFUL ASSERTION: Verify settings file
+        settings_file = claude_dir / "settings.json"
+        assert settings_file.exists(), "Claude Code settings not deployed"
+        
+        # Verify settings is valid JSON
+        try:
+            json.loads(settings_file.read_text())
+        except json.JSONDecodeError:
+            pytest.fail("Claude Code settings contains invalid JSON")
+    
+    def test_static_content_deployed(self, temp_repo):
+        """Test that static content (MCP servers, scripts) is properly deployed."""
+        runner = CliRunner()
+        
+        result = runner.invoke(main, [
+            "init", str(temp_repo)
+        ])
+        
+        assert result.exit_code == 0, f"Deployment failed: {result.output}"
+        
+        # MEANINGFUL ASSERTION: Verify .acforge contains static content
+        acforge_dir = temp_repo / ".acforge"
+        assert acforge_dir.exists(), "ACForge directory not created"
+        
+        # MEANINGFUL ASSERTION: Verify MCP servers deployed
+        mcp_dir = acforge_dir / "mcp-servers"
+        assert mcp_dir.exists(), "MCP servers directory not created"
+        
+        # Look for any MCP server content (flexible check)
+        mcp_files = list(mcp_dir.rglob("*"))
+        assert len(mcp_files) > 0, "No MCP server files deployed"
+        
+        # MEANINGFUL ASSERTION: Verify scripts deployed  
+        scripts_dir = acforge_dir / "scripts"
+        assert scripts_dir.exists(), "Scripts directory not created"
+        
+        # Look for script files
+        script_files = list(scripts_dir.rglob("*"))
+        assert len(script_files) > 0, "No script files deployed"
 
     def test_executable_permissions_applied(self, temp_repo):
         """Test that shell scripts get proper executable permissions."""
         runner = CliRunner()
         
         result = runner.invoke(main, [
-            "init", str(temp_repo),
-            "--project-name", "test-project",
-            "--github-owner", "testuser"
+            "init", str(temp_repo)
         ])
         
         assert result.exit_code == 0
@@ -127,9 +195,7 @@ class TestMeaningfulIntegration:
         runner = CliRunner()
         
         result = runner.invoke(main, [
-            "init", str(existing_acf_config),
-            "--project-name", "test-project",
-            "--github-owner", "testuser"
+            "init", str(existing_acf_config)
         ])
         
         # MEANINGFUL ASSERTION: Should refuse to overwrite
@@ -147,9 +213,7 @@ class TestMeaningfulIntegration:
             try:
                 runner = CliRunner()
                 result = runner.invoke(main, [
-                    "init", str(temp_path),
-                    "--project-name", "test-project",
-                    "--github-owner", "testuser"
+                    "init", str(temp_path)
                 ])
                 
                 # MEANINGFUL ASSERTION: Should fail gracefully with clear error

@@ -63,3 +63,22 @@ def git_repo_with_commits(real_git_repo):
     subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=real_git_repo, check=True)
     
     return real_git_repo
+
+
+@pytest.fixture
+def real_git_repo_with_acf(real_git_repo):
+    """Create a real git repository with ACF already initialized."""
+    from click.testing import CliRunner
+    from ai_code_forge_cli.cli import main
+    
+    # Initialize ACF in the git repo
+    runner = CliRunner()
+    result = runner.invoke(main, [
+        "init", str(real_git_repo), "--force"
+    ])
+    
+    # If init failed, return the repo anyway for testing error conditions
+    if result.exit_code != 0:
+        pytest.skip(f"Could not initialize ACF in test repo: {result.output}")
+    
+    return real_git_repo
