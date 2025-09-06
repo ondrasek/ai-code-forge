@@ -1,0 +1,24 @@
+# DevContainer secrets and sensitive files
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
+secrets.json
+
+# Temporary files that might contain secrets
+*.tmp
+*.temp
+.temp/
+
+# Backup files that might contain secrets
+*.bak
+*.backup
+
+# IDE files that might contain secrets
+.vscode/settings.json
+.idea/
+
+# Container-specific temporary files
+.container-*

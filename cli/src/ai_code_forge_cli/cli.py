@@ -18,6 +18,7 @@ class ACFContext:
         """Initialize CLI context."""
         self.repo_root: Optional[Path] = None
         self.verbose: bool = False
+        self.git: bool = False
     
     def find_repo_root(self) -> Path:
         """Find repository root directory.
@@ -58,9 +59,14 @@ pass_context = click.make_pass_decorator(ACFContext, ensure=True)
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
     help="Repository root directory (auto-detected if not specified)"
 )
+@click.option(
+    "--git",
+    is_flag=True,
+    help="Automatically commit changes to git with version-based commit messages"
+)
 @click.version_option(version=__version__, prog_name="acforge")
 @click.pass_context
-def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path]) -> None:
+def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path], git: bool) -> None:
     """AI Code Forge CLI - Template management for AI development workflows.
     
     The ACF CLI helps manage AI development configurations including:
@@ -74,6 +80,7 @@ def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path]) -> None:
     # Initialize shared context
     acf_ctx = ACFContext()
     acf_ctx.verbose = verbose
+    acf_ctx.git = git
     if repo_root:
         acf_ctx.repo_root = repo_root
     

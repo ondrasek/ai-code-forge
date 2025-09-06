@@ -1,22 +1,28 @@
 #!/bin/bash
 
-# Setup shell navigation defaults for workspace
+# Setup shell navigation shortcuts
 set -e
 
 echo "🧭 Setting up shell navigation..."
 
-# Environment variables are loaded by postCreate.sh and exported to child processes
+# Create shell aliases and shortcuts for repository navigation
+cat >> /home/vscode/.zshrc << 'EOF'
 
-# Set default directory for bash
-cat >> ~/.bashrc << EOF
-# Go to workspace
-cd /workspace/$repositoryName
+# Repository navigation shortcuts
+alias repo='cd /workspace/test-repo'
+alias worktrees='cd /workspace/worktrees/test-repo'
+
 EOF
 
-# Set default directory for zsh
-cat >> ~/.zshrc << EOF
-# Go to workspace
-cd /workspace/$repositoryName
+cat >> /home/vscode/.bashrc << 'EOF'
+
+# Repository navigation shortcuts  
+alias repo='cd /workspace/test-repo'
+alias worktrees='cd /workspace/worktrees/test-repo'
+
 EOF
+
+# Change to repository directory by default
+cd /workspace/test-repo
 
 echo "✅ Shell navigation setup completed"

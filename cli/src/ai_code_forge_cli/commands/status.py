@@ -7,7 +7,10 @@ from typing import Any, Dict, List
 
 import click
 
+from ..core.detector import RepositoryDetector
+from ..core.git_wrapper import create_git_wrapper
 from ..core.state import StateManager
+from ..core.static import StaticContentManager
 from ..core.templates import RepositoryAnalyzer, TemplateManager
 
 
@@ -40,6 +43,8 @@ class StatusReporter:
         self.state_manager = StateManager(repo_root)
         self.template_manager = TemplateManager()
         self.repo_analyzer = RepositoryAnalyzer(repo_root)
+        self.repo_detector = RepositoryDetector(repo_root)
+        self.static_manager = StaticContentManager()
     
     def generate_status_data(self) -> Dict[str, Any]:
         """Generate complete status data.
@@ -61,20 +66,46 @@ class StatusReporter:
         template_errors = self.template_manager.validate_templates()
         bundle_checksum = self.template_manager.calculate_bundle_checksum()
         
+        # Analyze static content
+        static_files = self.static_manager.list_static_files()
+        static_analysis = self._analyze_static_content()
+        
+        # Detect repository information (GitHub integration)
+        github_info = self.repo_detector.detect_github_info()
+        existing_config = self.repo_detector.check_existing_configuration()
+        
+        # Analyze git status if available
+        git_analysis = self._analyze_git_status()
+        
         # Compare current vs available templates
         template_comparison = self._compare_templates(current_state, available_templates)
         
         return {
             "repository": repo_info,
+            "github": {
+                "detected": github_info,
+                "has_remote": github_info.get("repo_url") is not None,
+                "owner": github_info.get("github_owner"),
+                "name": github_info.get("project_name"),
+            },
+            "git": git_analysis,
             "state": {
                 "current": current_state.model_dump(mode="json"),
                 "file_info": state_info,
+                "configuration_type": existing_config,
             },
             "templates": {
                 "available_count": len(available_templates),
                 "available_files": available_templates if self.verbose else [],
                 "bundle_checksum": bundle_checksum,
                 "validation_errors": template_errors,
+                "claude_templates": len([t for t in available_templates if t.startswith("_claude/")]),
+                "devcontainer_templates": len([t for t in available_templates if t.startswith("devcontainer/")]),
+            },
+            "static_content": {
+                "available_count": len(static_files),
+                "available_files": static_files if self.verbose else [],
+                "analysis": static_analysis,
             },
             "configuration": {
                 "existing_files": list(existing_files),
@@ -165,6 +196,88 @@ class StatusReporter:
         
         return analysis
     
+    def _analyze_static_content(self) -> Dict[str, Any]:
+        """Analyze static content availability and structure."""
+        try:
+            static_files = self.static_manager.list_static_files()
+            
+            analysis = {
+                "available": len(static_files) > 0,
+                "file_count": len(static_files),
+                "categories": {
+                    "mcp_servers": len([f for f in static_files if f.startswith("mcp-servers/")]),
+                    "scripts": len([f for f in static_files if f.startswith("scripts/")]),
+                    "tests": len([f for f in static_files if "test" in f.lower()]),
+                },
+                "errors": [],
+            }
+            
+            # Basic validation - check if key files exist
+            key_files = ["mcp-servers/", "scripts/"]
+            missing_categories = []
+            for key_file in key_files:
+                if not any(f.startswith(key_file) for f in static_files):
+                    missing_categories.append(key_file)
+            
+            if missing_categories:
+                analysis["errors"].append(f"Missing static content categories: {missing_categories}")
+            
+            return analysis
+            
+        except Exception as e:
+            return {
+                "available": False,
+                "file_count": 0,
+                "categories": {},
+                "errors": [f"Failed to analyze static content: {e}"],
+            }
+    
+    def _analyze_git_status(self) -> Dict[str, Any]:
+        """Analyze git repository status."""
+        git_analysis = {
+            "available": False,
+            "branch": None,
+            "has_changes": False,
+            "behind_remote": False,
+            "can_commit": True,
+            "status": "unknown",
+            "errors": [],
+        }
+        
+        try:
+            # Check if we're in a git repository
+            if not (self.repo_root / ".git").exists():
+                git_analysis["status"] = "not_git_repo"
+                return git_analysis
+            
+            git_analysis["available"] = True
+            
+            # Try to create git wrapper for detailed analysis
+            try:
+                # We need a minimal context object for git wrapper
+                class MinimalContext:
+                    def __init__(self, repo_root):
+                        self.repo_root = repo_root
+                        self.verbose = False
+                
+                minimal_ctx = MinimalContext(self.repo_root)
+                git_wrapper = create_git_wrapper(minimal_ctx, False)
+                
+                # Get current version as a proxy for git functionality
+                current_version = git_wrapper.get_current_version()
+                git_analysis["acf_version_detected"] = current_version is not None
+                git_analysis["status"] = "functional"
+                
+            except Exception as e:
+                git_analysis["errors"].append(f"Git wrapper failed: {e}")
+                git_analysis["status"] = "limited_functionality"
+                
+        except Exception as e:
+            git_analysis["errors"].append(f"Git analysis failed: {e}")
+            git_analysis["status"] = "error"
+        
+        return git_analysis
+    
     def print_human_readable(self, data: Dict[str, Any]) -> None:
         """Print human-readable status report.
         
@@ -176,11 +289,28 @@ class StatusReporter:
         
         # Repository information
         repo = data["repository"]
+        github = data["github"]
+        git = data["git"]
+        
         click.echo(f"📁 Repository: {repo['config_type']} configuration")
-        if repo["is_git_repo"]:
-            click.echo("   ✅ Git repository detected")
+        
+        # Git status
+        if git["available"]:
+            status_icon = "✅" if git["status"] == "functional" else "⚠️ "
+            click.echo(f"   {status_icon} Git: {git['status'].replace('_', ' ')}")
+            if git["errors"] and self.verbose:
+                for error in git["errors"][:2]:  # Show first 2 errors
+                    click.echo(f"      ⚠️  {error}")
         else:
-            click.echo("   ⚠️  Not a git repository")
+            click.echo("   ❌ Git: Not a git repository")
+        
+        # GitHub integration
+        if github["has_remote"]:
+            click.echo(f"   🔗 GitHub: {github['owner']}/{github['name']}")
+        elif github["detected"]["github_owner"]:
+            click.echo(f"   🔗 GitHub: {github['detected']['github_owner']} (partial detection)")
+        else:
+            click.echo("   ⚠️  GitHub: No remote detected")
         
         # State information
         state_info = data["state"]["file_info"]
@@ -202,6 +332,10 @@ class StatusReporter:
         # Template information
         templates = data["templates"]
         click.echo(f"📦 Templates: {templates['available_count']} files available")
+        if self.verbose:
+            click.echo(f"   📋 Claude Code: {templates['claude_templates']} files")
+            click.echo(f"   🐳 DevContainer: {templates['devcontainer_templates']} files")
+        
         if templates["validation_errors"]:
             click.echo(f"   ❌ {len(templates['validation_errors'])} validation errors")
             if self.verbose:
@@ -209,6 +343,26 @@ class StatusReporter:
                     click.echo(f"      {path}: {error}")
         else:
             click.echo("   ✅ All templates valid")
+        
+        # Static content information
+        static = data["static_content"]
+        click.echo(f"📦 Static Content: {static['available_count']} files available")
+        if static["analysis"]["available"]:
+            if self.verbose:
+                categories = static["analysis"]["categories"]
+                click.echo(f"   🤖 MCP Servers: {categories.get('mcp_servers', 0)} files")
+                click.echo(f"   📜 Scripts: {categories.get('scripts', 0)} files") 
+                click.echo(f"   🧪 Tests: {categories.get('tests', 0)} files")
+            
+            if static["analysis"]["errors"]:
+                click.echo(f"   ⚠️  {len(static['analysis']['errors'])} issues detected")
+                if self.verbose:
+                    for error in static["analysis"]["errors"]:
+                        click.echo(f"      ⚠️  {error}")
+            else:
+                click.echo("   ✅ Static content structure valid")
+        else:
+            click.echo("   ❌ No static content available")
         
         # Configuration files
         config = data["configuration"]

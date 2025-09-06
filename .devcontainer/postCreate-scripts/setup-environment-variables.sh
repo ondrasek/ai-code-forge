@@ -1,46 +1,31 @@
 #!/bin/bash
 
-# Setup environment variables for both shells
+# Setup environment variables for development
 set -e
 
-echo "🔧 Setting up environment variables..."
+echo "⚙️ Setting up environment variables..."
 
-# Environment variables are loaded by postCreate.sh and exported to child processes
+# Add repository-specific environment variables to shell profiles
+cat >> /home/vscode/.zshrc << 'EOF'
 
-# Set up shell aliases and environment for bash
-cat >> ~/.bashrc << 'EOF'
+# Repository-specific environment variables
+export REPOSITORY_NAME=test-repo
+export WORKTREES=/workspace/worktrees/test-repo
 
-# Environment variables for Claude Code
-export PYTHONIOENCODING=UTF-8
-
-# Add local bin to PATH
-export PATH="$HOME/.local/bin:$PATH"
 EOF
 
-# ...this time with variable substitution
-cat >> ~/.bashrc << EOF
-# Devcontainer folder structure
-export REPOSITORY_NAME=$repositoryName
-export WORKING_COPY=$workingCopy
-export WORKTREES=$worktreesDir
+cat >> /home/vscode/.bashrc << 'EOF'
+
+# Repository-specific environment variables
+export REPOSITORY_NAME=test-repo
+export WORKTREES=/workspace/worktrees/test-repo
+
 EOF
 
-# Configure zsh with same environment
-cat >> ~/.zshrc << 'EOF'
-
-# Environment variables for Claude Code
-export PYTHONIOENCODING=UTF-8
-
-# Add local bin to PATH
-export PATH="$HOME/.local/bin:$PATH"
-EOF
-
-# ...this time with variable substitution
-cat >> ~/.zshrc << EOF
-# Devcontainer folder structure
-export REPOSITORY_NAME=$repositoryName
-export WORKING_COPY=$workingCopy
-export WORKTREES=$worktreesDir
-EOF
+# Set for current session
+export REPOSITORY_NAME=test-repo
+export WORKTREES=/workspace/worktrees/test-repo
 
 echo "✅ Environment variables setup completed"
+echo "   REPOSITORY_NAME=test-repo"
+echo "   WORKTREES=/workspace/worktrees/test-repo"
