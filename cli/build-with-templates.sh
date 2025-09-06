@@ -18,7 +18,21 @@ echo "📦 Copying dist directory for build..."
 if [ -d "src/ai_code_forge_cli/dist" ]; then
     rm -rf src/ai_code_forge_cli/dist
 fi
-cp -r ../dist src/ai_code_forge_cli/dist
+
+# Check if dist directory exists at expected location
+if [ -d "../dist" ]; then
+    cp -r ../dist src/ai_code_forge_cli/dist
+    echo "✅ Copied dist from ../dist"
+elif [ -d "../../dist" ]; then
+    cp -r ../../dist src/ai_code_forge_cli/dist
+    echo "✅ Copied dist from ../../dist"
+else
+    echo "❌ ERROR: dist directory not found at ../dist or ../../dist"
+    echo "Current directory: $(pwd)"
+    echo "Available directories:"
+    ls -la ../
+    exit 1
+fi
 
 # Build the package
 echo "📦 Building package..."
