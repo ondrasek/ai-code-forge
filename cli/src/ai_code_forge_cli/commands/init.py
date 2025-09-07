@@ -1,5 +1,6 @@
 """Init command implementation."""
 
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -67,8 +68,14 @@ def init_command(
       acforge init --interactive      # Prompt for all parameters
     """
     try:
-        # Resolve target directory
-        target_path = target_dir.resolve()
+        # Resolve target directory - use original shell PWD for relative paths
+        # to handle cases where uv run --directory changes the Python CWD
+        if target_dir.is_absolute():
+            target_path = target_dir.resolve()
+        else:
+            # For relative paths, resolve against original shell working directory
+            original_pwd = os.environ.get('PWD', os.getcwd())
+            target_path = (Path(original_pwd) / target_dir).resolve()
         
         if verbose or acf_ctx.verbose:
             click.echo(f"🎯 Target directory: {target_path}")
