@@ -22,7 +22,6 @@ jobs:
           fetch-depth: 0  # Full history for proper version detection
 
       - name: Release validation and security checks
-        if: env.SHOULD_RELEASE == 'true'
         run: |
           echo "🔒 Running release validation and security checks..."
 
