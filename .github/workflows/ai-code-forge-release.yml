@@ -54,11 +54,26 @@ jobs:
               echo "📝 Committing version synchronization changes..."
               git config --local user.name "github-actions[bot]"
               git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              
+              # Switch to main branch to commit changes (we're currently in detached HEAD at tag)
+              git checkout main
               git add -A
               git commit -m "chore: sync versions to $TAG_VERSION for release
               
               🤖 Automated version synchronization via GitHub Actions"
-              git push origin HEAD
+              git push origin main
+              
+              # Move the tag to the new commit with synchronized versions
+              echo "📝 Moving tag $TAG_VERSION to commit with synchronized versions..."
+              git tag -d v$TAG_VERSION  # Delete the existing tag locally
+              git tag -a v$TAG_VERSION -m "Release v$TAG_VERSION (with synchronized versions)
+              
+              Previous version sync commit: $(git rev-parse --short HEAD)
+              🤖 Automated version synchronization completed"
+              git push origin --force v$TAG_VERSION  # Force push the updated tag
+              
+              # Switch back to the tag for the rest of the build process
+              git checkout v$TAG_VERSION
             else
               echo "ℹ️ All versions already synchronized with tag"
             fi
