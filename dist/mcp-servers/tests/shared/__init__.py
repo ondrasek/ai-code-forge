@@ -1,1 +1,0 @@
-"""Shared testing infrastructure for MCP servers."""
