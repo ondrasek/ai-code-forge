@@ -28,9 +28,7 @@ jobs:
 
       - name: Run version consistency validation
         run: |
-          echo "🔍 Running version consistency validation..."
           ./scripts/validate-versions.sh
-          echo "✅ Version validation completed"
 
   build-and-test:
     name: Build and Test CLI Package
@@ -57,28 +55,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-uv-
 
-      - name: Verify build script exists
+      - name: Clean up dist (should be empty)
         run: |
-          echo "=== Verifying Build Script ==="
-          if [[ -f cli/build-with-templates.sh ]]; then
-            echo "✅ Build script found: cli/build-with-templates.sh"
-            chmod +x cli/build-with-templates.sh
-          else
-            echo "❌ Build script not found: cli/build-with-templates.sh"
-            echo "The build script is required to properly bundle templates"
-            exit 1
-          fi
+          # We must make sure that we are not touching dist in the repo root, but the one in cli.
+          test -d cli/dist && rm -rfv cli/dist
+          mkdir -p cli/dist
 
       - name: Build CLI package with templates
         run: |
-          echo "=== Building CLI Package with Templates ==="
           cd cli
           # Use custom build script to properly bundle templates
           ./build-with-templates.sh
 
       - name: Validate package
         run: |
-          echo "=== Validating Package ==="
           cd cli
 
           # Check if artifacts were created using proper file checks
@@ -111,7 +101,6 @@ jobs:
 
       - name: Run tests
         run: |
-          echo "=== Running Tests ==="
           cd cli
           uv run pytest --verbose --tb=short
           echo "✅ Tests completed"
