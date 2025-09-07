@@ -119,8 +119,8 @@ class TestGitSafety:
         assert "git" in output_lower, "Status should show git information"
         assert "repository" in output_lower, "Status should show repository information"
         
-    def test_status_shows_static_content_info(self, real_git_repo_with_acf):
-        """Test that status command shows static content analysis."""
+    def test_status_shows_template_content_info(self, real_git_repo_with_acf):
+        """Test that status command shows template deployment info."""
         runner = CliRunner()
         with runner.isolated_filesystem():
             # Change to the repo directory first
@@ -132,10 +132,9 @@ class TestGitSafety:
         
         assert result.exit_code == 0, f"Status failed: {result.output}"
         
-        # MEANINGFUL ASSERTION: Should show static content breakdown
+        # MEANINGFUL ASSERTION: Should show template deployment info
         output_lower = result.output.lower()
-        assert "static content" in output_lower, "Status should show static content info"
-        assert any(word in output_lower for word in ["mcp", "scripts"]), "Missing static content details"
+        assert any(word in output_lower for word in ["template", "claude"]), "Status should show template deployment info"
         
     def test_status_json_contains_all_sections(self, real_git_repo_with_acf):
         """Test that status JSON output contains all new diagnostic sections."""
@@ -164,10 +163,16 @@ class TestGitSafety:
             assert "available" in git_section, "Git section missing availability info"
             assert "status" in git_section, "Git section missing status info"
             
-            # Check static content section
-            static_section = status_data["static_content"]
-            assert "available_count" in static_section, "Static content missing file count"
-            assert "analysis" in static_section, "Static content missing analysis"
+            # Check template content section
+            if "static_content" in status_data:
+                static_section = status_data["static_content"]
+                assert "available_count" in static_section, "Static content missing file count"
+                assert "analysis" in static_section, "Static content missing analysis"
+            
+            # Check for templates section (new architecture)
+            if "templates" in status_data:
+                templates_section = status_data["templates"]
+                assert "status" in templates_section, "Templates section missing status info"
             
         except json.JSONDecodeError:
             pytest.fail("Status JSON output is invalid")

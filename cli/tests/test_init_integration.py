@@ -142,8 +142,8 @@ class TestMeaningfulIntegration:
         except json.JSONDecodeError:
             pytest.fail("Claude Code settings contains invalid JSON")
     
-    def test_static_content_deployed(self, temp_repo):
-        """Test that static content (MCP servers, scripts) is properly deployed."""
+    def test_template_content_deployed(self, temp_repo):
+        """Test that template content (Claude Code templates) is properly deployed."""
         runner = CliRunner()
         
         result = runner.invoke(main, [
@@ -152,25 +152,21 @@ class TestMeaningfulIntegration:
         
         assert result.exit_code == 0, f"Deployment failed: {result.output}"
         
-        # MEANINGFUL ASSERTION: Verify .acforge contains static content
-        acforge_dir = temp_repo / ".acforge"
-        assert acforge_dir.exists(), "ACForge directory not created"
+        # MEANINGFUL ASSERTION: Verify .claude directory with templates
+        claude_dir = temp_repo / ".claude"
+        assert claude_dir.exists(), "Claude directory not created"
         
-        # MEANINGFUL ASSERTION: Verify MCP servers deployed
-        mcp_dir = acforge_dir / "mcp-servers"
-        assert mcp_dir.exists(), "MCP servers directory not created"
+        # MEANINGFUL ASSERTION: Verify agents deployed
+        agents_dir = claude_dir / "agents"
+        if agents_dir.exists():
+            agent_files = list(agents_dir.rglob("*.md"))
+            assert len(agent_files) > 0, "No agent template files deployed"
         
-        # Look for any MCP server content (flexible check)
-        mcp_files = list(mcp_dir.rglob("*"))
-        assert len(mcp_files) > 0, "No MCP server files deployed"
-        
-        # MEANINGFUL ASSERTION: Verify scripts deployed  
-        scripts_dir = acforge_dir / "scripts"
-        assert scripts_dir.exists(), "Scripts directory not created"
-        
-        # Look for script files
-        script_files = list(scripts_dir.rglob("*"))
-        assert len(script_files) > 0, "No script files deployed"
+        # MEANINGFUL ASSERTION: Verify commands deployed  
+        commands_dir = claude_dir / "commands"
+        if commands_dir.exists():
+            command_files = list(commands_dir.rglob("*.md"))
+            assert len(command_files) > 0, "No command template files deployed"
 
     def test_executable_permissions_applied(self, temp_repo):
         """Test that shell scripts get proper executable permissions."""

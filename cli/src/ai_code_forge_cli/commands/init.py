@@ -12,7 +12,7 @@ from ..core.detector import RepositoryDetector
 from ..core.deployer import TemplateDeployer
 from ..core.git_wrapper import create_git_wrapper
 from ..core.state import ACForgeState, FileInfo, InstallationState, StateManager, TemplateState
-from ..core.static import StaticContentManager, StaticContentDeployer
+from ..core.static import StaticContentManager
 from ..core.templates import TemplateManager
 
 
@@ -201,9 +201,9 @@ def _run_init(
         template_deployer = TemplateDeployer(target_path, template_manager)
         template_results = template_deployer.deploy_templates(parameters, dry_run)
         
-        # Deploy static content  
-        static_deployer = StaticContentDeployer(target_path, static_manager)
-        static_results = static_deployer.deploy_static_content(dry_run)
+        # Note: Static content deployment removed - CLI now focuses on templates only
+        # MCP servers and scripts are available as standalone repo components
+        static_results = {"files_deployed": [], "directories_created": [], "errors": []}
         
         # Combine results
         results["files_created"] = (
