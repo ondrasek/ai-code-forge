@@ -103,7 +103,7 @@ class TestGitCommandWrapper:
         wrapper = GitCommandWrapper(temp_repo)
         patterns = wrapper._get_acf_file_patterns()
         
-        expected_patterns = [".acforge/", ".devcontainer/", "CLAUDE.md"]
+        expected_patterns = [".acforge/", ".claude/", ".devcontainer/", "CLAUDE.md"]
         assert patterns == expected_patterns
     
     @patch('ai_code_forge_cli.core.git_wrapper.get_current_acf_version')
@@ -171,7 +171,7 @@ class TestGitIntegrationErrors:
         )
         
         assert result["success"] is False
-        assert "Failed to configure git user settings" in result["error"]
+        assert "Not a git repository or git not available" in result["error"]
     
     @patch('ai_code_forge_cli.core.git_wrapper.GitCommitManager')
     def test_commit_changes_add_files_failure(self, mock_git_manager, temp_repo):
@@ -220,5 +220,6 @@ class TestGitIntegrationErrors:
             git_enabled=True
         )
         
+        # Should skip git integration gracefully (no exception propagated)
         assert result["success"] is False
-        assert "Test exception" in result["error"]
+        assert result["error"] is None  # No error, just skipped

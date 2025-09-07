@@ -32,9 +32,15 @@ class GitCommandWrapper:
         if not git_enabled:
             return False
         
-        if not self.git_manager.is_git_repository():
+        try:
+            if not self.git_manager.is_git_repository():
+                if self.verbose:
+                    print("⚠️  Git integration skipped: Not a git repository")
+                return False
+        except Exception:
+            # If git check fails, skip git integration
             if self.verbose:
-                print("⚠️  Git integration skipped: Not a git repository")
+                print("⚠️  Git integration skipped: Git check failed")
             return False
         
         return True

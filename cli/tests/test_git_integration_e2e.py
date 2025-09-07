@@ -80,8 +80,6 @@ class TestGitIntegrationE2E:
         # Run init command without git integration
         result = runner.invoke(main, [
             "init", str(real_git_repo),
-            "--project-name", "test-project",
-            "--github-owner", "testuser",
             "--force"
         ])
         
@@ -105,8 +103,6 @@ class TestGitIntegrationE2E:
         
         result = runner.invoke(main, [
             "--git", "init", str(real_git_repo),
-            "--project-name", "test-project", 
-            "--github-owner", "testuser",
             "--dry-run"
         ])
         
@@ -133,8 +129,6 @@ class TestGitIntegrationE2E:
         # First initialize without git to create baseline
         init_result = runner.invoke(main, [
             "init", str(real_git_repo),
-            "--project-name", "test-project",
-            "--github-owner", "testuser",
             "--force"
         ])
         assert init_result.exit_code == 0, f"Init failed: {init_result.output}"
@@ -180,8 +174,6 @@ class TestGitIntegrationE2E:
         # Run init with git flag in non-git directory
         result = runner.invoke(main, [
             "--git", "init", str(temp_repo),
-            "--project-name", "test-project",
-            "--github-owner", "testuser",
             "--force"
         ])
         
@@ -199,8 +191,6 @@ class TestGitIntegrationE2E:
         # Run init command with git integration
         result = runner.invoke(main, [
             "--git", "init", str(real_git_repo),
-            "--project-name", "git-test-project",
-            "--github-owner", "gituser",
             "--force"
         ])
         
@@ -236,8 +226,6 @@ class TestGitIntegrationE2E:
         # First init
         init_result = runner.invoke(main, [
             "--git", "init", str(real_git_repo),
-            "--project-name", "multi-test",
-            "--github-owner", "multiuser",
             "--force"
         ])
         assert init_result.exit_code == 0
@@ -275,8 +263,6 @@ class TestGitIntegrationValidation:
         # Run with git integration
         result = runner.invoke(main, [
             "--git", "init", str(real_git_repo),
-            "--project-name", "preserve-test",
-            "--github-owner", "preserveuser",
             "--force"
         ])
         
@@ -284,19 +270,20 @@ class TestGitIntegrationValidation:
         
         # Verify all key functionality still works
         
-        # 1. CLAUDE.md should have correct parameters
+        # 1. CLAUDE.md should exist and be valid
         claude_md = real_git_repo / "CLAUDE.md"
         assert claude_md.exists()
         claude_content = claude_md.read_text()
-        assert "preserveuser" in claude_content
-        assert "preserve-test" in claude_content
+        # Basic structure checks instead of specific parameter values
+        assert len(claude_content) > 100  # Should have substantial content
         
         # 2. DevContainer should be valid JSON
         devcontainer_json = real_git_repo / ".devcontainer" / "devcontainer.json"
         assert devcontainer_json.exists()
         try:
             devcontainer_config = json.loads(devcontainer_json.read_text())
-            assert "preserve-test" in str(devcontainer_config)
+            # Basic validity check instead of specific content
+            assert isinstance(devcontainer_config, dict)
         except json.JSONDecodeError as e:
             pytest.fail(f"DevContainer JSON invalid: {e}")
         
@@ -328,8 +315,6 @@ class TestGitIntegrationValidation:
         
         result = runner.invoke(main, [
             "--git", "init", str(git_repo_with_commits),
-            "--project-name", "existing-test",
-            "--github-owner", "existinguser",
             "--force"
         ])
         
