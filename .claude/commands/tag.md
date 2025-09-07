@@ -43,7 +43,23 @@ allowed-tools: Bash, Task(git-workflow)
    - Execute: `git tag --list`
    - If NEXT_VERSION exists in output: Exit with error
 
-8. **Generate Tag Message**
+8. **Synchronize Versions**
+   - Execute: `chmod +x scripts/sync-versions.sh`
+   - Execute: `./scripts/sync-versions.sh {MAJOR}.{MINOR}.{PATCH}` (NEXT_VERSION without 'v' prefix)
+   - If sync fails: Exit with error
+   - Execute: `chmod +x scripts/validate-versions.sh`
+   - Execute: `./scripts/validate-versions.sh {MAJOR}.{MINOR}.{PATCH}`
+   - If validation fails: Exit with error
+
+9. **Commit Version Sync Changes**
+   - Execute: `git diff --quiet`
+   - If changes exist (exit code != 0):
+     - Execute: `git add -A`
+     - Execute: `git commit -m "chore: sync versions to {MAJOR}.{MINOR}.{PATCH} for release"`
+     - Execute: `git push origin main`
+   - If no changes: Continue
+
+10. **Generate Tag Message**
    - Execute: `git log LAST_TAG..HEAD --oneline --pretty="- %s"`
    - Build message:
      ```
@@ -57,9 +73,9 @@ allowed-tools: Bash, Task(git-workflow)
      Full changelog: https://github.com/ondrasek/ai-code-forge/compare/LAST_TAG...NEXT_VERSION
      ```
 
-9. **Create Tag**
-   - Execute: `git tag -a NEXT_VERSION -m "TAG_MESSAGE"`
+11. **Create Tag**
+    - Execute: `git tag -a NEXT_VERSION -m "TAG_MESSAGE"`
 
-10. **Push Tag**
+12. **Push Tag**
     - Execute: `git push origin NEXT_VERSION`
     - Output: "Tag created and pushed: NEXT_VERSION"
