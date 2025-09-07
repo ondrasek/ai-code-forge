@@ -3,6 +3,9 @@ name = "perplexity-mcp-server"
 version = "3.2.0"
 description = "MCP server for Perplexity API integration"
 requires-python = ">=3.13"
+authors = [
+    {name = "Ondrej (Ondra) Krajicek", email = "me@ondrejkrajicek.com"},
+]
 dependencies = [
     "fastmcp>=2.0",
     "httpx",
