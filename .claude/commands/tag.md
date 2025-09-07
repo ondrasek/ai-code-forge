@@ -4,15 +4,9 @@ argument-hint: Optional version type (auto|major|minor|patch) - defaults to auto
 allowed-tools: Bash, Task(git-workflow)
 ---
 
-!`git status`
-!`git branch --show-current`
-!`git tag --list | tail -5`
-
-## Execution Sequence
-
 1. **Validate Branch**
-   - Execute: `git branch --show-current`
-   - Requirement: Output must be "main"
+   - Execute: !`git status` and !`git branch --show-current`
+   - Requirement: Output must be "main", i.e. we are on the main branch
    - If not "main": Exit with error
 
 2. **Validate Working Directory**
@@ -36,7 +30,7 @@ allowed-tools: Bash, Task(git-workflow)
    - If VERSION_TYPE != "auto": Skip this step
    - Execute: `git log LAST_TAG..HEAD --oneline`
    - If output contains "break:" or "BREAKING": Set VERSION_TYPE = "major"
-   - Else if output contains "feat:": Set VERSION_TYPE = "minor"  
+   - Else if output contains "feat:": Set VERSION_TYPE = "minor"
    - Else: Set VERSION_TYPE = "patch"
 
 6. **Calculate Next Version**
@@ -54,12 +48,12 @@ allowed-tools: Bash, Task(git-workflow)
    - Build message:
      ```
      Release NEXT_VERSION
-     
+
      Previous Version: LAST_TAG
-     
+
      Changes in this release:
      {commit log output}
-     
+
      Full changelog: https://github.com/ondrasek/ai-code-forge/compare/LAST_TAG...NEXT_VERSION
      ```
 
