@@ -120,9 +120,71 @@ jobs:
           path: cli/.pytest_cache/
           retention-days: 7
 
+  test-mcp-servers:
+    name: Test MCP Servers
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install MCP server dependencies
+        run: |
+          cd mcp-servers
+          python -m pip install --upgrade pip
+          # Install test dependencies if requirements exist
+          if [ -f tests/requirements.txt ]; then
+            pip install -r tests/requirements.txt
+          fi
+          # Install each MCP server's dependencies
+          for server_dir in */; do
+            if [ -f "$server_dir/pyproject.toml" ]; then
+              echo "Installing dependencies for $server_dir"
+              cd "$server_dir"
+              pip install -e .
+              cd ..
+            fi
+          done
+
+      - name: Run MCP server tests
+        run: |
+          cd mcp-servers
+          chmod +x tests/run_tests.sh
+          ./tests/run_tests.sh --env ci
+
+  test-scripts:
+    name: Test Scripts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Make test scripts executable
+        run: |
+          chmod +x scripts/tests/*.sh
+
+      - name: Run script tests
+        run: |
+          cd scripts/tests
+          ./run-all-tests.sh --verbose
+
   build-summary:
     name: CI Summary
-    needs: [validate-versions, build-and-test]
+    needs: [validate-versions, build-and-test, test-mcp-servers, test-scripts]
     runs-on: ubuntu-latest
     if: always()
     permissions:
@@ -148,15 +210,31 @@ jobs:
             echo "❌ **Build & Test:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi
 
+          # MCP server tests status
+          if [[ "${{ needs.test-mcp-servers.result }}" == "success" ]]; then
+            echo "✅ **MCP Server Tests:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **MCP Server Tests:** FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Script tests status
+          if [[ "${{ needs.test-scripts.result }}" == "success" ]]; then
+            echo "✅ **Script Tests:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Script Tests:** FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 What Was Validated:" >> $GITHUB_STEP_SUMMARY
           echo "- Version consistency across all pyproject.toml and __init__.py files" >> $GITHUB_STEP_SUMMARY
           echo "- CLI package builds successfully with templates" >> $GITHUB_STEP_SUMMARY
           echo "- Package imports work correctly" >> $GITHUB_STEP_SUMMARY
-          echo "- All tests pass" >> $GITHUB_STEP_SUMMARY
+          echo "- CLI unit tests pass" >> $GITHUB_STEP_SUMMARY
+          echo "- MCP server functionality and integration tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Script launcher and worktree integration tests" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" ]]; then
+          if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" && "${{ needs.test-mcp-servers.result }}" == "success" && "${{ needs.test-scripts.result }}" == "success" ]]; then
             echo "🎉 **Overall Status:** All checks passed - ready for release!" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ **Overall Status:** Some checks failed - review before release" >> $GITHUB_STEP_SUMMARY
