@@ -185,7 +185,7 @@ jobs:
 
   build-summary:
     name: CI Summary
-    needs: [validate-versions, build-and-test, test-mcp-servers, test-templates]
+    needs: [validate-versions, build-and-test-cli, test-mcp-servers, test-templates]
     runs-on: ubuntu-latest
     if: always()
     permissions:
@@ -205,7 +205,7 @@ jobs:
           fi
 
           # Build and test status
-          if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
+          if [[ "${{ needs.build-and-test-cli.result }}" == "success" ]]; then
             echo "✅ **Build & Test:** PASSED" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Build & Test:** FAILED" >> $GITHUB_STEP_SUMMARY
@@ -235,7 +235,7 @@ jobs:
           echo "- Template script functionality and integration tests" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" && "${{ needs.test-mcp-servers.result }}" == "success" && "${{ needs.test-templates.result }}" == "success" ]]; then
+          if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test-cli.result }}" == "success" && "${{ needs.test-mcp-servers.result }}" == "success" && "${{ needs.test-templates.result }}" == "success" ]]; then
             echo "🎉 **Overall Status:** All checks passed - ready for release!" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ **Overall Status:** Some checks failed - review before release" >> $GITHUB_STEP_SUMMARY
