@@ -161,8 +161,8 @@ jobs:
           chmod +x tests/run_tests.sh
           ./tests/run_tests.sh --env ci
 
-  test-scripts:
-    name: Test Scripts
+  test-templates:
+    name: Test Templates
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -173,18 +173,19 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Make test scripts executable
+      - name: Make template test scripts executable
         run: |
-          chmod +x scripts/tests/*.sh
+          chmod +x templates.tests/scripts/*.sh
+          chmod +x templates.tests/scripts/worktree/*.sh
 
-      - name: Run script tests
+      - name: Run template tests
         run: |
-          cd scripts/tests
+          cd templates.tests/scripts
           ./run-all-tests.sh --verbose
 
   build-summary:
     name: CI Summary
-    needs: [validate-versions, build-and-test, test-mcp-servers, test-scripts]
+    needs: [validate-versions, build-and-test, test-mcp-servers, test-templates]
     runs-on: ubuntu-latest
     if: always()
     permissions:
@@ -217,11 +218,11 @@ jobs:
             echo "❌ **MCP Server Tests:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Script tests status
-          if [[ "${{ needs.test-scripts.result }}" == "success" ]]; then
-            echo "✅ **Script Tests:** PASSED" >> $GITHUB_STEP_SUMMARY
+          # Template tests status
+          if [[ "${{ needs.test-templates.result }}" == "success" ]]; then
+            echo "✅ **Template Tests:** PASSED" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Script Tests:** FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Template Tests:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -231,10 +232,10 @@ jobs:
           echo "- Package imports work correctly" >> $GITHUB_STEP_SUMMARY
           echo "- CLI unit tests pass" >> $GITHUB_STEP_SUMMARY
           echo "- MCP server functionality and integration tests" >> $GITHUB_STEP_SUMMARY
-          echo "- Script launcher and worktree integration tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Template script functionality and integration tests" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" && "${{ needs.test-mcp-servers.result }}" == "success" && "${{ needs.test-scripts.result }}" == "success" ]]; then
+          if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" && "${{ needs.test-mcp-servers.result }}" == "success" && "${{ needs.test-templates.result }}" == "success" ]]; then
             echo "🎉 **Overall Status:** All checks passed - ready for release!" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ **Overall Status:** Some checks failed - review before release" >> $GITHUB_STEP_SUMMARY
