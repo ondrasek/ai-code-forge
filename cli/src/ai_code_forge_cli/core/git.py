@@ -2,7 +2,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 
 class GitCommitManager:
@@ -123,6 +123,36 @@ class GitCommitManager:
         """
         # Only check if we're in a git repository - never modify configuration
         return self.is_git_repository()
+    
+    def get_repo_status(self) -> dict[str, Any]:
+        """Get git repository status.
+        
+        Returns:
+            Dictionary with success status and repo information
+        """
+        try:
+            result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                return {
+                    "success": True,
+                    "has_changes": bool(result.stdout.strip()),
+                    "status_output": result.stdout.strip()
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": result.stderr.strip() or "Git status failed"
+                }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
 
 
 def get_current_acf_version(acforge_dir: Path) -> Optional[str]:
