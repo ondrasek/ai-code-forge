@@ -229,7 +229,13 @@ FAILED_PYPROJECT=0
 if [[ ${#PYPROJECT_FILES[@]} -gt 0 ]]; then
     print_status "$BLUE" "📝 Updating pyproject.toml files..."
     for file in "${PYPROJECT_FILES[@]}"; do
-        if update_pyproject_version "$file" "$TARGET_VERSION"; then
+        # Temporarily disable exit on error to handle failures gracefully
+        set +e
+        update_pyproject_version "$file" "$TARGET_VERSION"
+        update_result=$?
+        set -e
+        
+        if [[ $update_result -eq 0 ]]; then
             ((UPDATED_PYPROJECT++))
         else
             ((FAILED_PYPROJECT++))
@@ -244,7 +250,13 @@ FAILED_INIT=0
 if [[ ${#INIT_FILES[@]} -gt 0 ]]; then
     print_status "$BLUE" "📝 Updating __init__.py files..."
     for file in "${INIT_FILES[@]}"; do
-        if update_init_py_version "$file" "$TARGET_VERSION"; then
+        # Temporarily disable exit on error to handle failures gracefully
+        set +e
+        update_init_py_version "$file" "$TARGET_VERSION"
+        update_result=$?
+        set -e
+        
+        if [[ $update_result -eq 0 ]]; then
             ((UPDATED_INIT++))
         else
             ((FAILED_INIT++))
