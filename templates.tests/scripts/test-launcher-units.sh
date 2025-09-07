@@ -6,8 +6,9 @@ set -euo pipefail
 # Usage: ./test-launcher-units.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LAUNCHER_DIR="$(dirname "$SCRIPT_DIR")"
-LIB_DIR="$LAUNCHER_DIR/lib"
+# Use git to find repository root for reliable path resolution
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+LIB_DIR="$REPO_ROOT/templates/scripts/lib"
 
 # Source the launcher utilities to test
 if [[ ! -f "$LIB_DIR/launcher-utils.sh" ]]; then

@@ -30,7 +30,7 @@ jobs:
         run: |
           ./scripts/validate-versions.sh
 
-  build-and-test:
+  build-and-test-cli:
     name: Build and Test CLI Package
     runs-on: ubuntu-latest
     permissions:

@@ -6,7 +6,9 @@ set -euo pipefail
 # Usage: ./test-launcher-integration.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LAUNCHER_DIR="$(dirname "$SCRIPT_DIR")"
+# Use git to find repository root for reliable path resolution
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+LAUNCHER_DIR="$REPO_ROOT/templates/scripts"
 
 # Color codes for test output
 RED='\033[0;31m'
