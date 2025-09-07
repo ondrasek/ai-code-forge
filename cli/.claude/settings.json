@@ -1,0 +1,12 @@
+{
+  "model": "claude-sonnet-4-20250514",
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  },
+  "includeCoAuthoredBy": true,
+  "cleanupPeriodDays": 30,
+  "statusLine": {
+    "type": "command",
+    "command": "printf '\\033[01;32m%s@%s\\033[00m:\\033[01;34m%s\\033[00m' \"$(whoami)\" \"$(hostname -s)\" \"$(pwd)\""
+  }
+}

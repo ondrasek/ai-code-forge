@@ -1,0 +1,80 @@
+{
+  "name": "ai-code-forge DevContainer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "latest",
+      "nodeGypDependencies": true
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "docker.docker",
+        "github.vscode-pull-request-github",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "qwtel.sqlite-viewer"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "python.defaultInterpreterPath": "/usr/local/python/current/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "git.openRepositoryInParentFolders": "always",
+        "terminal.integrated.defaultLocation": "editor"
+      }
+    }
+  },
+
+  "containerEnv": {
+    "PYTHONIOENCODING": "UTF-8"
+  },
+
+  "runArgs": [
+    "--env-file", ".env",
+    "--label", "my.repositoryName=ai-code-forge",
+    "--label", "my.repositoryOwner=ondrasek"
+  ],
+
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
+  },
+
+  "forwardPorts": [58023],
+  "portsAttributes": {
+    "58023": {
+      "label": "Claude Code SSE",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "postCreateCommand": "/tmp/.devcontainer/postCreate.sh",
+
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "updateRemoteUserUID": true,
+  "workspaceFolder": "/workspace",
+
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer,target=/tmp/.devcontainer,type=bind,consistency=cached",
+    "source=ai-code-forge,target=/workspace,type=volume"
+  ]
+}
