@@ -155,6 +155,7 @@ for file in "${ALL_PYPROJECT_FILES[@]}"; do
     clean_file="${file#./}"
     should_exclude=false
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        # Use proper glob pattern matching
         if [[ "$clean_file" == $pattern ]]; then
             should_exclude=true
             break
@@ -170,13 +171,14 @@ done
 
 # Find all __init__.py files with __version__ (exclude .venv and site-packages directories)
 print_status "$BLUE" "📋 Discovering __init__.py files with version info..."
-ALL_INIT_FILES=($(find . -path "*/.venv" -prune -o -path "*/site-packages" -prune -o -name "__init__.py" -type f -exec grep -l '^__version__ = ' {} \; | sort))
+ALL_INIT_FILES=($(find . \( -path "*/.venv" -o -path "*/site-packages" \) -prune -o -name "__init__.py" -type f -print0 | xargs -0 grep -l '^__version__ = ' 2>/dev/null | sort))
 
 INIT_FILES=()
 for file in "${ALL_INIT_FILES[@]}"; do
     clean_file="${file#./}"
     should_exclude=false
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        # Use proper glob pattern matching
         if [[ "$clean_file" == $pattern ]]; then
             should_exclude=true
             break
@@ -236,9 +238,10 @@ if [[ ${#PYPROJECT_FILES[@]} -gt 0 ]]; then
         set -e
         
         if [[ $update_result -eq 0 ]]; then
-            ((UPDATED_PYPROJECT++))
+            UPDATED_PYPROJECT=$((UPDATED_PYPROJECT + 1))
         else
-            ((FAILED_PYPROJECT++))
+            FAILED_PYPROJECT=$((FAILED_PYPROJECT + 1))
+            print_status "$RED" "❌ Failed to update pyproject.toml: $file (exit code: $update_result)"
         fi
     done
 fi
@@ -257,9 +260,10 @@ if [[ ${#INIT_FILES[@]} -gt 0 ]]; then
         set -e
         
         if [[ $update_result -eq 0 ]]; then
-            ((UPDATED_INIT++))
+            UPDATED_INIT=$((UPDATED_INIT + 1))
         else
-            ((FAILED_INIT++))
+            FAILED_INIT=$((FAILED_INIT + 1))
+            print_status "$RED" "❌ Failed to update __init__.py: $file (exit code: $update_result)"
         fi
     done
 fi
