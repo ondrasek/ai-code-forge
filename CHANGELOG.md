@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+## [3.2.0] - 2025-09-07
+
+### Changed
+- **Version Synchronization**: Updated all package versions to 3.2.0 for consistency (CLI, OpenAI MCP server, Perplexity MCP server)
+- **Script Cleanup**: Removed obsolete validation scripts (sync-versions.sh, validate-mcp-config.sh, validate-versions.sh, validate-workflows.sh)
+- **Workflow Updates**: Updated GitHub Actions workflow configurations to align with version changes
+- **Documentation Cleanup**: Removed outdated research documentation files
+
+## [2.90.0] - 2025-08-09
+
+### Added
 - **CLI Foundation Commands**: Complete implementation of `acf init` command with comprehensive repository bootstrapping (closes #205)
   - Dual directory initialization with `.acforge/` state management and `.claude/` configuration deployment
   - Template parameter substitution system supporting {{GITHUB_OWNER}}, {{PROJECT_NAME}}, {{REPO_NAME}} variables
