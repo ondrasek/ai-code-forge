@@ -3,7 +3,7 @@
 import pytest
 import asyncio
 import os
-from unittest.mock import patch, AsyncMock, MagicMock, side_effect
+from unittest.mock import patch, AsyncMock, MagicMock
 
 # Import shared testing utilities
 from tests.shared.base_test_classes import AsyncTestBase, ErrorSimulationMixin

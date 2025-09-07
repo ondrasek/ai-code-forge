@@ -94,13 +94,25 @@ test_detect_environment_scenarios() {
     # Clear environment first
     unset CODESPACES REMOTE_CONTAINERS DEVCONTAINER 2>/dev/null || true
     
-    # Test 1: Local environment (no container variables)
-    detect_environment
-    if [[ "${DETECTED_ENV_TYPE}" == "local" ]] && [[ "${DETECTED_SKIP_PERMISSIONS}" == "false" ]]; then
-        echo "Local environment detected correctly"
+    # Test 1: Local environment (no container variables and no /.dockerenv)
+    # Note: If running in CI with /.dockerenv, this test will detect container environment correctly
+    detect_environment 2>/dev/null
+    if [[ -f "/.dockerenv" ]] || [[ -n "${CI:-}" ]]; then
+        # In containerized CI, expect container detection
+        if [[ "${DETECTED_ENV_TYPE}" == "container" ]] && [[ "${DETECTED_SKIP_PERMISSIONS}" == "true" ]]; then
+            echo "Container environment detected correctly (CI/Docker)"
+        else
+            echo "Container environment detection failed in CI: type=${DETECTED_ENV_TYPE}, skip=${DETECTED_SKIP_PERMISSIONS}"
+            return 1
+        fi
     else
-        echo "Local environment detection failed: type=${DETECTED_ENV_TYPE}, skip=${DETECTED_SKIP_PERMISSIONS}"
-        return 1
+        # In true local environment, expect local detection
+        if [[ "${DETECTED_ENV_TYPE}" == "local" ]] && [[ "${DETECTED_SKIP_PERMISSIONS}" == "false" ]]; then
+            echo "Local environment detected correctly"
+        else
+            echo "Local environment detection failed: type=${DETECTED_ENV_TYPE}, skip=${DETECTED_SKIP_PERMISSIONS}"
+            return 1
+        fi
     fi
     
     # Test 2: Codespaces environment
@@ -254,7 +266,7 @@ EOF
        [[ "${TEST_VAR4:-}" == "local_value" ]]; then
         echo "load_configuration works correctly with precedence"
     else
-        echo "load_configuration failed: VAR1=${TEST_VAR1:-}, VAR2=${TEST_VAR2:-}, VAR3=${TEST_VAR3:-}, VAR4=${TEST_VAR4:-}"
+        echo "load_configuration failed: TEST_VAR1=${TEST_VAR1:-}, TEST_VAR2=${TEST_VAR2:-}, TEST_VAR3=${TEST_VAR3:-}, TEST_VAR4=${TEST_VAR4:-}"
         return 1
     fi
     
@@ -411,9 +423,11 @@ EOF
     # Clear any existing test variables
     unset NORMAL_VAR API_KEY TOKEN SECRET PASSWORD PASSPHRASE REGULAR_VAR 2>/dev/null || true
     
-    # Load with debug mode enabled
+    # Load with debug mode enabled - capture output to temp file to avoid subprocess
+    local output_file="$TEST_TEMP_DIR/load_output.txt"
+    load_env_file "$test_env" true > "$output_file" 2>&1
     local output
-    output=$(load_env_file "$test_env" true 2>&1)
+    output=$(cat "$output_file")
     
     # Check that sensitive values are masked
     if [[ "$output" =~ "API_KEY=***masked***" ]] && \

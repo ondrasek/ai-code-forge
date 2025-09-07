@@ -19,7 +19,7 @@ detect_environment() {
     
     # Check for devcontainer environment
     if [[ -n "${CODESPACES:-}" ]] || [[ -n "${REMOTE_CONTAINERS:-}" ]] || [[ -f "/.dockerenv" ]] || [[ -n "${DEVCONTAINER:-}" ]]; then
-        echo "🔍 Detected devcontainer/codespace environment - enabling --dangerously-skip-permissions"
+        echo "🔍 Detected devcontainer/codespace environment - enabling --dangerously-skip-permissions" >&2
         env_type="container"
         skip_permissions="true"
     fi
@@ -131,8 +131,10 @@ load_configuration() {
         env_files=(".env" ".env.local" ".env.development")
     fi
 
-    # Process .env files in order of precedence (.env.development overrides .env, etc.)
-    for env_file in "${env_files[@]}"; do
+    # Process .env files in reverse order so later files take precedence
+    # (e.g., .env.local overrides .env, .env.development overrides both)
+    for ((i=${#env_files[@]}-1; i>=0; i--)); do
+        local env_file="${env_files[i]}"
         local full_path="$project_root/$env_file"
         if [[ -f "$full_path" ]]; then
             if load_env_file "$full_path" "$debug_mode"; then
@@ -326,10 +328,8 @@ clean_tool_logs() {
         echo "⚠️  Deleted $deleted_sessions sessions with $error_count errors."
     fi
     
-    # Clean up empty base directory if needed
-    if [[ -d "$log_base_dir" ]] && [[ -z "$(ls -A "$log_base_dir" 2>/dev/null)" ]]; then
-        rmdir "$log_base_dir" 2>/dev/null || true
-    fi
+    # Keep the base directory - don't remove it even if empty
+    # This preserves the logging structure for future sessions
 }
 
 # Comprehensive logging execution wrapper

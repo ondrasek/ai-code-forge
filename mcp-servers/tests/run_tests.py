@@ -108,6 +108,19 @@ class TestRunner:
         try:
             env = os.environ.copy()
             env["PERFORMANCE_TEST_ENV"] = self.environment
+            # Set PYTHONPATH to include mcp-servers directory for tests.shared module
+            env["PYTHONPATH"] = str(self.mcp_servers_dir)
+            
+            # Set logging environment variables to disable logging in CI
+            if self.environment == "ci":
+                env["PERPLEXITY_LOG_LEVEL"] = "none"
+                env["OPENAI_STRUCTURED_LOG_LEVEL"] = "none"
+            else:
+                # For non-CI environments, set up minimal logging paths
+                log_dir = self.mcp_servers_dir / "logs"
+                log_dir.mkdir(exist_ok=True)
+                env["PERPLEXITY_LOG_PATH"] = str(log_dir / "perplexity.log")
+                env["OPENAI_STRUCTURED_LOG_PATH"] = str(log_dir / "openai.log")
             
             if self.verbose:
                 print(f"Running: {' '.join(cmd)}")

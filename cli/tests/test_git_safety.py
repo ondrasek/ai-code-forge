@@ -172,7 +172,12 @@ class TestGitSafety:
             # Check for templates section (new architecture)
             if "templates" in status_data:
                 templates_section = status_data["templates"]
-                assert "status" in templates_section, "Templates section missing status info"
+                assert "available_count" in templates_section, "Templates section missing available_count"
+                
+            # Check for analysis section with status info
+            if "analysis" in status_data:
+                analysis_section = status_data["analysis"]
+                assert "status" in analysis_section, "Analysis section missing status info"
             
         except json.JSONDecodeError:
             pytest.fail("Status JSON output is invalid")
