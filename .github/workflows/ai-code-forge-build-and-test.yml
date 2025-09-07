@@ -2,31 +2,13 @@ name: Build and Test
 
 on:
   push:
-    branches: 
+    branches:
       - main
-    paths:
-      - '.claude/**'
-      - 'templates/**'
-      - 'scripts/**'
-      - 'docs/**'
-      - 'cli/**'
-      - 'mcp-servers/**'
-      - 'CLAUDE.md'
-      - 'README.md'
-      - 'CHANGELOG.md'
   pull_request:
     branches:
       - main
-    paths:
-      - '.claude/**'
-      - 'templates/**'
-      - 'scripts/**'
-      - 'docs/**'
-      - 'cli/**'
-      - 'mcp-servers/**'
-      - 'CLAUDE.md'
-      - 'README.md'
-      - 'CHANGELOG.md'
+  workflow_dispatch:
+
 
 jobs:
   validate-versions:
@@ -162,29 +144,29 @@ jobs:
         run: |
           echo "## 🔍 Continuous Integration Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Version validation status
           if [[ "${{ needs.validate-versions.result }}" == "success" ]]; then
             echo "✅ **Version Consistency:** PASSED" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Version Consistency:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi
-          
-          # Build and test status  
+
+          # Build and test status
           if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
             echo "✅ **Build & Test:** PASSED" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Build & Test:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 What Was Validated:" >> $GITHUB_STEP_SUMMARY
           echo "- Version consistency across all pyproject.toml and __init__.py files" >> $GITHUB_STEP_SUMMARY
-          echo "- CLI package builds successfully with templates" >> $GITHUB_STEP_SUMMARY  
+          echo "- CLI package builds successfully with templates" >> $GITHUB_STEP_SUMMARY
           echo "- Package imports work correctly" >> $GITHUB_STEP_SUMMARY
           echo "- All tests pass" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ needs.validate-versions.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" ]]; then
             echo "🎉 **Overall Status:** All checks passed - ready for release!" >> $GITHUB_STEP_SUMMARY
           else
