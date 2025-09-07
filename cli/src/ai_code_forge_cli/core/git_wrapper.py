@@ -192,9 +192,8 @@ class GitCommandWrapper:
                 paths_to_add.append(".claude/")
                 
             for path in paths_to_add:
-                add_result = self.git_manager.stage_files([path])
-                if not add_result["success"]:
-                    result["error"] = f"Failed to stage {path}: {add_result['error']}"
+                if not self.git_manager.add_files([path]):
+                    result["error"] = f"Failed to stage {path}"
                     return result
                     
             # Check if there are any staged changes after adding files

@@ -180,7 +180,7 @@ class StateManager:
             stat = self.state_file.stat()
             info.update({
                 "state_file_size": stat.st_size,
-                "last_modified": datetime.fromtimestamp(stat.st_mtime),
+                "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
             })
         
         return info

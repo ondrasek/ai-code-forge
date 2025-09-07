@@ -317,7 +317,13 @@ class StatusReporter:
         if state_info["state_file_exists"]:
             click.echo(f"📋 State file: {_format_size(state_info['state_file_size'])}")
             if "last_modified" in state_info:
-                click.echo(f"   Last modified: {_format_datetime(state_info['last_modified'])}")
+                # last_modified is now an ISO format string, parse it for formatting
+                try:
+                    dt = datetime.fromisoformat(state_info['last_modified'])
+                    click.echo(f"   Last modified: {_format_datetime(dt)}")
+                except (ValueError, TypeError):
+                    # Fallback if ISO parsing fails
+                    click.echo(f"   Last modified: {state_info['last_modified']}")
         else:
             click.echo("📋 State file: Not found")
         
