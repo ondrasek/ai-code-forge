@@ -5,5 +5,5 @@ using OpenAI's JSON Schema validation features.
 """
 
 __version__ = "3.2.0"
-__author__ = "AI Code Forge"
+__author__ = "Ondrej Krajicek, me@ondrejkrajicek.com"
 __description__ = "MCP server for OpenAI structured output integration"
