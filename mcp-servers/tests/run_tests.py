@@ -201,18 +201,28 @@ class TestRunner:
         self.print_section("Cross-Server Integration Tests")
         
         # Performance baselines
-        success = self.run_test_suite("tests/benchmark/", "Performance baseline tests")
-        all_passed = all_passed and success
+        benchmark_dir = self.mcp_servers_dir / "tests" / "benchmark"
+        if benchmark_dir.exists() and any(benchmark_dir.glob("test_*.py")):
+            success = self.run_test_suite("tests/benchmark/", "Performance baseline tests")
+            all_passed = all_passed and success
+        else:
+            self.print_warning("No performance baseline tests found")
         
         # Integration workflows
-        success = self.run_test_suite("tests/integration/", "Integration workflow tests")
-        all_passed = all_passed and success
+        integration_dir = self.mcp_servers_dir / "tests" / "integration"
+        if integration_dir.exists() and any(integration_dir.glob("test_*.py")):
+            success = self.run_test_suite("tests/integration/", "Integration workflow tests")
+            all_passed = all_passed and success
+        else:
+            self.print_warning("No integration workflow tests found")
         
         # Validation tests
         validation_dir = self.mcp_servers_dir / "tests" / "validation"
         if validation_dir.exists() and any(validation_dir.glob("test_*.py")):
             success = self.run_test_suite("tests/validation/", "Validation tests")
             all_passed = all_passed and success
+        else:
+            self.print_warning("No validation tests found")
             
         # 4. Load tests (optional, resource intensive)
         if include_slow:
