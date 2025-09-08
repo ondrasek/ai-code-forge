@@ -15,7 +15,7 @@ class TestCodexGenerate:
     """Test cases for codex_generate tool."""
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_generate_success(self, mock_getenv, mock_openai_class):
         """Test successful code generation."""
@@ -41,10 +41,10 @@ def fibonacci(n):
 
 This is a simple recursive implementation of the Fibonacci sequence with proper base cases.
 """
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
         # Test the function
-        result = await codex_generate(
+        result = await codex_generate.fn(
             prompt="Generate a Fibonacci function",
             language="python",
             style="clean"
@@ -71,12 +71,12 @@ This is a simple recursive implementation of the Fibonacci sequence with proper 
         """Test error handling when API key is missing."""
         mock_getenv.return_value = None
         
-        result = await codex_generate(prompt="test prompt")
+        result = await codex_generate.fn(prompt="test prompt")
         
         assert "Error: OPENAI_API_KEY environment variable not set" in result
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_generate_with_context(self, mock_getenv, mock_openai_class):
         """Test code generation with existing context."""
@@ -88,9 +88,9 @@ This is a simple recursive implementation of the Fibonacci sequence with proper 
         mock_openai_class.return_value = mock_client
         mock_response = MagicMock()
         mock_response.choices[0].message.content = "Generated code with context"
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
-        result = await codex_generate(
+        result = await codex_generate.fn(
             prompt="Add error handling",
             context="def process_data(data): return data.upper()",
             language="python"
@@ -107,7 +107,7 @@ class TestCodexReview:
     """Test cases for codex_review tool."""
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_review_success(self, mock_getenv, mock_openai_class):
         """Test successful code review."""
@@ -134,14 +134,14 @@ class TestCodexReview:
 7. Recommendations: Add input validation and documentation
 8. Code Quality Score: 7/10
 """
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
         code_sample = """
 def calculate_average(numbers):
     return sum(numbers) / len(numbers)
 """
         
-        result = await codex_review(
+        result = await codex_review.fn(
             code=code_sample,
             language_hint="python",
             focus="comprehensive"
@@ -159,7 +159,7 @@ def calculate_average(numbers):
         assert "comprehensive" in system_msg
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_review_focus_security(self, mock_getenv, mock_openai_class):
         """Test code review with security focus."""
@@ -169,9 +169,9 @@ def calculate_average(numbers):
         mock_openai_class.return_value = mock_client
         mock_response = MagicMock()
         mock_response.choices[0].message.content = "Security-focused review results"
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
-        await codex_review(code="test code", focus="security")
+        await codex_review.fn(code="test code", focus="security")
         
         call_args = mock_client.chat.completions.create.call_args
         system_msg = call_args[1]['messages'][0]['content']
@@ -182,7 +182,7 @@ class TestCodexRefactor:
     """Test cases for codex_refactor tool."""
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_refactor_preserve_behavior(self, mock_getenv, mock_openai_class):
         """Test refactoring with behavior preservation."""
@@ -224,11 +224,11 @@ def calculate_average(numbers: List[float]) -> float:
 - Type hints improve IDE support and catch errors early  
 - Documentation makes function purpose clear
 """
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
         original_code = "def calculate_average(numbers): return sum(numbers) / len(numbers)"
         
-        result = await codex_refactor(
+        result = await codex_refactor.fn(
             code=original_code,
             requirements="Add type hints, error handling, and documentation",
             preserve_behavior=True
@@ -247,7 +247,7 @@ def calculate_average(numbers: List[float]) -> float:
         assert "Preserve exact behavior" in system_msg
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_refactor_allow_behavior_changes(self, mock_getenv, mock_openai_class):
         """Test refactoring allowing behavior changes."""
@@ -257,9 +257,9 @@ def calculate_average(numbers: List[float]) -> float:
         mock_openai_class.return_value = mock_client
         mock_response = MagicMock()
         mock_response.choices[0].message.content = "Refactored with behavior changes"
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
-        await codex_refactor(
+        await codex_refactor.fn(
             code="old code",
             requirements="modernize and optimize",
             preserve_behavior=False
@@ -274,7 +274,7 @@ class TestCodexExplain:
     """Test cases for codex_explain tool."""
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_explain_detailed_developer(self, mock_getenv, mock_openai_class):
         """Test detailed code explanation for developers."""
@@ -313,7 +313,7 @@ Uses classical recursive approach with base cases for n <= 1.
 - Exponential time complexity makes it impractical for n > 40
 - No input validation for negative numbers or non-integers
 """
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
         code_sample = """
 def fibonacci(n):
@@ -322,7 +322,7 @@ def fibonacci(n):
     return fibonacci(n-1) + fibonacci(n-2)
 """
         
-        result = await codex_explain(
+        result = await codex_explain.fn(
             code=code_sample,
             language_hint="python",
             level="detailed",
@@ -342,7 +342,7 @@ def fibonacci(n):
         assert "developer at detailed level" in system_msg
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_codex_explain_beginner_student(self, mock_getenv, mock_openai_class):
         """Test beginner-level explanation for students."""
@@ -352,9 +352,9 @@ def fibonacci(n):
         mock_openai_class.return_value = mock_client
         mock_response = MagicMock()
         mock_response.choices[0].message.content = "Beginner-friendly explanation"
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
         
-        await codex_explain(
+        await codex_explain.fn(
             code="simple code",
             level="beginner",
             audience="student"
@@ -371,7 +371,7 @@ class TestCodexToolsErrorHandling:
     """Test error handling across all Codex tools."""
     
     @pytest.mark.asyncio
-    @patch('openai_structured_mcp.server.AsyncOpenAI')
+    @patch('openai.AsyncOpenAI')
     @patch('openai_structured_mcp.server.os.getenv')
     async def test_openai_api_exception_handling(self, mock_getenv, mock_openai_class):
         """Test handling of OpenAI API exceptions."""
@@ -390,7 +390,7 @@ class TestCodexToolsErrorHandling:
         ]
         
         for tool_func, params in tools_and_params:
-            result = await tool_func(**params)
+            result = await tool_func.fn(**params)
             assert "Error during" in result
             assert "API Error" in result
     
@@ -408,7 +408,7 @@ class TestCodexToolsErrorHandling:
         ]
         
         for tool_func, params in tools_and_params:
-            result = await tool_func(**params)
+            result = await tool_func.fn(**params)
             assert "OPENAI_API_KEY environment variable not set" in result
 
 
@@ -424,7 +424,7 @@ class TestCodexToolsIntegration:
     async def test_codex_generate_real_api(self):
         """Test actual API integration for code generation."""
         # This test requires a real API key and --run-integration flag
-        result = await codex_generate(
+        result = await codex_generate.fn(
             prompt="Create a simple function that adds two numbers",
             language="python",
             temperature=0.1
@@ -442,7 +442,7 @@ class TestCodexToolsIntegration:
     async def test_codex_tools_workflow(self):
         """Test a complete workflow: generate -> review -> refactor -> explain."""
         # Generate code
-        generated = await codex_generate(
+        generated = await codex_generate.fn(
             prompt="Create a function to validate email addresses",
             language="python",
             temperature=0.1
@@ -454,18 +454,18 @@ class TestCodexToolsIntegration:
         code_sample = '\n'.join(code_lines)
         
         # Review the generated code
-        review = await codex_review(code=code_sample, focus="security")
+        review = await codex_review.fn(code=code_sample, focus="security")
         assert "Assessment" in review or "review" in review.lower()
         
         # Refactor for improvements  
-        refactored = await codex_refactor(
+        refactored = await codex_refactor.fn(
             code=code_sample,
             requirements="Add comprehensive error handling and type hints"
         )
         assert "refactor" in refactored.lower() or "def " in refactored
         
         # Explain the final code
-        explanation = await codex_explain(
+        explanation = await codex_explain.fn(
             code=code_sample,
             level="detailed",
             audience="developer"

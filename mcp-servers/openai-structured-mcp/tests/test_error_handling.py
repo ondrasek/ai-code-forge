@@ -7,11 +7,14 @@ import os
 from unittest.mock import patch, AsyncMock, MagicMock
 
 # Import shared testing utilities
-from tests.shared.base_test_classes import AsyncTestBase, ErrorSimulationMixin
-from tests.shared.mock_factories import OpenAIMockFactory, ErrorScenarioFactory, GenericMockFactory
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'tests'))
+from shared.base_test_classes import AsyncTestBase, ErrorSimulationMixin
+from shared.mock_factories import OpenAIMockFactory, ErrorScenarioFactory, GenericMockFactory
 
 # Import server with mock API key
-with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}):
+with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
     from openai_structured_mcp import server
 
 

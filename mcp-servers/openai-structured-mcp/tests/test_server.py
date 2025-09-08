@@ -365,27 +365,25 @@ class TestServerInitialization:
                 import importlib
                 importlib.reload(server)
     
-    @patch('openai_structured_mcp.server.FastMCP')
-    def test_main_function(self, mock_fastmcp):
+    def test_main_function(self):
         """Test main function execution."""
         mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
         
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
-            server.main()
+        with patch.object(server, 'mcp', mock_mcp_instance):
+            with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
+                server.main()
         
         mock_mcp_instance.run.assert_called_once()
     
-    @patch('openai_structured_mcp.server.FastMCP')
-    def test_main_function_keyboard_interrupt(self, mock_fastmcp):
+    def test_main_function_keyboard_interrupt(self):
         """Test main function with keyboard interrupt."""
         mock_mcp_instance = MagicMock()
         mock_mcp_instance.run.side_effect = KeyboardInterrupt()
-        mock_fastmcp.return_value = mock_mcp_instance
         
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
-            # Should not raise exception
-            server.main()
+        with patch.object(server, 'mcp', mock_mcp_instance):
+            with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
+                # Should not raise exception
+                server.main()
         
         mock_mcp_instance.run.assert_called_once()
 
