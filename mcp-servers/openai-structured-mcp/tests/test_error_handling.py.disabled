@@ -6,24 +6,15 @@ import json
 import os
 from unittest.mock import patch, AsyncMock, MagicMock
 
-# Import shared testing utilities
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'tests'))
-from shared.base_test_classes import AsyncTestBase, ErrorSimulationMixin
-from shared.mock_factories import OpenAIMockFactory, ErrorScenarioFactory, GenericMockFactory
+# Self-contained test - no shared dependencies
 
 # Import server with mock API key
 with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
     from openai_structured_mcp import server
 
 
-class TestOpenAIErrorHandling(AsyncTestBase, ErrorSimulationMixin):
+class TestOpenAIErrorHandling:
     """Test comprehensive error handling for OpenAI Structured MCP server."""
-    
-    def setup_method(self):
-        super().setup_method()
-        self.sample_data = GenericMockFactory.create_sample_data()
     
     @pytest.mark.asyncio
     async def test_network_error_handling(self):

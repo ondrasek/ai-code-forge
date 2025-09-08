@@ -19,6 +19,33 @@ from openai_structured_mcp.utils.logging import (
 )
 
 
+@pytest.fixture(autouse=True)
+def reset_logger_state():
+    """Reset logger state before and after each test to prevent pollution."""
+    # Reset main logger
+    logger = logging.getLogger("openai_structured_mcp")
+    logger.disabled = False
+    logger.handlers.clear()
+    logger.setLevel(logging.NOTSET)
+    
+    # Reset API logger
+    api_logger = logging.getLogger("openai_structured_api")
+    api_logger.disabled = False
+    api_logger.handlers.clear()
+    api_logger.setLevel(logging.NOTSET)
+    
+    yield
+    
+    # Clean up after test
+    logger.disabled = False
+    logger.handlers.clear()
+    logger.setLevel(logging.NOTSET)
+    
+    api_logger.disabled = False
+    api_logger.handlers.clear()
+    api_logger.setLevel(logging.NOTSET)
+
+
 class TestLoggingSetup:
     """Test logging setup functionality."""
     
@@ -55,7 +82,7 @@ class TestLoggingSetup:
             with patch.dict(os.environ, {
                 "OPENAI_STRUCTURED_LOG_LEVEL": "DEBUG",
                 "OPENAI_STRUCTURED_LOG_PATH": temp_dir
-            }):
+            }, clear=True):
                 logger = setup_logging()
                 
                 assert logger.disabled is False
@@ -96,7 +123,7 @@ class TestLoggingSetup:
                 with patch.dict(os.environ, {
                     "OPENAI_STRUCTURED_LOG_LEVEL": "INFO",
                     "OPENAI_STRUCTURED_LOG_PATH": "logs"
-                }):
+                }, clear=True):
                     logger = setup_logging()
                     
                     assert logger.disabled is False
@@ -111,15 +138,16 @@ class TestAPILogging:
     def test_setup_api_logging_with_path(self):
         """Test API logging setup with valid path."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            api_logger = setup_api_logging(temp_dir)
-            
-            assert api_logger.disabled is False
-            assert len(api_logger.handlers) > 0
-            
-            # Check that API log file exists
-            api_log_file = Path(temp_dir) / "api.log"
-            # File might not exist yet, but handler should be configured
-            assert any(isinstance(h, logging.FileHandler) for h in api_logger.handlers)
+            # Clear environment to ensure clean test
+            with patch.dict(os.environ, {}, clear=True):
+                api_logger = setup_api_logging(temp_dir)
+                
+                assert api_logger.disabled is False
+                assert len(api_logger.handlers) > 0
+                
+                # Check that API log file exists or handler is configured
+                # File might not exist yet, but handler should be configured
+                assert any(isinstance(h, logging.FileHandler) for h in api_logger.handlers)
     
     def test_setup_api_logging_without_path(self):
         """Test API logging setup without path (disabled)."""
@@ -329,7 +357,7 @@ class TestEnvironmentIntegration:
                 with patch.dict(os.environ, {
                     "OPENAI_STRUCTURED_LOG_LEVEL": level,
                     "OPENAI_STRUCTURED_LOG_PATH": temp_dir
-                }):
+                }, clear=True):
                     logger = setup_logging()
                     assert logger.disabled is False
                     assert logger.level == getattr(logging, level)
@@ -340,17 +368,26 @@ class TestEnvironmentIntegration:
             with patch.dict(os.environ, {
                 "OPENAI_STRUCTURED_LOG_LEVEL": "info",  # lowercase
                 "OPENAI_STRUCTURED_LOG_PATH": temp_dir
-            }):
+            }, clear=True):
                 logger = setup_logging()
                 assert logger.disabled is False
                 assert logger.level == logging.INFO
     
     def test_logging_disabled_states(self):
         """Test various ways logging can be disabled."""
-        disabled_values = ["none", "NONE", "None", "", None]
+        disabled_values = ["none", "NONE", "None", ""]
         
         for value in disabled_values:
-            env_dict = {"OPENAI_STRUCTURED_LOG_LEVEL": value} if value is not None else {}
+            env_dict = {"OPENAI_STRUCTURED_LOG_LEVEL": value}
+            
             with patch.dict(os.environ, env_dict, clear=True):
                 logger = setup_logging()
                 assert logger.disabled is True
+    
+    def test_logging_default_behavior_requires_path(self):
+        """Test that default behavior requires log path when no environment variables are set."""
+        with patch.dict(os.environ, {}, clear=True):
+            # When no environment variables are set, should default to INFO level
+            # which requires a log path, so should raise ValueError
+            with pytest.raises(ValueError, match="OPENAI_STRUCTURED_LOG_PATH must be set"):
+                setup_logging()
