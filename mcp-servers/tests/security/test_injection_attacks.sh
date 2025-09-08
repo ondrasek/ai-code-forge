@@ -62,9 +62,8 @@ test_injection_attack "Null byte with command" "branch\x00; echo pwned" "$WORKTR
 echo
 echo "Testing cleanup script injection attacks..."
 
-# Create a temporary safe worktree for cleanup testing
-SAFE_TEST_DIR="/tmp/worktree-injection-test-$$"
-mkdir -p "$SAFE_TEST_DIR"
+# Create a temporary safe worktree for cleanup testing - use mktemp for truly random temp directory
+SAFE_TEST_DIR="$(mktemp -d -t worktree-injection-test-XXXXXXXXXX)"
 
 test_injection_attack "Cleanup injection via path" "$SAFE_TEST_DIR; rm -rf /tmp/*" "$WORKTREE_CLEANUP"
 test_injection_attack "Cleanup injection via backticks" "$SAFE_TEST_DIR\`id > /tmp/pwned\`" "$WORKTREE_CLEANUP" 

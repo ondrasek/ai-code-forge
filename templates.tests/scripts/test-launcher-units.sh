@@ -30,9 +30,8 @@ TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-# Test directory for temporary files
-TEST_TEMP_DIR="/tmp/launcher-units-test-$$"
-mkdir -p "$TEST_TEMP_DIR"
+# Test directory for temporary files - use mktemp for truly random temp directory
+TEST_TEMP_DIR="$(mktemp -d -t launcher-units-test-XXXXXXXXXX)"
 
 # Cleanup function
 cleanup() {

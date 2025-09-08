@@ -1,11 +1,15 @@
 """Tests for FastMCP server implementation."""
 
 import pytest
+import tempfile
+import importlib
+import sys
 from unittest.mock import patch, AsyncMock, MagicMock
+from pathlib import Path
 import os
 
 # Import server components
-with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
+with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key", "PERPLEXITY_LOG_LEVEL": "none"}):
     from perplexity_mcp import server
 
 
@@ -15,6 +19,13 @@ def mock_perplexity_client():
     mock_client = AsyncMock()
     mock_client.AVAILABLE_MODELS = ["sonar", "sonar-pro", "sonar-reasoning", "sonar-deep-research"]
     return mock_client
+
+
+@pytest.fixture
+def temp_log_dir():
+    """Create a temporary directory for logging during tests."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)
 
 
 class TestMCPTools:
@@ -223,34 +234,55 @@ class TestServerInitialization:
         assert server.mcp is not None
         assert hasattr(server, 'perplexity_client')
     
-    def test_server_initialization_no_api_key(self):
+    def test_server_initialization_no_api_key(self, temp_log_dir):
         """Test server initialization without API key."""
-        with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(ValueError, match="PERPLEXITY_API_KEY"):
-                # Re-import to trigger initialization error
-                import importlib
-                importlib.reload(server)
-    
-    @patch('perplexity_mcp.server.FastMCP')
-    def test_main_function(self, mock_fastmcp):
-        """Test main function execution."""
-        mock_mcp_instance = MagicMock()
-        mock_fastmcp.return_value = mock_mcp_instance
+        # Set up environment with logging disabled to avoid logging configuration errors
+        test_env = {
+            "PERPLEXITY_LOG_LEVEL": "none"
+        }
         
-        with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
+        with patch.dict(os.environ, test_env, clear=True):
+            # Import a fresh copy of the client module to test initialization
+            import importlib.util
+            import sys
+            
+            # Create a fresh module spec to test initialization
+            spec = importlib.util.find_spec("perplexity_mcp.client")
+            client_module = importlib.util.module_from_spec(spec)
+            
+            # This should raise ValueError for missing API key
+            with pytest.raises(ValueError, match="PERPLEXITY_API_KEY environment variable is required"):
+                spec.loader.exec_module(client_module)
+                # Try to create a client instance
+                client_module.PerplexityClient()
+    
+    @patch.object(server, 'mcp')
+    def test_main_function(self, mock_mcp, temp_log_dir):
+        """Test main function execution."""
+        # Set up proper environment with logging disabled
+        test_env = {
+            "PERPLEXITY_API_KEY": "test-key",
+            "PERPLEXITY_LOG_LEVEL": "none"
+        }
+        
+        with patch.dict(os.environ, test_env):
             server.main()
         
-        mock_mcp_instance.run.assert_called_once()
+        mock_mcp.run.assert_called_once()
     
-    @patch('perplexity_mcp.server.FastMCP')
-    def test_main_function_keyboard_interrupt(self, mock_fastmcp):
+    @patch.object(server, 'mcp')
+    def test_main_function_keyboard_interrupt(self, mock_mcp, temp_log_dir):
         """Test main function with keyboard interrupt."""
-        mock_mcp_instance = MagicMock()
-        mock_mcp_instance.run.side_effect = KeyboardInterrupt()
-        mock_fastmcp.return_value = mock_mcp_instance
+        mock_mcp.run.side_effect = KeyboardInterrupt()
         
-        with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"}):
+        # Set up proper environment with logging disabled
+        test_env = {
+            "PERPLEXITY_API_KEY": "test-key", 
+            "PERPLEXITY_LOG_LEVEL": "none"
+        }
+        
+        with patch.dict(os.environ, test_env):
             # Should not raise exception
             server.main()
         
-        mock_mcp_instance.run.assert_called_once()
+        mock_mcp.run.assert_called_once()

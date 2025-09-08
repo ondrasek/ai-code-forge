@@ -81,7 +81,7 @@ echo
 echo "Testing validate_no_symlinks..."
 
 # Create test directory structure
-TEST_BASE="/tmp/worktree-test-$$"
+TEST_BASE="$(mktemp -d -t worktree-test-XXXXXXXXXX)"
 mkdir -p "$TEST_BASE/safe/path"
 mkdir -p "$TEST_BASE/unsafe"
 ln -s "/etc/passwd" "$TEST_BASE/unsafe/symlink"
