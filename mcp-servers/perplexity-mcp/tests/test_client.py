@@ -2,6 +2,7 @@
 
 import pytest
 import os
+import json
 from unittest.mock import patch, AsyncMock
 import httpx
 
@@ -89,7 +90,7 @@ class TestPerplexityClient:
         
         # Verify request was made with correct parameters
         request = httpx_mock.get_request()
-        request_data = request.json()
+        request_data = json.loads(request.content.decode())
         
         assert request_data["model"] == "sonar-deep-research"
         assert request_data["max_tokens"] == 500
@@ -114,7 +115,7 @@ class TestPerplexityClient:
         await client.query("test", model="invalid-model")
         
         request = httpx_mock.get_request()
-        request_data = request.json()
+        request_data = json.loads(request.content.decode())
         assert request_data["model"] == "sonar"
     
     @pytest.mark.asyncio
@@ -189,7 +190,7 @@ class TestPerplexityClient:
         
         # Verify request parameters
         request = httpx_mock.get_request()
-        request_data = request.json()
+        request_data = json.loads(request.content.decode())
         
         assert request_data["model"] == "sonar-deep-research"
         assert request_data["temperature"] == 0.3

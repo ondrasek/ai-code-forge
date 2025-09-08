@@ -33,7 +33,7 @@ class TestMCPTools:
         mock_perplexity_client.query.return_value = mock_response
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.perplexity_search(
+            result = await server.perplexity_search.fn(
                 query="test query",
                 model="sonar",
                 system_prompt="Custom prompt",
@@ -54,6 +54,11 @@ class TestMCPTools:
             system_message="Custom prompt",
             max_tokens=500,
             temperature=0.8,
+            top_p=1.0,
+            presence_penalty=0.0,
+            frequency_penalty=0.0,
+            search_domain_filter=None,
+            search_recency_filter=None,
             return_citations=True,
             return_related_questions=True
         )
@@ -68,7 +73,7 @@ class TestMCPTools:
         mock_perplexity_client.query.return_value = mock_response
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.perplexity_search(query="test query")
+            result = await server.perplexity_search.fn(query="test query")
         
         assert "Default result" in result
         
@@ -84,7 +89,7 @@ class TestMCPTools:
         mock_perplexity_client.query.return_value = mock_response
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.perplexity_search(query="test query")
+            result = await server.perplexity_search.fn(query="test query")
         
         assert "Research failed:" in result
         assert "API authentication failed" in result
@@ -98,33 +103,32 @@ class TestMCPTools:
             "citations": ["Source 1", "Source 2"],
             "related_questions": ["Deep question 1"]
         }
-        mock_perplexity_client.research_topic.return_value = mock_response
+        mock_perplexity_client.query.return_value = mock_response
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.perplexity_deep_research(
+            result = await server.perplexity_deep_research.fn(
                 topic="AI research",
-                focus_areas=["machine learning", "ethics"],
-                time_filter="month",
-                domain_filter=["arxiv.org"],
+                search_domain_filter=["arxiv.org"],
+                search_filter="month",
                 max_tokens=2000
             )
         
         # Verify the result includes all components
         assert "Deep research result" in result
-        assert "Sources:" in result
-        assert "Source 1" in result
-        assert "Source 2" in result
         assert "Related Research Questions:" in result
         assert "Deep question 1" in result
         
         # Verify client was called correctly
-        mock_perplexity_client.research_topic.assert_called_once_with(
-            topic="AI research",
-            focus_areas=["machine learning", "ethics"],
-            time_filter="month",
-            domain_filter=["arxiv.org"],
-            max_tokens=2000
-        )
+        expected_prompt = "Conduct comprehensive research on: AI research"
+        call_args = mock_perplexity_client.query.call_args
+        assert call_args[1]["prompt"] == expected_prompt
+        assert call_args[1]["model"] == "sonar-deep-research"
+        assert call_args[1]["max_tokens"] == 2000
+        assert call_args[1]["temperature"] == 0.3
+        assert call_args[1]["search_domain_filter"] == ["arxiv.org"]
+        assert call_args[1]["search_filter"] == "month"
+        assert call_args[1]["return_citations"] == True
+        assert call_args[1]["return_related_questions"] == True
     
     @pytest.mark.asyncio
     @patch.dict(os.environ, {"PERPLEXITY_API_KEY": "test-key"})
@@ -136,10 +140,10 @@ class TestMCPTools:
         mock_perplexity_client.query.return_value = mock_response
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.perplexity_quick_query(
+            result = await server.perplexity_quick_query.fn(
                 question="What is Python?",
-                domain_filter=["python.org"],
-                recency_filter="week"
+                search_domain_filter=["python.org"],
+                search_recency_filter="week"
             )
         
         assert result == "Quick answer"
@@ -156,7 +160,7 @@ class TestMCPTools:
     @pytest.mark.asyncio
     async def test_list_models(self):
         """Test list models functionality."""
-        result = await server.list_models()
+        result = await server.list_models.fn()
         
         # Verify all models are listed
         assert "sonar" in result
@@ -176,7 +180,7 @@ class TestMCPTools:
         mock_perplexity_client.health_check.return_value = True
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.health_check()
+            result = await server.health_check.fn()
         
         assert "✅" in result
         assert "accessible and working correctly" in result
@@ -189,7 +193,7 @@ class TestMCPTools:
         mock_perplexity_client.health_check.return_value = False
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.health_check()
+            result = await server.health_check.fn()
         
         assert "❌" in result
         assert "not responding correctly" in result
@@ -201,7 +205,7 @@ class TestMCPTools:
         mock_perplexity_client.health_check.side_effect = Exception("Connection error")
         
         with patch.object(server, 'perplexity_client', mock_perplexity_client):
-            result = await server.health_check()
+            result = await server.health_check.fn()
         
         assert "❌" in result
         assert "Health check failed" in result

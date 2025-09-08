@@ -643,6 +643,11 @@ done
 
 # Setup session-based logging system
 setup_logging() {
+    # Convert "force" to "true" for consistency
+    if [[ "$SAVE_LOGS" == "force" ]]; then
+        SAVE_LOGS="true"
+    fi
+    
     if [[ "$SAVE_LOGS" == "true" ]]; then
         # Generate session timestamp
         SESSION_TIMESTAMP=$(date +"%Y%m%d-%H%M%S")

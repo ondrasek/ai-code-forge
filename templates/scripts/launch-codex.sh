@@ -580,6 +580,11 @@ main() {
         load_configuration "$PROJECT_ROOT" "$DEBUG_MODE" "${ENV_FILES[@]}"
     fi
 
+    # Convert "force" to "true" for consistency
+    if [[ "$SAVE_LOGS" == "force" ]]; then
+        SAVE_LOGS="true"
+    fi
+    
     # Setup session-based logging
     if [[ "$SAVE_LOGS" == "true" ]]; then
         setup_session_logging "codex" "$PROJECT_ROOT" "$DEBUG_MODE" "$SAVE_LOGS"

@@ -114,6 +114,7 @@ class PerplexityClient:
         return_images: bool = False,
         return_related_questions: bool = False,
         search_domain_filter: Optional[List[str]] = None,
+        search_recency_filter: Optional[str] = None,
         search_filter: Optional[str] = None,
         stream: bool = False,
         custom_timeout: Optional[float] = None
@@ -135,6 +136,7 @@ class PerplexityClient:
             return_images: Whether to include images in results
             return_related_questions: Whether to return related questions
             search_domain_filter: List of domains to search within
+            search_recency_filter: Time period filter for search results (e.g., "month", "week", "day")
             search_filter: Search filter (e.g., "academic" for academic sources)
             stream: Whether to stream the response
             custom_timeout: Custom timeout for this request (overrides default)
@@ -174,6 +176,8 @@ class PerplexityClient:
         # Add optional search filters
         if search_domain_filter:
             data["search_domain_filter"] = search_domain_filter
+        if search_recency_filter:
+            data["search_recency_filter"] = search_recency_filter
         if search_filter:
             data["search_filter"] = search_filter
         
