@@ -1,5 +1,6 @@
 """Tests for Codex integration tools in the OpenAI Structured MCP server."""
 
+import os
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch, ANY
 from openai_structured_mcp.server import (
@@ -416,8 +417,8 @@ class TestCodexToolsIntegration:
     """Integration tests for Codex tools (require actual API key)."""
     
     @pytest.mark.skipif(
-        not pytest.config.getoption("--run-integration"),
-        reason="Integration tests require --run-integration flag"
+        not os.getenv("RUN_INTEGRATION_TESTS"),
+        reason="Integration tests require RUN_INTEGRATION_TESTS environment variable"
     )
     @pytest.mark.asyncio
     async def test_codex_generate_real_api(self):
@@ -434,8 +435,8 @@ class TestCodexToolsIntegration:
         assert "Error" not in result
     
     @pytest.mark.skipif(
-        not pytest.config.getoption("--run-integration"),
-        reason="Integration tests require --run-integration flag"
+        not os.getenv("RUN_INTEGRATION_TESTS"),
+        reason="Integration tests require RUN_INTEGRATION_TESTS environment variable"
     )
     @pytest.mark.asyncio
     async def test_codex_tools_workflow(self):

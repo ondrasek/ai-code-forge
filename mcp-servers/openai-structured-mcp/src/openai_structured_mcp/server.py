@@ -337,7 +337,7 @@ async def list_schemas() -> str:
     Returns:
         Formatted information about available schemas and their use cases
     """
-    schemas_info = openai_client.get_available_schemas()
+    schemas_info = await openai_client.get_available_schemas()
     
     result = "**Available Structured Output Schemas:**\n\n"
     for schema_name, description in schemas_info.items():

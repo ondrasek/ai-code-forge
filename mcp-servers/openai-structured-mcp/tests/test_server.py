@@ -6,7 +6,7 @@ import os
 import json
 
 # Import server components
-with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}):
+with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
     from openai_structured_mcp import server
 
 
@@ -46,7 +46,7 @@ class TestMCPTools:
         mock_openai_client.extract_data.return_value = mock_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.extract_data(
+            result = await server.extract_data.fn(
                 text=sample_unstructured_text,
                 custom_instructions="Focus on AI technology"
             )
@@ -72,7 +72,7 @@ class TestMCPTools:
         mock_openai_client.extract_data.return_value = mock_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.extract_data(text="Test text")
+            result = await server.extract_data.fn(text="Test text")
         
         assert "Error extracting data: Invalid API key" in result
     
@@ -98,7 +98,7 @@ class TestMCPTools:
         mock_openai_client.analyze_code.return_value = mock_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.analyze_code(
+            result = await server.analyze_code.fn(
                 code=sample_code,
                 language_hint="python"
             )
@@ -145,7 +145,7 @@ class TestMCPTools:
         mock_openai_client.create_configuration_task.return_value = mock_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.create_configuration_task(
+            result = await server.create_configuration_task.fn(
                 description="Setup continuous integration and deployment pipeline"
             )
         
@@ -180,7 +180,7 @@ class TestMCPTools:
         mock_openai_client.analyze_sentiment.return_value = mock_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.analyze_sentiment(
+            result = await server.analyze_sentiment.fn(
                 text="This was an excellent service! I highly recommend it to anyone looking for a great experience."
             )
         
@@ -214,7 +214,7 @@ class TestMCPTools:
         mock_openai_client.structured_completion.return_value = mock_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.custom_structured_query(
+            result = await server.custom_structured_query.fn(
                 prompt="Extract information about custom queries",
                 schema_name="data_extraction",
                 system_message="Focus on technical concepts",
@@ -245,7 +245,7 @@ class TestMCPTools:
         mock_openai_client.structured_completion.return_value = mock_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.custom_structured_query(
+            result = await server.custom_structured_query.fn(
                 prompt="Test",
                 schema_name="invalid_schema"
             )
@@ -256,7 +256,7 @@ class TestMCPTools:
     async def test_list_schemas(self, mock_openai_client):
         """Test list schemas functionality."""
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.list_schemas()
+            result = await server.list_schemas.fn()
         
         # Verify all expected schemas are listed
         assert "data_extraction" in result
@@ -266,7 +266,7 @@ class TestMCPTools:
         
         # Verify descriptions and usage tips are present
         assert "Extract structured data" in result
-        assert "Analyze source code" in result
+        assert "Analyze code structure" in result
         assert "Usage Tips:" in result
         assert "custom_structured_query" in result
     
@@ -286,7 +286,7 @@ class TestMCPTools:
         mock_openai_client.structured_completion.return_value = mock_structured_response
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.health_check()
+            result = await server.health_check.fn()
         
         assert "\u2705" in result  # Check mark emoji
         assert "accessible and structured outputs are working correctly" in result
@@ -302,7 +302,7 @@ class TestMCPTools:
         mock_openai_client.health_check.return_value = False
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.health_check()
+            result = await server.health_check.fn()
         
         assert "\u274c" in result  # X mark emoji
         assert "not responding correctly" in result
@@ -315,7 +315,7 @@ class TestMCPTools:
         mock_openai_client.structured_completion.return_value = {"error": "Schema validation failed"}
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.health_check()
+            result = await server.health_check.fn()
         
         assert "\u274c" in result
         assert "structured output failed" in result
@@ -328,7 +328,7 @@ class TestMCPTools:
         mock_openai_client.health_check.side_effect = Exception("Connection error")
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.health_check()
+            result = await server.health_check.fn()
         
         assert "\u274c" in result
         assert "Health check failed" in result
@@ -341,7 +341,7 @@ class TestMCPTools:
         mock_openai_client.extract_data.side_effect = Exception("Unexpected error")
         
         with patch.object(server, 'openai_client', mock_openai_client):
-            result = await server.extract_data(text="Test text")
+            result = await server.extract_data.fn(text="Test text")
         
         assert "Error during data extraction: Unexpected error" in result
 
@@ -359,7 +359,7 @@ class TestServerInitialization:
     
     def test_server_initialization_no_api_key(self):
         """Test server initialization without API key."""
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {"OPENAI_STRUCTURED_LOG_LEVEL": "none"}, clear=True):
             with pytest.raises(ValueError, match="OPENAI_API_KEY"):
                 # Re-import to trigger initialization error
                 import importlib
@@ -371,7 +371,7 @@ class TestServerInitialization:
         mock_mcp_instance = MagicMock()
         mock_fastmcp.return_value = mock_mcp_instance
         
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}):
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
             server.main()
         
         mock_mcp_instance.run.assert_called_once()
@@ -383,7 +383,7 @@ class TestServerInitialization:
         mock_mcp_instance.run.side_effect = KeyboardInterrupt()
         mock_fastmcp.return_value = mock_mcp_instance
         
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}):
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "OPENAI_STRUCTURED_LOG_LEVEL": "none"}):
             # Should not raise exception
             server.main()
         

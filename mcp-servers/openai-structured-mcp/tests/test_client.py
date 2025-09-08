@@ -53,7 +53,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = mock_openai_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.structured_completion(
                     prompt="Extract data from this text",
                     schema_name="data_extraction"
@@ -93,7 +93,7 @@ class TestOpenAIStructuredClient:
             api_error.response.status_code = 401
             api_error.response.text = "Unauthorized"
             
-            with patch.object(client.client.chat.completions, 'create', side_effect=api_error):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, side_effect=api_error):
                 result = await client.structured_completion(
                     prompt="Test prompt",
                     schema_name="data_extraction"
@@ -127,7 +127,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = invalid_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.structured_completion(
                     prompt="Test prompt",
                     schema_name="data_extraction",
@@ -148,7 +148,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = mock_openai_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.extract_data(
                     text="OpenAI provides API access for Python developers.",
                     custom_instructions="Focus on technology mentions."
@@ -167,7 +167,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = mock_code_analysis_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.analyze_code(
                     code="def hello(): print('hello')",
                     language_hint="python"
@@ -187,7 +187,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = mock_configuration_task_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.create_configuration_task(
                     description="Setup Docker development environment"
                 )
@@ -207,7 +207,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = mock_sentiment_analysis_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.analyze_sentiment(
                     text="This was a great experience! Highly recommend."
                 )
@@ -228,7 +228,7 @@ class TestOpenAIStructuredClient:
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "healthy"
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_response):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_response):
                 result = await client.health_check()
                 
                 assert result is True
@@ -240,7 +240,7 @@ class TestOpenAIStructuredClient:
             client = OpenAIStructuredClient()
             
             # Mock API error
-            with patch.object(client.client.chat.completions, 'create', side_effect=Exception("API Error")):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, side_effect=Exception("API Error")):
                 result = await client.health_check()
                 
                 assert result is False
@@ -272,7 +272,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = mock_openai_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion) as mock_create:
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion) as mock_create:
                 await client.structured_completion(
                     prompt="Test",
                     schema_name="data_extraction",
@@ -303,7 +303,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = invalid_json_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.structured_completion(
                     prompt="Test",
                     schema_name="data_extraction"
@@ -330,7 +330,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = empty_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.structured_completion(
                     prompt="Test",
                     schema_name="data_extraction"
@@ -354,7 +354,7 @@ class TestOpenAIStructuredClient:
             mock_completion = MagicMock()
             mock_completion.model_dump.return_value = no_choices_response
             
-            with patch.object(client.client.chat.completions, 'create', return_value=mock_completion):
+            with patch.object(client.client.chat.completions, 'create', new_callable=AsyncMock, return_value=mock_completion):
                 result = await client.structured_completion(
                     prompt="Test",
                     schema_name="data_extraction"
