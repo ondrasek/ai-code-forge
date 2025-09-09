@@ -17,7 +17,7 @@ from openai_structured_mcp.client import OpenAIStructuredClient
 
 async def test_schema_validation():
     """Test the schema validation system."""
-    print("=== Testing Schema Validation System ===")
+    print("Testing Schema Validation System")
     
     # Test data extraction schema
     print("\n1. Testing DataExtraction schema...")
@@ -77,7 +77,7 @@ async def test_schema_validation():
 
 def test_json_schema_generation():
     """Test JSON schema generation."""
-    print("\n=== Testing JSON Schema Generation ===")
+    print("\nTesting JSON Schema Generation")
     
     for schema_name in SCHEMA_REGISTRY:
         try:
@@ -91,7 +91,7 @@ def test_json_schema_generation():
 
 async def test_client_initialization():
     """Test client initialization without making API calls."""
-    print("\n=== Testing Client Initialization ===")
+    print("\nTesting Client Initialization")
     
     try:
         # Test without API key (should fail)
@@ -126,7 +126,7 @@ async def test_client_initialization():
 
 def demonstrate_structured_output_benefits():
     """Demonstrate the benefits of structured outputs."""
-    print("\n=== Structured Output Benefits Demo ===")
+    print("\nStructured Output Benefits Demo")
     
     print("\n📊 Traditional Unstructured Response:")
     unstructured_example = '''
@@ -162,7 +162,6 @@ def demonstrate_structured_output_benefits():
 async def main():
     """Run all integration tests."""
     print("🚀 OpenAI Structured Output MCP Server - Integration Test")
-    print("==========================================================")
     
     # Test schema validation system
     await test_schema_validation()

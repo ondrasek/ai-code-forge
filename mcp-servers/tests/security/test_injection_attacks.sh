@@ -31,7 +31,6 @@ test_injection_attack() {
 }
 
 echo "Running command injection attack tests..."
-echo "========================================"
 
 # Test command injection attacks on branch names
 echo
@@ -81,7 +80,6 @@ test_injection_attack "Shell tilde expansion" "branch~/evil" "$WORKTREE_CREATE"
 
 echo
 echo "Security Test Summary"
-echo "===================="
 echo "Tests passed: $TESTS_PASSED"
 echo "Tests failed: $TESTS_FAILED"
 echo "Total tests: $((TESTS_PASSED + TESTS_FAILED))"

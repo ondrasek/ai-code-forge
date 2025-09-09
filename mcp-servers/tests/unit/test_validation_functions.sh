@@ -48,7 +48,6 @@ print_warning() { echo "WARNING: $1" >&2; }
 print_info() { echo "INFO: $1" >&2; }
 
 echo "Running validation function tests..."
-echo "=================================="
 
 # Test validate_branch_name function
 echo
@@ -120,7 +119,6 @@ test_assert "Repository name returned" "[[ -n '$REPO_NAME' && '$REPO_NAME' != 't
 
 echo
 echo "Test Summary"
-echo "============"
 echo "Tests passed: $TESTS_PASSED"
 echo "Tests failed: $TESTS_FAILED"
 echo "Total tests: $((TESTS_PASSED + TESTS_FAILED))"

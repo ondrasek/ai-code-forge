@@ -39,15 +39,12 @@ class TestRunner:
         self.total_start_time = time.time()
         
     def print_header(self, text: str) -> None:
-        """Print a formatted header."""
-        print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.RESET}")
-        print(f"{Colors.BOLD}{Colors.CYAN}{text.center(60)}{Colors.RESET}")
-        print(f"{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.RESET}\n")
+        """Print a simple header."""
+        print(f"\n{Colors.BOLD}{Colors.CYAN}{text}{Colors.RESET}\n")
         
     def print_section(self, text: str) -> None:
-        """Print a formatted section header."""
-        print(f"\n{Colors.BOLD}{Colors.BLUE}{'▶ ' + text}{Colors.RESET}")
-        print(f"{Colors.BLUE}{'-' * (len(text) + 2)}{Colors.RESET}")
+        """Print a section header."""
+        print(f"\n{Colors.BOLD}{Colors.BLUE}▶ {text}{Colors.RESET}")
         
     def print_success(self, text: str) -> None:
         """Print success message."""
