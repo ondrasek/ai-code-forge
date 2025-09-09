@@ -562,13 +562,6 @@ main() {
         echo "ℹ️  Interactive mode: verbose disabled (use -q to explicitly disable or run with arguments to enable)"
     fi
 
-    # Validate tool requirements
-    if ! validate_tool_requirements "Codex CLI" "codex"; then
-        echo "💡 Install Codex CLI with: npm install -g @openai/codex"
-        echo "💡 Or visit: https://github.com/openai/codex"
-        exit 1
-    fi
-
     # Auto-detect environment
     detect_environment
     if [[ "$DETECTED_SKIP_PERMISSIONS" == "true" ]]; then
@@ -602,6 +595,13 @@ main() {
     if [[ "$DRY_RUN" == "true" ]]; then
         echo "🧪 Dry run complete - would execute: ${CODEX_CMD[*]}"
         exit 0
+    fi
+
+    # Validate tool requirements (only for actual execution)
+    if ! validate_tool_requirements "Codex CLI" "codex"; then
+        echo "💡 Install Codex CLI with: npm install -g @openai/codex"
+        echo "💡 Or visit: https://github.com/openai/codex"
+        exit 1
     fi
 
     # Execute Codex with comprehensive logging if requested
