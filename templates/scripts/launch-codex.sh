@@ -570,8 +570,9 @@ main() {
     fi
 
     # Auto-detect environment
-    detect_environment
-    if [[ "$DETECTED_SKIP_PERMISSIONS" == "true" ]]; then
+    # Check for devcontainer environment
+    if [[ -n "${CODESPACES:-}" ]] || [[ -n "${REMOTE_CONTAINERS:-}" ]] || [[ -f "/.dockerenv" ]] || [[ -n "${DEVCONTAINER:-}" ]]; then
+        echo "🔍 Detected devcontainer/codespace environment - enabling --dangerously-skip-permissions"
         SKIP_PERMISSIONS="true"
     fi
 
