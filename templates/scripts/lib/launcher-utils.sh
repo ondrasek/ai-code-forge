@@ -19,7 +19,7 @@ detect_environment() {
     
     # Check for devcontainer environment
     if [[ -n "${CODESPACES:-}" ]] || [[ -n "${REMOTE_CONTAINERS:-}" ]] || [[ -f "/.dockerenv" ]] || [[ -n "${DEVCONTAINER:-}" ]]; then
-        echo "🔍 Detected devcontainer/codespace environment - enabling --dangerously-skip-permissions" >&2
+        echo "🔍 Detected devcontainer/codespace environment - enabling --dangerously-skip-permissions"
         env_type="container"
         skip_permissions="true"
     fi

@@ -360,10 +360,11 @@ class TestServerInitialization:
     def test_server_initialization_no_api_key(self):
         """Test server initialization without API key."""
         with patch.dict(os.environ, {"OPENAI_STRUCTURED_LOG_LEVEL": "none"}, clear=True):
+            # Reset the lazy client to None to test initialization
+            server.openai_client = None
             with pytest.raises(ValueError, match="OPENAI_API_KEY"):
-                # Re-import to trigger initialization error
-                import importlib
-                importlib.reload(server)
+                # Call function that triggers lazy initialization
+                server.get_openai_client()
     
     def test_main_function(self):
         """Test main function execution."""

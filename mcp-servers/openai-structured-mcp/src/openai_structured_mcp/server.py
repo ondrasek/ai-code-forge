@@ -41,13 +41,20 @@ logger.debug(f"  OPENAI_DEFAULT_TEMPERATURE: {os.getenv('OPENAI_DEFAULT_TEMPERAT
 # Create FastMCP server instance
 mcp = FastMCP("OpenAI Structured Output Server")
 
-# Initialize OpenAI client
-try:
-    openai_client = OpenAIStructuredClient()
-    logger.info("OpenAI Structured MCP server initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize OpenAI client: {e}")
-    raise
+# Initialize OpenAI client lazily
+openai_client = None
+
+def get_openai_client():
+    """Get or create the OpenAI client instance."""
+    global openai_client
+    if openai_client is None:
+        try:
+            openai_client = OpenAIStructuredClient()
+            logger.info("OpenAI Structured MCP server initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize OpenAI client: {e}")
+            raise
+    return openai_client
 
 
 @mcp.tool(
@@ -81,7 +88,7 @@ async def extract_data(
     logger.debug(f"Text preview: {text[:100]}...")
     
     try:
-        result = await openai_client.extract_data(
+        result = await get_openai_client().extract_data(
             text=text,
             custom_instructions=custom_instructions
         )
@@ -135,7 +142,7 @@ async def analyze_code(
     logger.debug(f"Code preview: {code[:200]}...")
     
     try:
-        result = await openai_client.analyze_code(
+        result = await get_openai_client().analyze_code(
             code=code,
             language_hint=language_hint
         )
@@ -187,7 +194,7 @@ async def create_configuration_task(
     logger.debug(f"Task description: {description}")
     
     try:
-        result = await openai_client.create_configuration_task(
+        result = await get_openai_client().create_configuration_task(
             description=description
         )
         
@@ -238,7 +245,7 @@ async def analyze_sentiment(
     logger.debug(f"Text preview: {text[:100]}...")
     
     try:
-        result = await openai_client.analyze_sentiment(
+        result = await get_openai_client().analyze_sentiment(
             text=text
         )
         
@@ -295,7 +302,7 @@ async def custom_structured_query(
     logger.debug(f"Available schemas: {list(SCHEMA_REGISTRY.keys())}")
     
     try:
-        result = await openai_client.structured_completion(
+        result = await get_openai_client().structured_completion(
             prompt=prompt,
             schema_name=schema_name,
             system_message=system_message,
@@ -337,7 +344,7 @@ async def list_schemas() -> str:
     Returns:
         Formatted information about available schemas and their use cases
     """
-    schemas_info = await openai_client.get_available_schemas()
+    schemas_info = await get_openai_client().get_available_schemas()
     
     result = "**Available Structured Output Schemas:**\n\n"
     for schema_name, description in schemas_info.items():
@@ -767,12 +774,12 @@ async def health_check() -> str:
     
     try:
         # Test basic API connectivity
-        is_healthy = await openai_client.health_check()
+        is_healthy = await get_openai_client().health_check()
         
         if is_healthy:
             # Test structured output capability
             logger.debug("Testing structured output capability...")
-            test_result = await openai_client.structured_completion(
+            test_result = await get_openai_client().structured_completion(
                 prompt="Test structured output with a simple example.",
                 schema_name="data_extraction",
                 system_message="Extract any entities, provide one key fact, and summarize in one sentence.",

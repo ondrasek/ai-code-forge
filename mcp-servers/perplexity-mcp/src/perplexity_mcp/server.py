@@ -40,13 +40,20 @@ logger.debug(f"  PERPLEXITY_API_KEY: {'SET' if os.getenv('PERPLEXITY_API_KEY') e
 # Create FastMCP server instance
 mcp = FastMCP("Perplexity Research Server")
 
-# Initialize Perplexity client
-try:
-    perplexity_client = PerplexityClient()
-    logger.info("Perplexity MCP server initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize Perplexity client: {e}")
-    raise
+# Initialize Perplexity client lazily
+perplexity_client = None
+
+def get_perplexity_client():
+    """Get or create the Perplexity client instance."""
+    global perplexity_client
+    if perplexity_client is None:
+        try:
+            perplexity_client = PerplexityClient()
+            logger.info("Perplexity MCP server initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Perplexity client: {e}")
+            raise
+    return perplexity_client
 
 
 @mcp.tool(
@@ -98,7 +105,7 @@ async def perplexity_search(
         # Use provided model or default
         selected_model = model if model in PerplexityClient.AVAILABLE_MODELS else "sonar"
         
-        result = await perplexity_client.query(
+        result = await get_perplexity_client().query(
             prompt=query,
             model=selected_model,
             system_message=system_message,
@@ -188,7 +195,7 @@ async def perplexity_deep_research(
 
 Be thorough, balanced, and evidence-based. Structure your response clearly with appropriate headings."""
         
-        result = await perplexity_client.query(
+        result = await get_perplexity_client().query(
             prompt=f"Conduct comprehensive research on: {topic}",
             model="sonar-deep-research",
             system_message=system_message,
@@ -262,7 +269,7 @@ async def perplexity_quick_query(
     logger.debug(f"Quick query parameters: question_length={len(question)}, search_domain_filter={search_domain_filter}, search_recency_filter={search_recency_filter}, temperature={temperature}")
     
     try:
-        result = await perplexity_client.query(
+        result = await get_perplexity_client().query(
             prompt=question,
             model="sonar",  # Fast model for quick queries
             system_message="Provide a concise, direct answer with key facts. Be brief but comprehensive.",
@@ -359,7 +366,7 @@ async def health_check() -> str:
         log_status = f"enabled (level={log_level}, path={log_path})"
     
     try:
-        is_healthy = await perplexity_client.health_check()
+        is_healthy = await get_perplexity_client().health_check()
         
         if is_healthy:
             logger.debug("Health check passed - API is responding correctly")
