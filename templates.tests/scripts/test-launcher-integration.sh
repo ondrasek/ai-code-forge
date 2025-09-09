@@ -123,6 +123,8 @@ test_dry_run_mode() {
         echo "launch-claude.sh dry run working correctly"
     else
         echo "launch-claude.sh dry run failed"
+        echo "Claude output: $claude_dry"
+        echo "Expected to contain both: 'Dry run complete' and 'would execute:'"
         return 1
     fi
     
@@ -134,6 +136,8 @@ test_dry_run_mode() {
         echo "launch-codex.sh dry run working correctly"
     else
         echo "launch-codex.sh dry run failed"
+        echo "Codex output: $codex_dry"
+        echo "Expected to contain both: 'Dry run complete' and 'would execute:'"
         return 1
     fi
     
@@ -206,6 +210,8 @@ test_logging_directory_creation() {
         echo "launch-codex.sh logging setup working"
     else
         echo "launch-codex.sh logging setup failed"
+        echo "Codex logging output: $codex_output"
+        echo "Expected to contain: '📝 Session-based logging enabled for codex:' and '.acforge/logs/codex/'"
         return 1
     fi
     
@@ -237,6 +243,9 @@ test_environment_detection_consistency() {
         echo "Environment detection consistent between launchers"
     else
         echo "Environment detection inconsistent"
+        echo "Claude output: $claude_output"
+        echo "Codex output: $codex_output"
+        echo "Expected both to contain: 'Detected devcontainer/codespace environment'"
         return 1
     fi
     
@@ -246,6 +255,9 @@ test_environment_detection_consistency() {
         echo "Permission handling consistent between launchers"
     else
         echo "Permission handling inconsistent"
+        echo "Claude output: $claude_output"
+        echo "Codex output: $codex_output" 
+        echo "Expected both to contain: '--dangerously-skip-permissions'"
         return 1
     fi
     

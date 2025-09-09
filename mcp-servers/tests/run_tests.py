@@ -139,8 +139,13 @@ class TestRunner:
                 return True, result.stdout if result.stdout else ""
             else:
                 self.print_error(f"{description} failed ({duration:.1f}s)")
-                if not self.verbose and result.stderr:
+                # Always show failure details for debugging
+                if result.stderr:
+                    print(f"{Colors.RED}STDERR:{Colors.RESET}")
                     print(f"{Colors.RED}{result.stderr}{Colors.RESET}")
+                if result.stdout:
+                    print(f"{Colors.YELLOW}STDOUT:{Colors.RESET}")
+                    print(f"{Colors.YELLOW}{result.stdout}{Colors.RESET}")
                 return False, result.stderr if result.stderr else ""
                 
         except Exception as e:
