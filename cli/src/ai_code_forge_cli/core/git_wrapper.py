@@ -1,4 +1,4 @@
-"""General git wrapper for ACF command git integration."""
+"""General git wrapper for acforge cli command git integration."""
 
 from pathlib import Path
 from typing import Dict, Optional, Any
@@ -7,7 +7,7 @@ from .git import GitCommitManager, get_current_acf_version
 
 
 class GitCommandWrapper:
-    """General git wrapper that can wrap any ACF command with automatic commits."""
+    """General git wrapper that can wrap any acforge cli command with automatic commits."""
     
     def __init__(self, repository_path: Path, verbose: bool = False):
         """Initialize git wrapper for repository.
@@ -53,13 +53,13 @@ class GitCommandWrapper:
         new_version: Optional[str] = None,
         custom_message: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Commit changes made by an ACF command.
+        """Commit changes made by an acforge cli command.
         
         Args:
             command_name: Name of the command (e.g., "init", "update", "merge")
             git_enabled: Whether git integration is enabled
-            old_version: Previous ACF configuration version (if applicable)
-            new_version: New ACF configuration version (if applicable)
+            old_version: Previous acforge cli configuration version (if applicable)
+            new_version: New acforge cli configuration version (if applicable)
             custom_message: Custom commit message (overrides version-based message)
             
         Returns:
@@ -85,7 +85,7 @@ class GitCommandWrapper:
                     command_name, old_version, new_version
                 )
             
-            # Add ACF-related files
+            # Add acforge cli-related files
             acf_patterns = self._get_acf_file_patterns()
             
             if not self.git_manager.add_files(acf_patterns):
@@ -153,7 +153,7 @@ class GitCommandWrapper:
         ]
     
     def get_current_version(self) -> Optional[str]:
-        """Get current ACF version from state if available.
+        """Get current acforge cli version from state if available.
         
         Returns:
             Current version string or None
@@ -162,7 +162,7 @@ class GitCommandWrapper:
         return get_current_acf_version(acforge_dir) if acforge_dir.exists() else None
 
     def commit_existing_state_before_init(self) -> Dict[str, Any]:
-        """Commit existing ACF/Claude configuration before init overwrites it.
+        """Commit existing acforge cli/Claude configuration before init overwrites it.
         
         This preserves any existing .acforge/ and .claude/ state before initialization
         destroys it, ensuring no work is lost and creating a clean diff.
@@ -173,7 +173,7 @@ class GitCommandWrapper:
         result = {"success": False, "error": None, "commit_message": None}
         
         try:
-            # Check if we have any ACF/Claude files to commit
+            # Check if we have any acforge cli/Claude files to commit
             acforge_dir = self.repo_path / ".acforge"
             claude_dir = self.repo_path / ".claude" 
             
@@ -181,10 +181,10 @@ class GitCommandWrapper:
             has_claude_files = claude_dir.exists() and any(claude_dir.iterdir())
             
             if not has_acf_files and not has_claude_files:
-                result["error"] = "No existing ACF/Claude configuration to commit"
+                result["error"] = "No existing acforge cli/Claude configuration to commit"
                 return result
                 
-            # Add ACF/Claude files to staging (includes both tracked and untracked files)
+            # Add acforge cli/Claude files to staging (includes both tracked and untracked files)
             paths_to_add = []
             if has_acf_files:
                 paths_to_add.append(".acforge/")
@@ -204,11 +204,11 @@ class GitCommandWrapper:
                 
             has_staged_changes = status_result.get("staged_files", [])
             if not has_staged_changes:
-                result["error"] = "No changes to commit after staging ACF/Claude files"  
+                result["error"] = "No changes to commit after staging acforge cli/Claude files"  
                 return result
             
             # Create commit message
-            commit_msg = "chore: preserve existing ACF/Claude configuration before init\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+            commit_msg = "chore: preserve existing acforge cli/Claude configuration before init\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
             
             # Commit the changes
             commit_result = self.git_manager.commit_changes(commit_msg)

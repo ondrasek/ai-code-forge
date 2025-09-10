@@ -93,7 +93,7 @@ class RepositoryDetector:
         return (self.repo_path / ".git").exists()
     
     def check_existing_configuration(self) -> Dict[str, bool]:
-        """Check for existing ACF and Claude configuration.
+        """Check for existing acforge cli and Claude configuration.
         
         Returns:
             Dictionary with has_acf and has_claude flags

@@ -86,7 +86,7 @@ class StateManager:
         """Load current state from file.
         
         Returns:
-            Current ACF state, or default state if no file exists
+            Current acforge cli state, or default state if no file exists
         """
         if not self.state_file.exists():
             return ACForgeState()

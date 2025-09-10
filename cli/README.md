@@ -51,7 +51,7 @@ uv run ruff check
 
 This CLI manages AI development workflows through:
 
-- **Template Management**: Bundled templates for agents, commands, and configurations
+- **Configuration Management**: Bundled templates for agents, commands, and configurations
 - **State Management**: Atomic state tracking in `.acforge/state.json`  
 - **Configuration Analysis**: Detection and analysis of existing configurations
 - **Customization Preservation**: Support for `.local` files and user modifications

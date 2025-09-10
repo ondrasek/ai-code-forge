@@ -1,4 +1,4 @@
-"""Git integration utilities for ACF deployment."""
+"""Git integration utilities for acforge cli deployment."""
 
 import subprocess
 from pathlib import Path
@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 
 class GitCommitManager:
-    """Manages git commits for ACF deployment operations."""
+    """Manages git commits for acforge cli deployment operations."""
     
     def __init__(self, repository_path: Path):
         """Initialize git manager for repository.
@@ -91,17 +91,17 @@ class GitCommitManager:
         new_version: str,
         operation: str = "initialize"
     ) -> bool:
-        """Create a commit for ACF deployment with version-based message.
+        """Create a commit for acforge cli deployment with version-based message.
         
         Args:
-            old_version: Previous ACF configuration version (None for initial deployment)
-            new_version: New ACF configuration version
+            old_version: Previous acforge cli configuration version (None for initial deployment)
+            new_version: New acforge cli configuration version
             operation: Type of operation ("initialize", "update", "merge")
             
         Returns:
             True if successful
         """
-        # Add all ACF-related files
+        # Add all acforge cli-related files
         acf_patterns = [".acforge/", ".devcontainer/", "CLAUDE.md"]
         
         if not self.add_files(acf_patterns):
@@ -156,7 +156,7 @@ class GitCommitManager:
 
 
 def get_current_acf_version(acforge_dir: Path) -> Optional[str]:
-    """Get current ACF version from state.json if it exists.
+    """Get current acforge cli version from state.json if it exists.
     
     Args:
         acforge_dir: Path to .acforge directory

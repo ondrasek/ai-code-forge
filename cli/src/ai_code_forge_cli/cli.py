@@ -11,7 +11,7 @@ from .commands.status import status_command
 from .commands.update import update_command
 
 
-class ACFContext:
+class AcforgeContext:
     """Shared CLI context object."""
     
     def __init__(self) -> None:
@@ -45,7 +45,7 @@ class ACFContext:
         return current
 
 
-pass_context = click.make_pass_decorator(ACFContext, ensure=True)
+pass_context = click.make_pass_decorator(AcforgeContext, ensure=True)
 
 
 @click.group(invoke_without_command=True)
@@ -67,9 +67,9 @@ pass_context = click.make_pass_decorator(ACFContext, ensure=True)
 @click.version_option(version=__version__, prog_name="acforge")
 @click.pass_context
 def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path], git: bool) -> None:
-    """AI Code Forge CLI - Template management for AI development workflows.
+    """acforge cli - Configuration management for AI development workflows.
     
-    The ACF CLI helps manage AI development configurations including:
+    The acforge cli helps manage AI development configurations including:
     - Claude Code agent configurations
     - Development workflow templates
     - Project structure templates

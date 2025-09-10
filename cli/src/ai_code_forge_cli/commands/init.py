@@ -52,9 +52,9 @@ def init_command(
     interactive: bool,
     verbose: bool,
 ) -> None:
-    """Initialize repository with ACF configuration and Claude Code templates.
+    """Initialize repository with acforge cli configuration and Claude Code templates.
     
-    Creates .acforge/ directory for ACF state management and .claude/ directory
+    Creates .acforge/ directory for acforge cli state management and .claude/ directory
     with Claude Code configuration from bundled templates. Performs template
     parameter substitution for repository-specific values.
     
@@ -152,7 +152,7 @@ def _run_init(
         existing_config = detector.check_existing_configuration()
         
         if not force and (existing_config["has_acf"] or existing_config["has_claude"]):
-            error_msg = "Repository already has ACF or Claude Code configuration. Use --force to overwrite."
+            error_msg = "Repository already has acforge cli or Claude Code configuration. Use --force to overwrite."
             results["errors"].append(error_msg)
             return results
         
@@ -213,7 +213,7 @@ def _run_init(
         results["errors"].extend(template_results["errors"])
         results["errors"].extend(static_results["errors"])
         
-        # Initialize ACF state (if not dry run)
+        # Initialize acforge cli state (if not dry run)
         if not dry_run and not results["errors"]:
             _initialize_acf_state(state_manager, template_manager, parameters)
             results["files_created"].append(".acforge/state.json")
@@ -295,7 +295,7 @@ def _initialize_acf_state(
     template_manager: TemplateManager,
     parameters: Dict[str, str]
 ) -> None:
-    """Initialize ACF state file.
+    """Initialize acforge cli state file.
     
     Args:
         state_manager: State manager instance
@@ -351,7 +351,7 @@ def _display_results(results: dict, dry_run: bool, verbose: bool) -> None:
         if dry_run:
             click.echo("✅ Repository initialization preview:")
         else:
-            click.echo("🎉 ACF initialization complete!")
+            click.echo("🎉 acforge cli initialization complete!")
         click.echo()
         
         # Show files that would be/were created

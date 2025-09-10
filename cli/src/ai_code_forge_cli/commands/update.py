@@ -259,7 +259,7 @@ def _analyze_changes(state_manager: StateManager, template_manager: TemplateMana
         "preserved_customizations": [],
     }
     
-    # Check if ACF has been initialized
+    # Check if acforge cli has been initialized
     if current_state.installation is None:
         analysis["status"] = "not_initialized"
         return analysis
@@ -452,7 +452,7 @@ def _update_state(
     template_manager: TemplateManager,
     analysis: Dict[str, Any]
 ) -> None:
-    """Update ACF state after successful update."""
+    """Update acforge cli state after successful update."""
     with state_manager.atomic_update() as state:
         if state.installation:
             state.installation.template_version = analysis["available_version"]

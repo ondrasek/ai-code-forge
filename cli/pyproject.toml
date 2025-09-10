@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "acforge"
 version = "3.1.0"
-description = "CLI for AI Code Forge template management"
+description = "acforge cli for AI Code Forge configuration management"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}

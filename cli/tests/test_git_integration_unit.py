@@ -99,7 +99,7 @@ class TestGitCommandWrapper:
         assert display_msg == "sync update"
     
     def test_acf_file_patterns(self, temp_repo):
-        """Test ACF file patterns for git add operations."""
+        """Test acforge cli file patterns for git add operations."""
         wrapper = GitCommandWrapper(temp_repo)
         patterns = wrapper._get_acf_file_patterns()
         

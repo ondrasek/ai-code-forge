@@ -121,7 +121,7 @@ class StatusReporter:
         """Compare current state with available templates.
         
         Args:
-            current_state: Current ACF state
+            current_state: Current acforge cli state
             available_templates: List of available template files
             
         Returns:
@@ -137,7 +137,7 @@ class StatusReporter:
             "extra_files": [],
         }
         
-        # Check if ACF has been initialized
+        # Check if acforge cli has been initialized
         if current_state.installation is None:
             analysis["status"] = "not_initialized"
             analysis["needs_init"] = True
@@ -284,7 +284,7 @@ class StatusReporter:
         Args:
             data: Status data from generate_status_data()
         """
-        click.echo(f"🔍 ACF Status Report - {self.repo_root}")
+        click.echo(f"🔍 acforge cli Status Report - {self.repo_root}")
         click.echo("=" * 50)
         
         # Repository information
@@ -435,10 +435,10 @@ class StatusReporter:
 )
 @click.pass_obj
 def status_command(acforge_ctx: Any, output_format: str, verbose: bool) -> None:
-    """Show ACF configuration status and template information.
+    """Show acforge cli configuration status and template information.
     
     The status command provides comprehensive information about:
-    - Repository configuration state (ACF vs Claude vs none)
+    - Repository configuration state (acforge cli vs Claude vs none)
     - Template availability and validation
     - State file integrity and metadata
     - Customization and conflict analysis
