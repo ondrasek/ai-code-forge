@@ -41,8 +41,8 @@ LOG_BASE_DIR="$PROJECT_ROOT/.acforge/logs/claude-code"
 
 # Auto-detect environment function
 detect_environment() {
-    # Check for devcontainer environment
-    if [[ -n "${CODESPACES:-}" ]] || [[ -n "${REMOTE_CONTAINERS:-}" ]] || [[ -f "/.dockerenv" ]] || [[ -n "${DEVCONTAINER:-}" ]]; then
+    # Check for devcontainer environment or CI environment
+    if [[ -n "${CODESPACES:-}" ]] || [[ -n "${REMOTE_CONTAINERS:-}" ]] || [[ -f "/.dockerenv" ]] || [[ -n "${DEVCONTAINER:-}" ]] || [[ -n "${GITHUB_ACTIONS:-}" ]] || [[ -n "${CI:-}" ]]; then
         echo "🔍 Detected devcontainer/codespace environment - enabling --dangerously-skip-permissions"
         SKIP_PERMISSIONS="true"
     fi
