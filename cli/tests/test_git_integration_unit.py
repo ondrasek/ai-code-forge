@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch, MagicMock
 import pytest
 
 from ai_code_forge_cli.core.git_wrapper import GitCommandWrapper, create_git_wrapper
-from ai_code_forge_cli.cli import ACFContext
+from ai_code_forge_cli.cli import AcforgeContext
 
 
 class TestGitCommandWrapper:
@@ -133,8 +133,8 @@ class TestCreateGitWrapper:
     """Test git wrapper factory function."""
     
     def test_create_from_context(self, temp_repo):
-        """Test creating wrapper from ACFContext."""
-        ctx = ACFContext()
+        """Test creating wrapper from AcforgeContext."""
+        ctx = AcforgeContext()
         ctx.repo_root = temp_repo
         ctx.verbose = True
         
