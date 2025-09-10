@@ -221,7 +221,7 @@ jobs:
           BRANCH="${{ github.ref_name }}"
           
           # Create comprehensive test summary artifact
-          cat > ci-summary/test-summary-${RUN_ID}.md << 'EOF'
+          cat > ci-summary/test-summary-${RUN_ID}.md << EOF
           # 🔍 AI Code Forge CI Test Summary
           
           **Generated:** $TIMESTAMP  
