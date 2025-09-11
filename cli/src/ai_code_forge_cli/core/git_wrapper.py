@@ -228,14 +228,14 @@ def create_git_wrapper(ctx_or_path, verbose: bool = False) -> GitCommandWrapper:
     """Create git wrapper from CLI context or path.
     
     Args:
-        ctx_or_path: ACFContext object or Path to repository
+        ctx_or_path: AcforgeContext object or Path to repository
         verbose: Enable verbose output
         
     Returns:
         GitCommandWrapper instance
     """
     if hasattr(ctx_or_path, 'find_repo_root'):
-        # It's an ACFContext
+        # It's an AcforgeContext
         repo_path = ctx_or_path.find_repo_root()
         verbose = ctx_or_path.verbose or verbose
     else:
