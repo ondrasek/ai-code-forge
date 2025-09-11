@@ -78,7 +78,7 @@ def main(ctx: click.Context, verbose: bool, repo_root: Optional[Path], git: bool
     Use 'acforge COMMAND --help' for detailed help on specific commands.
     """
     # Initialize shared context
-    acf_ctx = ACFContext()
+    acf_ctx = AcforgeContext()
     acf_ctx.verbose = verbose
     acf_ctx.git = git
     if repo_root:
