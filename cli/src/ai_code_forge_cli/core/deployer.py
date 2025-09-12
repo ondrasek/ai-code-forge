@@ -198,7 +198,7 @@ class TemplateDeployer:
             template_files = self.template_manager.list_template_files()
             
             # Check if we have DevContainer templates and create .devcontainer directory
-            has_devcontainer_templates = any(f.startswith("devcontainer/") for f in template_files)
+            has_devcontainer_templates = any(f.startswith("_devcontainer/") for f in template_files)
             if has_devcontainer_templates:
                 devcontainer_dir = self.target_path / ".devcontainer"
                 if not dry_run:
@@ -267,10 +267,10 @@ class TemplateDeployer:
         clean_path = template_path.replace(".template", "")
         
         # Handle DevContainer templates specially
-        if template_path.startswith("devcontainer/"):
+        if template_path.startswith("_devcontainer/"):
             devcontainer_dir = self.target_path / ".devcontainer"
-            # Extract path from devcontainer/path (preserves subdirectories like postCreate-scripts/)
-            relative_path = clean_path.split("/", 1)[1]  # Remove "devcontainer/" prefix
+            # Extract path from _devcontainer/path (preserves subdirectories like postCreate-scripts/)
+            relative_path = clean_path.split("/", 1)[1]  # Remove "_devcontainer/" prefix
             return devcontainer_dir / relative_path
         
         # Handle Claude Code templates specially - go to .claude/ directory
