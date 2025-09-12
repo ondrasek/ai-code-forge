@@ -9,20 +9,20 @@ echo "🧭 Setting up shell navigation..."
 cat >> /home/vscode/.zshrc << 'EOF'
 
 # Repository navigation shortcuts
-alias repo='cd /workspace/test-repo'
-alias worktrees='cd /workspace/worktrees/test-repo'
+alias repo='cd /workspace/ai-code-forge'
+alias worktrees='cd /workspace/worktrees/ai-code-forge'
 
 EOF
 
 cat >> /home/vscode/.bashrc << 'EOF'
 
 # Repository navigation shortcuts  
-alias repo='cd /workspace/test-repo'
-alias worktrees='cd /workspace/worktrees/test-repo'
+alias repo='cd /workspace/ai-code-forge'
+alias worktrees='cd /workspace/worktrees/ai-code-forge'
 
 EOF
 
 # Change to repository directory by default
-cd /workspace/test-repo
+cd /workspace/ai-code-forge
 
 echo "✅ Shell navigation setup completed"

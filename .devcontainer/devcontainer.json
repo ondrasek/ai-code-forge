@@ -1,5 +1,5 @@
 {
-  "name": "test-repo DevContainer",
+  "name": "ai-code-forge DevContainer",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "."
@@ -50,8 +50,8 @@
 
   "runArgs": [
     "--env-file", ".env",
-    "--label", "my.repositoryName=test-repo",
-    "--label", "my.repositoryOwner=testuser"
+    "--label", "my.repositoryName=ai-code-forge",
+    "--label", "my.repositoryOwner=ondrasek"
   ],
 
   "remoteEnv": {
@@ -75,6 +75,6 @@
 
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer,target=/tmp/.devcontainer,type=bind,consistency=cached",
-    "source=test-repo,target=/workspace,type=volume"
+    "source=ai-code-forge,target=/workspace,type=volume"
   ]
 }

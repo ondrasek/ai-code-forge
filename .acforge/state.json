@@ -1,0 +1,637 @@
+{
+  "version": "1.0",
+  "installation": {
+    "template_version": "b853c353",
+    "installed_at": "2025-09-12T07:44:52.790335",
+    "cli_version": "3.1.1"
+  },
+  "templates": {
+    "checksum": "b853c3534098e6be5c025e7b320db7df34f8b35fcbd66cd3a66559d8ee9544bc",
+    "files": {
+      "CLAUDE.md": {
+        "checksum": "3dbc8bd793b39de3bc46f28b7366b744097e113fcec3962ea45822cb05248971",
+        "customized": false,
+        "size": 431
+      },
+      "CLAUDE.md.template": {
+        "checksum": "64db065327b0d2fcd0030e6b0916e8a5934076b336254049ec340a9caee67b90",
+        "customized": false,
+        "size": 6339
+      },
+      "_claude/agents/foundation/conflicts.md": {
+        "checksum": "96889a5d6cc5f7323f3d6e04be56d625e8477b5d236c9132ecb563e5136b0b44",
+        "customized": false,
+        "size": 8185
+      },
+      "_claude/agents/foundation/context.md": {
+        "checksum": "c1201e2901d3a31c59accebc6e41213c64ea56665770fbd91ce3cb0f5b3952f7",
+        "customized": false,
+        "size": 9658
+      },
+      "_claude/agents/foundation/critic.md": {
+        "checksum": "588ae2175f48b9fc832e6120be0e287b15e59a0bbe33c46a29448047b6556407",
+        "customized": false,
+        "size": 11732
+      },
+      "_claude/agents/foundation/patterns.md": {
+        "checksum": "3e848b3ccec64c5f787c8c61406631dd6da21021fd6ca1cbbc2e12ffd6486a9d",
+        "customized": false,
+        "size": 6830
+      },
+      "_claude/agents/foundation/principles.md": {
+        "checksum": "096ac942d2027fc48d8d0ff5994855c92522a5cb2c115feae337c29472cb3a15",
+        "customized": false,
+        "size": 6990
+      },
+      "_claude/agents/foundation/researcher.md": {
+        "checksum": "b3083a077fe297c21b5088e6b97a8b83df4a838e3b63e311b9c6e544c29dccb5",
+        "customized": false,
+        "size": 34847
+      },
+      "_claude/agents/specialists/code-cleaner.md": {
+        "checksum": "3f6baeabc5c0928533cf171a00b4c75425bd3904b83d8bff3c328f8786c72b1c",
+        "customized": false,
+        "size": 7164
+      },
+      "_claude/agents/specialists/constraint-solver.md": {
+        "checksum": "64b63b143f2406ef3d48d1c09662246b5bd939addc4dd2dfe5672ddb55072fcc",
+        "customized": false,
+        "size": 11665
+      },
+      "_claude/agents/specialists/git-workflow.md": {
+        "checksum": "1ea02c85a17a107efcb6ecc2cf79a80c26280633015e155282f5fb3e56264f31",
+        "customized": false,
+        "size": 20204
+      },
+      "_claude/agents/specialists/github-issues-workflow.md": {
+        "checksum": "c55431cb513597887d487b932fd206fa01656b64761184ee2a1068d610c711f7",
+        "customized": false,
+        "size": 30206
+      },
+      "_claude/agents/specialists/github-pr-workflow.md": {
+        "checksum": "871646fefeddd5a9d801b46daeb422d5bb77926d09e0222e64e8a9c2bc000fd8",
+        "customized": false,
+        "size": 21310
+      },
+      "_claude/agents/specialists/meta-programmer.md": {
+        "checksum": "de0dc18e0f1d2092fa2fed4dfb8eaf6a0a01d41f73d211816cd5c997d35eaa52",
+        "customized": false,
+        "size": 3515
+      },
+      "_claude/agents/specialists/options-analyzer.md": {
+        "checksum": "19239e51f937b4991569757a3251da744866d7b7f9136d55de308430488fc09e",
+        "customized": false,
+        "size": 8389
+      },
+      "_claude/agents/specialists/performance-optimizer.md": {
+        "checksum": "2dabdb0f7c309f352cb17b844c5c545a282996da6a32894e318189640299c3b7",
+        "customized": false,
+        "size": 10070
+      },
+      "_claude/agents/specialists/prompt-engineer.md": {
+        "checksum": "4fbae4662d6ffc5f7e0303075993bc95b126445570b5f0fc6c2102fe94ccb9c5",
+        "customized": false,
+        "size": 1779
+      },
+      "_claude/agents/specialists/stack-advisor.md": {
+        "checksum": "4087249854065449a96f972e082e082de74f39379c105800f35aeb3f81ff66be",
+        "customized": false,
+        "size": 6780
+      },
+      "_claude/agents/specialists/test-strategist.md": {
+        "checksum": "8ace65ee1134079378bd93391e3783fdd2c33ee80f250850743704051dd00209",
+        "customized": false,
+        "size": 11447
+      },
+      "_claude/commands/agents/audit.md": {
+        "checksum": "cddf4cb1465307f1bf2411408cf637a98efa7babe7e748305c378b9f9281f038",
+        "customized": false,
+        "size": 8814
+      },
+      "_claude/commands/agents/create.md": {
+        "checksum": "5033652321e66cc2d1124937cb66ec623019a73ee1b5ab4a626fc53c6d89223e",
+        "customized": false,
+        "size": 10977
+      },
+      "_claude/commands/agents/guide.md": {
+        "checksum": "c8bf5617d9fb7c26b5350ee54f8b766fffe8392065a2ad89cc93075b24ecfe27",
+        "customized": false,
+        "size": 9190
+      },
+      "_claude/commands/commands/create.md": {
+        "checksum": "b6652ba76d97ba2414fdac5593fef2bfc39bf85da19d0742c83b908455024e7b",
+        "customized": false,
+        "size": 4107
+      },
+      "_claude/commands/commands/review.md": {
+        "checksum": "8eb074a861e02128e2e415fae28c37be642450dbc480686069bb182f27620ca1",
+        "customized": false,
+        "size": 4005
+      },
+      "_claude/commands/deploy.md": {
+        "checksum": "a5344ff2995c2ec6b1415f975529e899f700affc752a0c563235b11e94626475",
+        "customized": false,
+        "size": 7582
+      },
+      "_claude/commands/discuss.md": {
+        "checksum": "5bf7e65e7f171771c96da4e037522ba330f61754ae9a86a6df9fb58ef2a1a8d1",
+        "customized": false,
+        "size": 6160
+      },
+      "_claude/commands/doc-update.md": {
+        "checksum": "33e04672ae6513c2e8e85fcd225074ec57480c3c3ae4eff284660b141fa7e392",
+        "customized": false,
+        "size": 6739
+      },
+      "_claude/commands/fix.md": {
+        "checksum": "f926c35e7e0017bbb970d9f64cfa3b89be186c83809233ecd88aed6ceefb67c6",
+        "customized": false,
+        "size": 6427
+      },
+      "_claude/commands/generate.md": {
+        "checksum": "c54d5fbba78c28bfc46c18f48a8e02d5b9f1986754084211bd93d08846ba4698",
+        "customized": false,
+        "size": 9525
+      },
+      "_claude/commands/git.md": {
+        "checksum": "dbdcd1dd6b18f5cf15a3601f23d680601427b8cacb941c25b5ad58be9f936809",
+        "customized": false,
+        "size": 1643
+      },
+      "_claude/commands/issue/cleanup.md": {
+        "checksum": "5de51a8b123cd6ef5476a057c4ca4e98412374ea96bcb7cc923c37e757dc833c",
+        "customized": false,
+        "size": 679
+      },
+      "_claude/commands/issue/create.md": {
+        "checksum": "06772a37bd0906ca59ee977ff55873ee3b14390f1db214a97a29a0f89974380a",
+        "customized": false,
+        "size": 6481
+      },
+      "_claude/commands/issue/dedupe.md": {
+        "checksum": "c0ee08feec72d436c6877f15644143241e77f022278618ddb0fefd43038b2b24",
+        "customized": false,
+        "size": 3729
+      },
+      "_claude/commands/issue/list.md": {
+        "checksum": "e952add754a3a95013eac57728692a7a8f6e293af5b26cd0091bd21d9f3dda51",
+        "customized": false,
+        "size": 579
+      },
+      "_claude/commands/issue/next.md": {
+        "checksum": "108819c8b199aa44c66f92d6932a191594ded556475715835cdaa853ef87d80a",
+        "customized": false,
+        "size": 754
+      },
+      "_claude/commands/issue/plan.md": {
+        "checksum": "adee777624526daf6356b78560171ca18c2a3b2dc7b3982b456e7d65f04da91e",
+        "customized": false,
+        "size": 1834
+      },
+      "_claude/commands/issue/pr-create.md": {
+        "checksum": "a66d88672df43b90d20d4046789317d97de7b898232b51552efa7cb8e26e1bf5",
+        "customized": false,
+        "size": 2206
+      },
+      "_claude/commands/issue/pr-merge.md": {
+        "checksum": "d0dadd8e9b56d5699869291a6e052bf177de21fcc96073e5187756bed62a8b87",
+        "customized": false,
+        "size": 3079
+      },
+      "_claude/commands/issue/pr-review.md": {
+        "checksum": "32599d286e0c53192c8d1a1004b1f4e0765d1e5439717325bc3fb135f3bdce15",
+        "customized": false,
+        "size": 3130
+      },
+      "_claude/commands/issue/pr.md": {
+        "checksum": "e691ba53508a4033b9d096d7daa0ed222aa674843aa7cd3af5725d7e8e1b0dd5",
+        "customized": false,
+        "size": 2552
+      },
+      "_claude/commands/issue/refine.md": {
+        "checksum": "262fddd9b73b328d066fd9285cdd702ae7dac088dcf1581049ca1ca94c050a63",
+        "customized": false,
+        "size": 2774
+      },
+      "_claude/commands/issue/review.md": {
+        "checksum": "c379ac4b1792b9472608ebe220715b843b1481f441c9e3c06debe26ef5bc1b26",
+        "customized": false,
+        "size": 901
+      },
+      "_claude/commands/issue/start.md": {
+        "checksum": "fa5685042f9d2e68ac532c4866d28707963c6b5f13b082b4212b006f08d95fe8",
+        "customized": false,
+        "size": 1895
+      },
+      "_claude/commands/issue/update.md": {
+        "checksum": "9724f6971fe78d13a9801872cff07c895a7f6229622e4a3ae0d25d86dd98e153",
+        "customized": false,
+        "size": 620
+      },
+      "_claude/commands/monitor.md": {
+        "checksum": "c931983492d86a10b8b05b4b78be344e10c2dd628af42c688ab56a9476515324",
+        "customized": false,
+        "size": 10208
+      },
+      "_claude/commands/performance.md": {
+        "checksum": "d9bb96f7f8e232b8886623a3c233e0757ce0487a13bbd40fb290392c9d282699",
+        "customized": false,
+        "size": 5635
+      },
+      "_claude/commands/pr.md": {
+        "checksum": "6b7952485ac1054ef358044f5a89edf2247a3691de903b5c37635dc4e89cf661",
+        "customized": false,
+        "size": 1067
+      },
+      "_claude/commands/refactor.md": {
+        "checksum": "281e7eb985742d1cd07532b6453991c42faf66a3b71c23ce5c1ce8a256a1ffe1",
+        "customized": false,
+        "size": 11492
+      },
+      "_claude/commands/research.md": {
+        "checksum": "6f07320f1b71b6ed3e2972b3efb20de43b75bb448becf288e974569dceb5f45e",
+        "customized": false,
+        "size": 2517
+      },
+      "_claude/commands/review.md": {
+        "checksum": "f60ea11de4c88c1eb3c1c29d905bf24eb5c1ae379c823e5c84f3692012dbe01a",
+        "customized": false,
+        "size": 9703
+      },
+      "_claude/commands/security.md": {
+        "checksum": "1ab124117614addcc91e3d472016102c6a81cee2d4aa97308597d9360d370035",
+        "customized": false,
+        "size": 10581
+      },
+      "_claude/commands/stacks.md": {
+        "checksum": "6fdef9bad16e74566ea67f8a622e538c0d7f3756bd04e0385672efa60576f102",
+        "customized": false,
+        "size": 6594
+      },
+      "_claude/commands/tag.md": {
+        "checksum": "e4c75d977ec224f72785a76ba151fca15947a8cb83702dadb7c8ce8deef2570e",
+        "customized": false,
+        "size": 2322
+      },
+      "_claude/commands/test.md": {
+        "checksum": "055264e28f1feb91b05d56d90a7d53325afb6c36375c45fe98cb5dbba7fa7afa",
+        "customized": false,
+        "size": 9887
+      },
+      "_claude/settings.json": {
+        "checksum": "e6c26efd72cf3af9c2f73d6b4dcd9a29bfb420ca2adb90af4e80b63881bef66b",
+        "customized": false,
+        "size": 329
+      },
+      "devcontainer/Dockerfile.template": {
+        "checksum": "60ff4976cb30eac9130611d64566976b6bf3a4ee986d9d51e7fdf81209ae9138",
+        "customized": false,
+        "size": 1597
+      },
+      "devcontainer/build.sh": {
+        "checksum": "90bf7cc2b9b4e0be9365f867171bbea2b901ad2f5b8eaba2c19dba4fc677dcdb",
+        "customized": false,
+        "size": 1561
+      },
+      "devcontainer/clean.sh": {
+        "checksum": "9c28be7fde166b8cd6e5d49e5e44684f1fee5415ccc72a83685e4f196b962b98",
+        "customized": false,
+        "size": 8339
+      },
+      "devcontainer/devcontainer.json.template": {
+        "checksum": "30f0e426f2ba8b1420fabf97cfa573ed2097f1ed9fad9a0d240a6fe5c0207607",
+        "customized": false,
+        "size": 2037
+      },
+      "devcontainer/postCreate-scripts/apt-upgrade.sh": {
+        "checksum": "09cde94f52a39a71bc926fd562f8a709fdef65547640253c8207abb9528a4eb4",
+        "customized": false,
+        "size": 308
+      },
+      "devcontainer/postCreate-scripts/clone-repository.sh.template": {
+        "checksum": "9fb41bb5da991b52c2c2ab1c3adaa89893f7e2935ca98aae3917b9091ec81052",
+        "customized": false,
+        "size": 562
+      },
+      "devcontainer/postCreate-scripts/configure-git.sh": {
+        "checksum": "919d5e7989eb6ebf67ec20fe6ba9c12547ed4dfbe9d1bd0b786b538f3aaffef5",
+        "customized": false,
+        "size": 1241
+      },
+      "devcontainer/postCreate-scripts/configure-gpg-agent-socket.sh": {
+        "checksum": "f7d4a6b2d2edeb71a69247c54efe14db6988feaf1521c4f917ca9eb51b85c514",
+        "customized": false,
+        "size": 1153
+      },
+      "devcontainer/postCreate-scripts/configure-oh-my-zsh.sh": {
+        "checksum": "d3ab15c914a247607bd12da10acc6afd4f2a923a1c80ed96f60a23b06f5b0db4",
+        "customized": false,
+        "size": 714
+      },
+      "devcontainer/postCreate-scripts/configure-ssh-socket.sh": {
+        "checksum": "416344d0d47b9179a203d6efb530d8732df2aecb054a512f1c7c900fecb87440",
+        "customized": false,
+        "size": 706
+      },
+      "devcontainer/postCreate-scripts/configure-worktree-shell-commands.sh": {
+        "checksum": "ca3e920146f55703490ed6f6940bda7cef3897a87d45f845514e0192df020440",
+        "customized": false,
+        "size": 3393
+      },
+      "devcontainer/postCreate-scripts/install-ai-tools.sh": {
+        "checksum": "067f9ad99f5984eec86c9e6e18282284d76a2ee795b4729929c80a47db00d848",
+        "customized": false,
+        "size": 378
+      },
+      "devcontainer/postCreate-scripts/install-apt-dependencies.sh": {
+        "checksum": "3fe1aa6bd4c694fe6a51e2f902359a3e78d58852fcc58d2eddf8809f7244e266",
+        "customized": false,
+        "size": 730
+      },
+      "devcontainer/postCreate-scripts/install-mcp-tools.sh": {
+        "checksum": "cab4a23d6cb19c53c7a42fea3fda8848d24f7e335e7e5a286bed3de3589fd1e8",
+        "customized": false,
+        "size": 457
+      },
+      "devcontainer/postCreate-scripts/install-python-tools.sh": {
+        "checksum": "e88cf460782cd789803417f3270186d3b1b15381e071754f472a38b7b32a6753",
+        "customized": false,
+        "size": 597
+      },
+      "devcontainer/postCreate-scripts/install-zsh.sh": {
+        "checksum": "9b26e43d5c8ca783a429847e3f13f3aecd08a77392d4ce4cc4a215871b088820",
+        "customized": false,
+        "size": 396
+      },
+      "devcontainer/postCreate-scripts/setup-environment-variables.sh.template": {
+        "checksum": "a21108106feecc7d8a4dab59c229815506e1bb9fdb85c9bb367c41eb86e08e65",
+        "customized": false,
+        "size": 820
+      },
+      "devcontainer/postCreate-scripts/setup-github-authentication.sh": {
+        "checksum": "bd8b7da9095b441650f492ba6fc65db7e2ca94c4ea80fda20d90aa50ab19b957",
+        "customized": false,
+        "size": 680
+      },
+      "devcontainer/postCreate-scripts/setup-shell-navigation.sh.template": {
+        "checksum": "50eeab96271fe7a0d00c5e938c74c9c7c267c03b7918dfeee948be581362f479",
+        "customized": false,
+        "size": 645
+      },
+      "devcontainer/postCreate-scripts/setup-workspace.sh.template": {
+        "checksum": "ff0fc83ed3a0edbca9fb26c77d6dc0e7ab50d087eb0a07ab1a065903bbb33dc1",
+        "customized": false,
+        "size": 383
+      },
+      "devcontainer/postCreate-scripts/verify-all-tools-installed.sh": {
+        "checksum": "0454d0ea73c5bf272b5370eda439340f68a5189a9011e99620cc4a5b6c511d20",
+        "customized": false,
+        "size": 481
+      },
+      "devcontainer/postCreate.sh.template": {
+        "checksum": "921eb8a88faf81638fb8ed49de4cdca8336c45a01e4a89bc24b0331c40cdbce4",
+        "customized": false,
+        "size": 2297
+      },
+      "devcontainer/up.sh": {
+        "checksum": "dab88e5476b65949a9f7d57d6382fc37094a9118b148ed17a2c68ff15a76e43d",
+        "customized": false,
+        "size": 75
+      },
+      "guidelines/CLAUDE.md": {
+        "checksum": "0d3b3a47bd0deb0845c7ab45310cc4c9dfd31f9a6cf52ed13826bb6c44465097",
+        "customized": false,
+        "size": 219
+      },
+      "guidelines/claude-agents-guidelines.md": {
+        "checksum": "3c172fe96250d57a96e72afaa13c05ecfc576eb66f9862c19ef3baeb2dc36dd5",
+        "customized": false,
+        "size": 18188
+      },
+      "guidelines/claude-commands-guidelines.md": {
+        "checksum": "986b2cf2e11a44a647ad345395eb30d8fa8324e95f7338af0423f54921d8c13c",
+        "customized": false,
+        "size": 11435
+      },
+      "guidelines/claude-prompt-engineering-guidelines.md": {
+        "checksum": "71604f6413f991827b8c8ad460d7827d10c5b85a618488463cedc6cf85e73378",
+        "customized": false,
+        "size": 14631
+      },
+      "guidelines/critical-bias-assessment-optimization-reports.md": {
+        "checksum": "199826734b88f7047cb00c55cdd08959db6d4333447cef08668b09c337c1da58",
+        "customized": false,
+        "size": 10069
+      },
+      "guidelines/critical-thinking-framework.md": {
+        "checksum": "8504fca7dbd128a8aecfa3d6a7575b2af096910a3ffa0a7d5252a742d3dbb78e",
+        "customized": false,
+        "size": 12810
+      },
+      "guidelines/github-labels.md": {
+        "checksum": "b4f065d09ef3dd098ecbb9bdbd3f033609cafce546f020dadddd5f14e40ae0d7",
+        "customized": false,
+        "size": 12782
+      },
+      "guidelines/readme-documentation-guidelines.md": {
+        "checksum": "7c82d4322cdc099a16e19c2d194a4c38b14960bc19af9aadb5c681480e37d679",
+        "customized": false,
+        "size": 12984
+      },
+      "guidelines/research-verification-protocol.md": {
+        "checksum": "3d60e5fe5f9eae5332416155ff7f376bdc3aa25e779102da0b151fbbb0820725",
+        "customized": false,
+        "size": 11463
+      },
+      "guidelines/security-workflows.md": {
+        "checksum": "0b6503fc9022d96204ce542742e74668abc0170ea983ea1a1992f87b98748680",
+        "customized": false,
+        "size": 8742
+      },
+      "guidelines/software-tradeoff-framework.md": {
+        "checksum": "3b60202f5badb73331496bb768fdd96a9e8bac91c104b6b0fc47abb69d29e811",
+        "customized": false,
+        "size": 11577
+      },
+      "guidelines/stack-mapping.md": {
+        "checksum": "f0c32f8a6f1f39047853f9e228e98cd8ac008051b1c5bbc77fb0fbe6dd0c2699",
+        "customized": false,
+        "size": 8414
+      },
+      "prompts/master-prompt.md": {
+        "checksum": "cd38dfe68ee6d46792972e585da504cdad41ee73fd7868cee9c25a62272d7569",
+        "customized": false,
+        "size": 768
+      },
+      "prompts/worktree-deliver.template.md": {
+        "checksum": "a3dde6ff671293c463c41ffe97bfee1dc2e4eb1e151b7104148491349bde10ea",
+        "customized": false,
+        "size": 10850
+      },
+      "readme/general-project-template.md": {
+        "checksum": "4a077ea8790e340f959063d9585c17efeca419915dc00dda5eb04c4cd48559ee",
+        "customized": false,
+        "size": 1012
+      },
+      "readme/library-package-template.md": {
+        "checksum": "97552ebad6bcbc0f000c1b18039c87252962f0c40a67390a5a3836aabde1d309",
+        "customized": false,
+        "size": 2957
+      },
+      "readme/mcp-server-template.md": {
+        "checksum": "1f5b38f7a6428a7c97739e4bd7189cbd5c4fb674cc727a75bd3402cdc20b8f14",
+        "customized": false,
+        "size": 2471
+      },
+      "scripts/README.md": {
+        "checksum": "5bb76fc79fac7514eb3c830338d614053c829a42e96c755b90be2306fac3778d",
+        "customized": false,
+        "size": 6960
+      },
+      "scripts/analyze-jsonl.sh": {
+        "checksum": "3df6d07cfa15ab1993d6680599fc30c61e086d3431e69135773554f46e2891be",
+        "customized": false,
+        "size": 6577
+      },
+      "scripts/analyze-mcp.sh": {
+        "checksum": "5fe015c40b107ba604ba32a437d987bac48252c7790d0f13137d68be14bc226a",
+        "customized": false,
+        "size": 2941
+      },
+      "scripts/analyze-usage.sh": {
+        "checksum": "7672680e2d4276d792c68d8d23d09e45ae61f97c450f409f5fa6fc76fa350aaf",
+        "customized": false,
+        "size": 2695
+      },
+      "scripts/debug-claude.sh": {
+        "checksum": "86e8ce7a9b49205f1e97e8f8eff9efdd14c1a2ea2cec423a2aaed55699d651a9",
+        "customized": false,
+        "size": 2802
+      },
+      "scripts/discover-sessions.sh": {
+        "checksum": "271280c4801314a34a53b1d4d5461935eb0933845b642548ea9f431a8e0c644f",
+        "customized": false,
+        "size": 6095
+      },
+      "scripts/launch-claude.sh": {
+        "checksum": "29cae50a266b2039783ef1155d59810b01047b6c71e26705bbf09830b2a1f36d",
+        "customized": false,
+        "size": 34162
+      },
+      "scripts/launch-codex.sh": {
+        "checksum": "7b6c3a49704791337af1bb374b23bc9606787520c3d340d8ea9be67788b72bcb",
+        "customized": false,
+        "size": 21945
+      },
+      "scripts/lib/launcher-utils.sh": {
+        "checksum": "08a3e746403963f6f2860264a67a285ff19ccad9ef22cba41106e94ef1fe3420",
+        "customized": false,
+        "size": 15475
+      },
+      "scripts/worktree/worktree-cleanup.sh": {
+        "checksum": "0679de784b1a3ebaf92ea7bc1e948e8b90f29b4ab228ba7becb330f5f3fb7f10",
+        "customized": false,
+        "size": 14413
+      },
+      "scripts/worktree/worktree-create.sh": {
+        "checksum": "991819712dddab8ce4ee7aa238e868596811b1ca5ac29647d7fba4907211558a",
+        "customized": false,
+        "size": 27240
+      },
+      "scripts/worktree/worktree-deliver.sh": {
+        "checksum": "917ca06082ca0a38a01dc2a0131d81ea4a126e449d04f4352f682c3e1137a112",
+        "customized": false,
+        "size": 18751
+      },
+      "scripts/worktree/worktree-init.sh": {
+        "checksum": "8cb8c0b30065f8c4e99e7a40cc5a39b9cb515325c570b6a35eef4109271152f8",
+        "customized": false,
+        "size": 18608
+      },
+      "scripts/worktree/worktree-inspect.sh": {
+        "checksum": "9df0e6bc64b386771efb5dfc4ea01ae53d72353b91b080d19f1a9ce0fd6f8067",
+        "customized": false,
+        "size": 37031
+      },
+      "scripts/worktree/worktree-launch.sh": {
+        "checksum": "a7740dd41d7027bda06572a879e1ae94d5db3a2f4855c335b48ff33fd13594e7",
+        "customized": false,
+        "size": 11848
+      },
+      "scripts/worktree/worktree-list.sh": {
+        "checksum": "ead061fea885100981de8275713cb54a5425c32e9cf655c360dd9c82535b7528",
+        "customized": false,
+        "size": 9280
+      },
+      "scripts/worktree/worktree-path.sh": {
+        "checksum": "ff17d521c041189bf791dd2484324ae569b672bf64d76af71e57f7ddd13919e9",
+        "customized": false,
+        "size": 7037
+      },
+      "scripts/worktree/worktree-title.sh": {
+        "checksum": "858d9ce8d74a736f15444e2f92c956dd9be603c28a1f6d7e7f02b38fd173a80d",
+        "customized": false,
+        "size": 2751
+      },
+      "scripts/worktree/worktree-watch.sh": {
+        "checksum": "2ed455ec822925b88a58651cfa02f41a882c20a6f3696a68619438971b6b8d7f",
+        "customized": false,
+        "size": 17655
+      },
+      "scripts/worktree/worktree.sh": {
+        "checksum": "c416cb79bc098e59d7fdc9565c968706c845c60bce651fb5a30df8058d8b05f9",
+        "customized": false,
+        "size": 7402
+      },
+      "stacks/bash.md": {
+        "checksum": "2a441a0ed38ddcfb3021ebf4f6c55b4030be29a8258a2811b333ab68f4f49001",
+        "customized": false,
+        "size": 10807
+      },
+      "stacks/cpp.md": {
+        "checksum": "22c6b84c840e366679e34396e1fcae73da18459b818151107801048d863b2a56",
+        "customized": false,
+        "size": 8535
+      },
+      "stacks/csharp.md": {
+        "checksum": "91603dce99582765740b87d1bf7d6c958324981070e0b9a2fa0dcebcd6c9b787",
+        "customized": false,
+        "size": 9496
+      },
+      "stacks/docker.md": {
+        "checksum": "4f69d4ddfc37fb66c878453efdc486317ed71f6ac11b86c604cadf51f7bf04a4",
+        "customized": false,
+        "size": 6934
+      },
+      "stacks/java.md": {
+        "checksum": "3bdefa4fd38509c6dd009658eb15abf61e0bb55c86ed926fbe34dfc624e40e48",
+        "customized": false,
+        "size": 6824
+      },
+      "stacks/kotlin.md": {
+        "checksum": "7232cc2eb2d42934f7a28009e0fe17e62edcb96c68e00465c2b595963ee3bc6a",
+        "customized": false,
+        "size": 6731
+      },
+      "stacks/python.md": {
+        "checksum": "282e5c031999982adc64e30a279a80e6f6879b0a6659476ffa07ba5a01e8ddb0",
+        "customized": false,
+        "size": 2431
+      },
+      "stacks/ruby.md": {
+        "checksum": "925f402ba9d5dc6d48f958782bded439c6e20a25ba38914c5eb051ce9772f48c",
+        "customized": false,
+        "size": 7221
+      },
+      "stacks/rust.md": {
+        "checksum": "4af115847538932eba419a3356c2ded318c7204cd8fdc303e6898bd38390fb2a",
+        "customized": false,
+        "size": 4599
+      }
+    }
+  },
+  "customizations": {
+    "preserved_files": [],
+    "custom_overrides": {}
+  }
+}

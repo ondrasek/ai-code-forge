@@ -18,7 +18,7 @@ if [ -d $workingCopy/.git ]; then
   cd -
   echo "✅ Repository synced"
 else
-  gh repo clone testuser/test-repo $workingCopy
+  gh repo clone ondrasek/ai-code-forge $workingCopy
   echo "✅ Repository cloned"
 fi
 

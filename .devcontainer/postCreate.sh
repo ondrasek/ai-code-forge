@@ -12,12 +12,12 @@ postCreateEnvFile=$devcontainerDir/postCreate.env.tmp
 }
 
 eval "$(grep -v '^#' $postCreateEnvFile | sed 's/^/export /')"
-export workingCopy=/workspace/test-repo
-export worktreesDir=/workspace/worktrees/test-repo
+export workingCopy=/workspace/ai-code-forge
+export worktreesDir=/workspace/worktrees/ai-code-forge
 
 echo "Configuration from initializeCommand:"
-echo "repositoryName: test-repo"
-echo "repositoryNameWithOwner: testuser/test-repo"
+echo "repositoryName: ai-code-forge"
+echo "repositoryNameWithOwner: ondrasek/ai-code-forge"
 echo "gitUserName: $gitUserName"
 echo "gitUserEmail: $gitUserEmail"
 echo "workingCopy: $workingCopy"
