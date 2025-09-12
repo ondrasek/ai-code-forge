@@ -52,7 +52,7 @@ target-repo/
 - `templates/prompts/` → Parameter substitution → `.acforge/prompts/`
 - `templates/stacks/` → Parameter substitution → `.acforge/stacks/`
 - `templates/readme/` → Parameter substitution → `.acforge/readme/`
-- `templates/devcontainer/` → Parameter substitution → `.devcontainer/`
+- `templates/_devcontainer/` → Parameter substitution → `.devcontainer/`
 
 **Dist → Direct Copy → Target**:
 - `dist/scripts/` → Direct copy → `.acforge/scripts/`

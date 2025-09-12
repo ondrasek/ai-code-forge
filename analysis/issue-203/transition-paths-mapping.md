@@ -18,7 +18,7 @@
 `templates/stacks/` | `.acforge/stacks/` | Template processing | 9 files
 `templates/readme/` | `.acforge/readme/` | Template processing | 3 files
 `templates/CLAUDE.md.template` | `.acforge/CLAUDE.md` | Template processing | 1 file
-`templates/devcontainer/` | `.devcontainer/` | Template processing | 23 files
+`templates/_devcontainer/` | `.devcontainer/` | Template processing | 23 files
 
 **Total from templates/**: 50 files (30 to .acforge/ + 20 to .devcontainer/)
 
@@ -55,7 +55,7 @@ ai-code-forge/templates/guidelines/        → target-repo/.acforge/guidelines/
 ai-code-forge/templates/stacks/            → target-repo/.acforge/stacks/
 ai-code-forge/templates/readme/            → target-repo/.acforge/readme/
 ai-code-forge/templates/CLAUDE.md.template → target-repo/.acforge/CLAUDE.md
-ai-code-forge/templates/devcontainer/      → target-repo/.devcontainer/
+ai-code-forge/templates/_devcontainer/      → target-repo/.devcontainer/
 ```
 
 ### **Dist Processing** (Direct Copy)

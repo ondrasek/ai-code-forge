@@ -85,7 +85,7 @@ target-repo/
 ### **Template vs Static Distribution**
 **Templates** (parameter processing):
 - `.claude/` directory → from `templates/` 
-- `.devcontainer/` directory → from `templates/devcontainer/`
+- `.devcontainer/` directory → from `templates/_devcontainer/`
 
 **Static Content** (direct copying):
 - `scripts/` directory → from `scripts/`
