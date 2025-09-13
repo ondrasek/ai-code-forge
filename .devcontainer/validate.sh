@@ -15,12 +15,12 @@ else
     exit 1
 fi
 
-# Check setup script syntax
-echo "📋 Validating setup.sh syntax..."
-if bash -n setup.sh; then
-    echo "✅ setup.sh syntax is valid"
+# Check postCreate script syntax
+echo "📋 Validating postCreate.sh syntax..."
+if bash -n postCreate.sh; then
+    echo "✅ postCreate.sh syntax is valid"
 else
-    echo "❌ setup.sh has syntax errors"
+    echo "❌ postCreate.sh has syntax errors"
     exit 1
 fi
 
@@ -53,9 +53,8 @@ fi
 echo "📋 Validating devcontainer features..."
 FEATURES=(
     "ghcr.io/devcontainers/features/node:1"
-    "ghcr.io/devcontainers/features/python:1"
     "ghcr.io/devcontainers/features/github-cli:1"
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1"
+    "ghcr.io/devcontainers/features/git:1"
 )
 
 echo "✅ Using standard devcontainer features:"
@@ -67,12 +66,9 @@ done
 echo "📋 Validating VS Code extensions..."
 EXTENSIONS=(
     "anthropic.claude-code"
-    "docker.docker"
-    "github.codespaces"
     "github.vscode-pull-request-github"
     "ms-python.python"
     "ms-python.vscode-pylance"
-    "ms-azuretools.vscode-docker"
     "redhat.vscode-yaml"
     "qwtel.sqlite-viewer"
 )
