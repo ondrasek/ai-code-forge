@@ -53,8 +53,8 @@ fi
 echo "📋 Validating devcontainer features..."
 FEATURES=(
     "ghcr.io/devcontainers/features/node:1"
-    "ghcr.io/devcontainers/features/python:1"
     "ghcr.io/devcontainers/features/github-cli:1"
+    "ghcr.io/devcontainers/features/git:1"
 )
 
 echo "✅ Using standard devcontainer features:"
@@ -66,12 +66,9 @@ done
 echo "📋 Validating VS Code extensions..."
 EXTENSIONS=(
     "anthropic.claude-code"
-    "docker.docker"
-    "github.codespaces"
     "github.vscode-pull-request-github"
     "ms-python.python"
     "ms-python.vscode-pylance"
-    "ms-azuretools.vscode-docker"
     "redhat.vscode-yaml"
     "qwtel.sqlite-viewer"
 )
