@@ -12,6 +12,9 @@ project.db
 .env.local
 .env.*.local
 
+# Local configuration overrides
+.claude/settings.local.json
+
 # Secrets
 *.pem
 *.key
