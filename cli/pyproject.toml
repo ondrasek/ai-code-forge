@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "acforge"
-version = "3.1.1"
+version = "3.2.0-pre-overhaul"
 description = "acforge cli for AI Code Forge configuration management"
 readme = "README.md"
 requires-python = ">=3.9"
