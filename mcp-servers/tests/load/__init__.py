@@ -1,1 +1,0 @@
-"""Load testing for MCP server performance under stress."""
