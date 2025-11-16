@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Deleted `analysis/` directory with 24+ issue-based analysis folders
   - Removed complex state management and template versioning systems
   - Eliminated broken update command complexity
+- **Multi-AI Platform Support**: Complete removal of OpenAI Codex and OpenCode CLI integration
+  - Removed `launch-codex.sh` scripts and launcher utilities
+  - Removed OpenAI Codex and OpenCode AI installation from devcontainer setup
+  - Closed 6 GitHub issues related to multi-AI platform support (#85, #86, #87, #91, #92, #165)
+  - Eliminated dual-AI coexistence architecture in favor of focused Claude Code integration
+  - Removed multi-AI model switching and backup/restore functionality
 
 ### Changed
 - **Version Strategy**: Bumped to major version 4.0.0 to reflect breaking changes

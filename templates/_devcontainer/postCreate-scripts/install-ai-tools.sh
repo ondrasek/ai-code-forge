@@ -9,10 +9,6 @@ echo "🤖 Installing AI tools..."
 echo "🔄 Installing Claude CLI..."
 npm install -g @anthropic-ai/claude-code
 
-echo "🔄 Installing OpenAI Codex..."
-npm install -g @openai/codex
-
-echo "🔄 Installing OpenCode AI..."
-npm install -g opencode-ai
+# OpenAI Codex and OpenCode AI support removed in v4.0.0
 
 echo "✅ AI tools installation completed"

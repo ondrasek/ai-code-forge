@@ -162,7 +162,7 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/db
 
 # .env.global (user-specific)
 GITHUB_TOKEN=your-github-token
-OPENAI_API_KEY=your-openai-key
+# OPENAI_API_KEY removed - OpenAI Codex support discontinued
 ```
 
 ## Technology Stack Customization
