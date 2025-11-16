@@ -41,37 +41,35 @@ install:                    # File installation mapping
     - ".devcontainer/ -> .devcontainer/"
   skills:                   # Optional skills list
     - "skill-name"
-conflicts:                  # Optional conflicts
-  - conflicting-module
+# conflicts: []           # Module conflicts - to be implemented later
 compatibility:              # Version requirements
   claude-code: ">=2.78.0"
   ai-code-forge: ">=4.0.0"
 ```
 
-## Module Categories
+## Module Naming
 
-### technology-stack
-Complete development setup for specific programming languages or platforms:
-- Python, TypeScript, Rust, Java modules
-- Include devcontainer, guidelines, and language-specific tools
+Use descriptive, self-explanatory names in flat structure:
 
-### workflow
-Development process enhancements:
-- Git worktree management
-- GitHub integration
-- CI/CD automation
+### Language Modules
+- **python**: Complete Python development setup
+- **typescript**: Complete TypeScript development setup
+- **rust**: Complete Rust development setup
+- **java**: Complete Java development setup
 
-### enhancement
-Pure functionality additions without core dependencies:
-- README generation
-- Code analysis tools
-- Documentation helpers
+### Platform/Framework Modules
+- **cloudflare-workers**: Cloudflare Workers development
+- **nextjs**: Next.js framework setup
+- **django**: Django framework setup
 
-### core
-Foundation modules required by other modules:
-- claude-config: Basic Claude Code setup
-- scripts-core: Essential automation
-- devcontainer-base: Common patterns
+### Workflow Modules
+- **worktree**: Git worktree management
+- **github-integration**: GitHub workflow automation
+
+### Foundation Modules
+- **claude-config**: Basic Claude Code setup
+- **scripts-core**: Essential automation
+- **devcontainer-base**: Common patterns
 
 ## File Installation
 
@@ -168,15 +166,14 @@ cd modules/category/module-name
 ### 1. Module Creation
 ```bash
 # Create module structure
-mkdir -p modules/technology/my-language
-cd modules/technology/my-language
+mkdir -p modules/my-language
+cd modules/my-language
 
 # Create metadata
 cat > module.yaml << EOF
 name: my-language
 version: 1.0.0
 description: "Complete My Language development setup"
-category: technology-stack
 capabilities:
   files: true
   skills: true
@@ -263,12 +260,11 @@ EOF
 
 ## Common Patterns
 
-### Technology Module Template
+### Language Module Template
 ```yaml
-name: technology-name
+name: language-name
 version: 1.0.0
-description: "Complete Technology Name development setup"
-category: technology-stack
+description: "Complete Language Name development setup"
 capabilities:
   files: true
   skills: true
@@ -284,8 +280,7 @@ install:
     - "technology-linting"
     - "technology-testing"
     - "code-review"
-conflicts:
-  - other-primary-language
+# conflicts: []           # Module conflicts - to be implemented later
 ```
 
 ### Workflow Module Template
@@ -305,12 +300,11 @@ install:
     - "docs/ -> docs/"
 ```
 
-### Enhancement Module Template
+### Skills-Only Module Template
 ```yaml
 name: enhancement-name
 version: 1.0.0
 description: "Enhancement functionality description"
-category: enhancement
 capabilities:
   files: false
   skills: true
@@ -325,13 +319,13 @@ install:
 ### Local Development
 ```bash
 # Install from local development
-acforge module install ./modules/category/module-name --dev
+acforge module install ./modules/module-name --dev
 ```
 
 ### Repository Integration
 ```bash
 # Commit module to repository
-git add modules/category/module-name/
+git add modules/module-name/
 git commit -m "feat: add module-name module v1.0.0"
 ```
 
@@ -372,7 +366,7 @@ git commit -m "chore: bump module-name to v1.1.0"
 ### Debug Commands
 ```bash
 # Validate module metadata
-acforge module validate ./modules/category/module-name
+acforge module validate ./modules/module-name
 
 # Test installation without applying
 acforge module install module-name --dry-run

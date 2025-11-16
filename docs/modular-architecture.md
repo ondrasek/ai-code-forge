@@ -28,51 +28,48 @@ AI Code Forge v4.0+ introduces a revolutionary modular architecture that elimina
 
 ```
 ai-code-forge/
-├── modules/                      # Module definitions
-│   ├── core/                     # Foundation modules
-│   │   ├── claude-config/        # Basic Claude Code setup
-│   │   ├── scripts-core/         # Essential automation
-│   │   └── devcontainer-base/    # Common devcontainer patterns
-│   ├── technology/               # Language-specific modules
-│   │   ├── python/               # Complete Python setup
-│   │   ├── typescript/           # Complete TypeScript setup
-│   │   ├── rust/                 # Complete Rust setup
-│   │   └── java/                 # Complete Java setup
-│   ├── workflow/                 # Development workflow modules
-│   │   ├── worktree/            # Git worktree management
-│   │   └── github-integration/   # GitHub workflow automation
-│   └── enhancement/              # Pure enhancement modules
-│       └── readme-generation/    # Documentation generation
-├── skills/                       # Skill definitions
-│   ├── development/              # Development assistance skills
-│   ├── documentation/            # Documentation skills
-│   └── workflow/                 # Workflow skills
+├── modules/                      # Module definitions (flat structure)
+│   ├── claude-config/           # Basic Claude Code setup
+│   ├── scripts-core/            # Essential automation scripts
+│   ├── devcontainer-base/       # Common devcontainer patterns
+│   ├── python/                  # Complete Python development
+│   ├── typescript/              # Complete TypeScript development
+│   ├── rust/                    # Complete Rust development
+│   ├── java/                    # Complete Java development
+│   ├── cloudflare-workers/      # Cloudflare Workers platform
+│   ├── worktree/               # Git worktree management
+│   ├── github-integration/      # GitHub workflow automation
+│   └── readme-generation/       # Documentation generation
+├── skills/                       # Skill definitions (flat structure)
+│   ├── code-review/            # AI-powered code analysis
+│   ├── python-linting/         # Python-specific assistance
+│   ├── typescript-analysis/    # TypeScript-specific assistance
+│   ├── readme-generator/       # README creation skill
+│   ├── architecture-advisor/   # System design guidance
+│   └── git-helper/            # Git workflow assistance
 ├── manifests/                    # M:N relationship definitions
-│   ├── bundles.yaml             # Module → Skills mappings
-│   ├── compatibility.yaml       # Version compatibility matrix
-│   └── distributions.yaml       # Pre-defined combinations
-└── cli/                         # Enhanced CLI
+│   └── bundles.yaml             # Module → Skills mappings
+└── cli/                         # Enhanced CLI tool
 ```
 
 ## Module Types
 
 ### Full-Stack Modules
 Contains both filesystem components and AI assistance skills:
-- **Python Module**: Devcontainer + guidelines + Python AI skills
-- **TypeScript Module**: Complete TypeScript setup + analysis skills
-- **Rust Module**: Rust environment + Rust-specific AI assistance
+- **python**: Complete Python development setup with AI assistance
+- **typescript**: Complete TypeScript setup with analysis skills
+- **rust**: Rust environment with Rust-specific AI assistance
 
 ### Skills-Only Modules
 Pure AI enhancement without filesystem changes:
-- **README Generation**: Documentation creation skills
-- **Code Review**: AI-powered analysis skills
-- **Architecture Advisor**: System design guidance
+- **readme-generation**: Documentation creation skills
+- Skills are bundled with relevant modules via manifests
 
-### Files-Only Modules
-Filesystem components without AI integration:
-- **Worktree**: Shell scripts for Git worktree management
-- **Scripts Core**: Basic automation utilities
-- **Devcontainer Base**: Common Docker patterns
+### Foundation Modules
+Essential components required by other modules:
+- **claude-config**: Basic Claude Code configuration
+- **scripts-core**: Essential automation utilities
+- **devcontainer-base**: Common Docker patterns
 
 ## Module Metadata
 
@@ -96,9 +93,7 @@ install:
   skills:
     - "python-linting"            # Auto-install with module
     - "python-testing"            # Auto-install with module
-conflicts:
-  - typescript                    # Cannot coexist
-  - rust                          # Cannot coexist
+# conflicts: []                     # Module conflicts - to be implemented later
 ```
 
 ## Installation Process

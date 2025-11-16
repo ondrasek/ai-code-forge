@@ -9,7 +9,7 @@ This guide covers creating Claude Skills that integrate with AI Code Forge modul
 Every skill follows Claude's standard structure:
 
 ```
-skills/category/skill-name/
+skills/skill-name/
 ├── SKILL.md                # Skill definition (required)
 ├── templates/              # Optional templates
 ├── examples/               # Optional examples
@@ -158,8 +158,8 @@ compatibility:
 ### 2. Skill Creation
 ```bash
 # Create skill structure
-mkdir -p skills/development/my-skill
-cd skills/development/my-skill
+mkdir -p skills/my-skill
+cd skills/my-skill
 
 # Create SKILL.md
 cat > SKILL.md << 'EOF'
@@ -167,7 +167,6 @@ cat > SKILL.md << 'EOF'
 name: my-skill
 version: 1.0.0
 description: "Description of skill functionality"
-category: development
 compatibility:
   modules:
     - python
@@ -412,7 +411,7 @@ acforge skills list
 acforge skills status my-skill
 
 # Validate skill format
-acforge skills validate ./skills/category/skill-name
+acforge skills validate ./skills/skill-name
 
 # Test skill installation
 acforge skills install my-skill --dry-run
