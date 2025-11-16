@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2025-11-16
+
+### Breaking Changes
+- **MAJOR OVERHAUL**: Complete repository restructuring with no backward compatibility
+- **Removed**: MCP servers directory (`mcp-servers/`) containing openai-structured-mcp and perplexity-mcp codebases
+- **Removed**: Analysis directory (`analysis/`) containing 24+ issue analysis folders
+- **Repository Focus**: Shifted from "everything AI development" to focused template distribution + CLI tool
+
+### Removed
+- **Half-baked Features Elimination**: Aggressive removal of incomplete and broken functionality
+  - Deleted `mcp-servers/` directory with multiple MCP server implementations
+  - Deleted `analysis/` directory with 24+ issue-based analysis folders
+  - Removed complex state management and template versioning systems
+  - Eliminated broken update command complexity
+
+### Changed
+- **Version Strategy**: Bumped to major version 4.0.0 to reflect breaking changes
+- **Repository Purpose**: Transformed from mixed-purpose development workspace to clean CLI distribution platform
+- **Configuration Separation**: Prepared for removal of root `.claude/` directory to eliminate AI confusion between local config and templates
+
+### Added
+- **Pre-overhaul Preservation**: Created git tag `v3.2.0-pre-overhaul` to preserve repository state before restructuring
+- **Aggressive Cleanup Protocol**: Established protocol for removing half-baked features without backward compatibility concerns
+
+### Notes
+- This release represents a complete philosophical shift toward focused, working tools
+- User migration is not supported - users should upgrade by starting fresh
+- Focus on modernizing Claude Code integration and eliminating config confusion
+- Next phase will address template vs local configuration separation
+
 ### Added
 
 ## [3.2.0] - 2025-09-07
