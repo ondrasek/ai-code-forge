@@ -5,6 +5,7 @@ Welcome to AI Code Forge v4.0+ documentation. This version introduces a revoluti
 ## Getting Started
 
 - [**Modular Architecture**](modular-architecture.md) - Complete overview of the new modular system
+- [**Claude Code Components**](claude-code-components.md) - Skills, Sub-Agents, and Slash Commands explained
 
 ## Module Development
 
@@ -13,10 +14,12 @@ Welcome to AI Code Forge v4.0+ documentation. This version introduces a revoluti
 
 ## Architecture Overview
 
-AI Code Forge v4.0+ is built around modules and skills:
+AI Code Forge v4.0+ is built around Claude Code components:
 
 - **Modules**: Filesystem components and configuration
-- **Skills**: AI enhancement capabilities
+- **Skills**: AI enhancement capabilities (optional)
+- **Sub-Agents**: Specialized task execution with isolation
+- **Slash Commands**: Workflow automation and orchestration
 - **Git Integration**: Rollback and state management
 - **CLI**: Enhanced command interface
 

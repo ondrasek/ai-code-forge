@@ -1,0 +1,14 @@
+name: devcontainer-base
+version: 1.0.0
+description: "Foundation devcontainer infrastructure and setup scripts"
+category: core
+capabilities:
+  files: true
+  skills: false
+dependencies: []
+install:
+  files:
+    - "_devcontainer/ -> _devcontainer/"
+compatibility:
+  claude-code: ">=2.78.0"
+  ai-code-forge: ">=4.0.0"
