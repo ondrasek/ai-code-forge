@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **GitHub Issues Cleanup**: All existing GitHub issues closed in preparation for v4.0 architectural overhaul
+  - Closed 100+ GitHub issues representing legacy features, completed work, and pre-v4.0 specifications
+  - Cleared issue backlog to establish clean foundation for v4.0 development cycle
+  - Enables focused architecture planning without legacy issue debt
+
 ## [4.0.0] - 2025-11-16
 
 ### Breaking Changes
