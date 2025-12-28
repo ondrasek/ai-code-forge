@@ -171,29 +171,29 @@ class MergeStrategy(ABC):
 
 <project_structure priority="CRITICAL">
 <layout>
-src/acforge/
-├── __init__.py
-├── cli/                    # Typer CLI commands (ONE FILE PER NAMESPACE)
-│   ├── __init__.py
-│   ├── main.py            # Entry point, Typer app creation
-│   ├── module.py          # acforge module add/remove/list/update
-│   ├── workflow.py        # acforge workflow start-from-scratch/tech-stack
-│   ├── issue.py           # acforge issue create/start
-│   ├── pr.py              # acforge pr create
-│   ├── devcontainer.py    # acforge devcontainer build/rebuild
-│   └── docs.py            # acforge docs readme/changelog/gitignore
-├── core/                   # Core functionality (NO CLI CODE)
-│   ├── __init__.py
-│   ├── git.py             # GitManager: subprocess + GitPython
-│   ├── config.py          # Pydantic models for .acforge.yaml
-│   ├── merge.py           # MergeStrategy base class, MergeResult
-│   └── registry.py        # Module discovery and registry management
-└── strategies/             # Merge strategy implementations
-    ├── __init__.py
-    ├── union.py           # UnionStrategy (.gitignore merging)
-    ├── template.py        # TemplateStrategy (structured file merging)
-    ├── append.py          # AppendStrategy (separate file appending)
-    └── resolution.py      # UserResolutionStrategy (conflict handling)
+- src/acforge/
+  - __init__.py
+  - cli/ - Typer CLI commands (ONE FILE PER NAMESPACE)
+    - __init__.py
+    - main.py - Entry point, Typer app creation
+    - module.py - acforge module add/remove/list/update
+    - workflow.py - acforge workflow start-from-scratch/tech-stack
+    - issue.py - acforge issue create/start
+    - pr.py - acforge pr create
+    - devcontainer.py - acforge devcontainer build/rebuild
+    - docs.py - acforge docs readme/changelog/gitignore
+  - core/ - Core functionality (NO CLI CODE)
+    - __init__.py
+    - git.py - GitManager: subprocess + GitPython
+    - config.py - Pydantic models for .acforge.yaml
+    - merge.py - MergeStrategy base class, MergeResult
+    - registry.py - Module discovery and registry management
+  - strategies/ - Merge strategy implementations
+    - __init__.py
+    - union.py - UnionStrategy (.gitignore merging)
+    - template.py - TemplateStrategy (structured file merging)
+    - append.py - AppendStrategy (separate file appending)
+    - resolution.py - UserResolutionStrategy (conflict handling)
 </layout>
 <enforcement>NEVER deviate from this structure without updating this document</enforcement>
 </project_structure>
