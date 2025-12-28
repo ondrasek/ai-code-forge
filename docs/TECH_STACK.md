@@ -1,188 +1,267 @@
-# acforge-cli Tech Stack
+<acforge_technical_requirements>
+<critical_constraints>
+MANDATORY REQUIREMENT 0: Python 3.14+ ONLY. NEVER use features from older Python versions as compatibility target.
+MANDATORY REQUIREMENT 1: ALL configuration MUST use Pydantic models serialized to YAML. NEVER use JSON or TOML.
+MANDATORY REQUIREMENT 2: ALL CLI commands MUST use Typer with type hints. NEVER use argparse or plain Click.
+MANDATORY REQUIREMENT 3: File merging MUST use Strategy Pattern. NEVER implement merge logic inline.
+MANDATORY REQUIREMENT 4: ALL code MUST pass MyPy strict mode. NEVER commit code with type errors.
+</critical_constraints>
 
-## Core Technology
+<language priority="CRITICAL">
+<python_version>3.14+</python_version>
+<enforcement>
+  - Use latest Python features (pattern matching, enhanced type hints)
+  - Leverage async/await for concurrent operations
+  - NEVER add compatibility code for Python <3.14
+</enforcement>
+</language>
 
-**Language**: Python 3.14+
-- Latest Python features
-- Modern async/await support
-- Enhanced type hints and pattern matching
-- Performance improvements
+<cli_framework priority="CRITICAL">
+<primary>Typer</primary>
+<integration>Rich (built-in with Typer[all])</integration>
+<structure>
+  - Command structure: `acforge <namespace> <command> [args]`
+  - Namespaces: module, workflow, issue, pr, devcontainer, docs
+  - ALL commands MUST use type hints for automatic validation
+  - ALL commands MUST use Rich for output formatting
+</structure>
+<enforcement>
+  - Entry point: `src/acforge/cli/main.py`
+  - One file per namespace: module.py, workflow.py, issue.py, pr.py, devcontainer.py, docs.py
+  - NEVER use print() - ALWAYS use Rich Console
+</enforcement>
+</cli_framework>
 
-## CLI Framework
+<configuration_management priority="CRITICAL">
+<format>YAML ONLY</format>
+<models>Pydantic v2+</models>
+<file_location>.acforge/acforge.yaml</file_location>
+<requirements>
+  - ALL configuration MUST be defined as Pydantic BaseModel subclasses
+  - Models location: `src/acforge/core/config.py`
+  - MUST validate on load, MUST fail fast on invalid config
+  - NEVER use dictionaries for configuration
+  - NEVER serialize to JSON or TOML
+</requirements>
+<structure>
+<![CDATA[
+class ModuleConfig(BaseModel):
+    name: str
+    repo_url: str
+    version: str
+    subtree_prefix: str
+    installed_files: list[str]
 
-**Typer** - Modern CLI framework
-- Type-hint based command definitions
-- Built on Click (proven, reliable)
-- Automatic help generation
-- Excellent support for namespace commands
-- Perfect for complex CLI structures like `acforge module add`, `acforge workflow start-from-scratch`
+class AcforgeConfig(BaseModel):
+    version: str
+    modules: dict[str, ModuleConfig]
+    registry_sources: list[str]
+]]>
+</structure>
+</configuration_management>
 
-**Rich** - Terminal output formatting
-- Beautiful tables, progress bars, and formatting
-- Syntax highlighting for code/config display
-- Markdown rendering in terminal
-- Seamless integration with Typer
-- Enhanced user experience
+<git_integration priority="CRITICAL">
+<strategy>HYBRID</strategy>
+<rules>
+  - Git subtree operations: MUST use subprocess + git CLI directly
+  - Standard git operations: MUST use GitPython
+  - NEVER use GitPython for git subtree commands
+  - ALWAYS capture and parse git CLI output for subtree operations
+</rules>
+<implementation>
+  - Location: `src/acforge/core/git.py`
+  - Class: GitManager (handles both subprocess and GitPython)
+  - Subtree operations: add, pull, push, split
+  - GitPython operations: status, diff, branch, log
+</implementation>
+</git_integration>
 
-## Configuration & Data Management
+<file_merging_system priority="CRITICAL">
+<pattern>Strategy Pattern</pattern>
+<strategies>
+  - UnionStrategy: .gitignore, .dockerignore (merge all unique entries)
+  - TemplateStrategy: pyproject.toml, structured configs (AST-based merge)
+  - AppendStrategy: .claude/agents/ (separate files, append mode)
+  - UserResolutionStrategy: conflicts require interactive resolution
+</strategies>
+<enforcement>
+  - Base class: `src/acforge/core/merge.py::MergeStrategy`
+  - Implementations: `src/acforge/strategies/`
+  - ALL strategies MUST implement: `can_merge()`, `merge()`, `validate()`
+  - Strategy registration: automatic via class decorator
+  - NEVER implement merge logic outside strategy classes
+</enforcement>
+<interface>
+<![CDATA[
+class MergeStrategy(ABC):
+    @abstractmethod
+    def can_merge(self, file_path: Path) -> bool: ...
 
-**Pydantic** - Data validation and serialization
-- Type-safe configuration models
-- Automatic validation
-- Serialization to/from YAML
-- Clear error messages
-- Perfect for `.acforge.yaml` management
+    @abstractmethod
+    def merge(self, base: Path, incoming: Path, target: Path) -> MergeResult: ...
 
-**PyYAML** - YAML parsing
-- Human-readable configuration files
-- Industry standard for config files
-- Works seamlessly with Pydantic
+    @abstractmethod
+    def validate(self, result: Path) -> bool: ...
+]]>
+</interface>
+</file_merging_system>
 
-## Git Integration
+<testing priority="CRITICAL">
+<framework>pytest</framework>
+<property_testing>Hypothesis</property_testing>
+<coverage>pytest-cov (minimum 80% coverage)</coverage>
+<structure>
+  - tests/unit/ - Unit tests for individual functions
+  - tests/integration/ - Integration tests for workflows
+  - tests/property/ - Hypothesis property-based tests
+</structure>
+<requirements>
+  - ALL merge strategies MUST have Hypothesis tests
+  - ALL CLI commands MUST have integration tests
+  - ALL Pydantic models MUST have validation tests
+  - NEVER skip tests, NEVER commit failing tests
+</requirements>
+</testing>
 
-**Hybrid Approach**:
+<packaging priority="CRITICAL">
+<manager>UV</manager>
+<configuration>pyproject.toml (PEP 517/518)</configuration>
+<requirements>
+  - Package name: "acforge"
+  - Entry point: "acforge" command
+  - MUST support: pip install acforge
+  - MUST support: uvx acforge
+  - Lock file: uv.lock (MUST be committed)
+</requirements>
+</packaging>
 
-1. **subprocess + git CLI** - For git subtree operations
-   - Direct control over complex subtree commands
-   - Full access to git subtree features
-   - Reliable and predictable
+<dependencies priority="CRITICAL">
+<runtime>
+  - typer[all]>=0.12.0  # Includes Rich integration
+  - rich>=13.0.0        # Terminal formatting
+  - pydantic>=2.0.0     # Data validation
+  - pyyaml>=6.0         # YAML parsing
+  - gitpython>=3.1.0    # Git operations
+</runtime>
+<development>
+  - pytest>=8.0.0
+  - pytest-cov>=4.0.0
+  - hypothesis>=6.0.0
+  - mypy>=1.8.0
+  - ruff>=0.2.0
+</development>
+<enforcement>
+  - NEVER add dependencies without justification
+  - PREFER standard library when possible
+  - AVOID heavy dependencies (pandas, numpy, etc.)
+</enforcement>
+</dependencies>
 
-2. **GitPython** - For standard git operations
-   - Status checking
-   - Diff generation
-   - Branch management
-   - Cleaner API for simple operations
+<code_quality priority="CRITICAL">
+<linting>Ruff (replaces flake8, black, isort)</linting>
+<type_checking>MyPy (strict mode)</type_checking>
+<requirements>
+  - ALL code MUST pass: ruff check src/
+  - ALL code MUST pass: mypy --strict src/
+  - Configuration in pyproject.toml
+  - NEVER disable type checking with # type: ignore without comment
+  - NEVER commit unformatted code
+</requirements>
+</code_quality>
 
-## File Merging System
+<project_structure priority="CRITICAL">
+<layout>
+src/acforge/
+├── __init__.py
+├── cli/                    # Typer CLI commands (ONE FILE PER NAMESPACE)
+│   ├── __init__.py
+│   ├── main.py            # Entry point, Typer app creation
+│   ├── module.py          # acforge module add/remove/list/update
+│   ├── workflow.py        # acforge workflow start-from-scratch/tech-stack
+│   ├── issue.py           # acforge issue create/start
+│   ├── pr.py              # acforge pr create
+│   ├── devcontainer.py    # acforge devcontainer build/rebuild
+│   └── docs.py            # acforge docs readme/changelog/gitignore
+├── core/                   # Core functionality (NO CLI CODE)
+│   ├── __init__.py
+│   ├── git.py             # GitManager: subprocess + GitPython
+│   ├── config.py          # Pydantic models for .acforge.yaml
+│   ├── merge.py           # MergeStrategy base class, MergeResult
+│   └── registry.py        # Module discovery and registry management
+└── strategies/             # Merge strategy implementations
+    ├── __init__.py
+    ├── union.py           # UnionStrategy (.gitignore merging)
+    ├── template.py        # TemplateStrategy (structured file merging)
+    ├── append.py          # AppendStrategy (separate file appending)
+    └── resolution.py      # UserResolutionStrategy (conflict handling)
+</layout>
+<enforcement>NEVER deviate from this structure without updating this document</enforcement>
+</project_structure>
 
-**Strategy Pattern** - Plugin-based merge strategies
-- Different strategies for different file types:
-  - **UNION Strategy**: `.gitignore`, `.dockerignore` - merge all entries
-  - **Template Strategy**: `pyproject.toml`, config files - structured merge
-  - **Append Strategy**: `.claude/agents/` - separate files, no conflicts
-  - **User Resolution Strategy**: Conflicts require manual resolution
-- Extensible for new file types
-- Type-safe strategy interfaces
+<implementation_rules>
+<type_safety>
+  - ALL functions MUST have type hints (parameters and return values)
+  - ALL Pydantic models MUST use strict typing
+  - NEVER use Any type without explicit justification in comment
+  - Use NewType for domain-specific types (ModuleName, RepoUrl, etc.)
+</type_safety>
 
-## Testing
+<error_handling>
+  - ALWAYS use Rich Console for error output
+  - NEVER use sys.exit() - raise exceptions and handle at CLI boundary
+  - ALL exceptions MUST be logged with context
+  - User-facing errors MUST be clear and actionable
+</error_handling>
 
-**pytest** - Testing framework
-- Modern, fixture-based testing
-- Rich plugin ecosystem
-- Excellent async support
+<git_operations>
+  - Git subtree add: subprocess.run(["git", "subtree", "add", ...])
+  - Git subtree pull: subprocess.run(["git", "subtree", "pull", ...])
+  - ALWAYS check return codes from git commands
+  - ALWAYS capture stderr for error reporting
+  - Parse git output to extract commit SHAs, file lists, etc.
+</git_operations>
 
-**Hypothesis** - Property-based testing
-- Generates edge cases automatically
-- Tests properties rather than examples
-- Catches bugs traditional tests miss
-- Perfect for testing file merging strategies
+<module_operations>
+  - Module metadata MUST be stored in .acforge/acforge.yaml
+  - Module files MUST be stored in .acforge/modules/<module-name>/
+  - Ephemeral modules: Install → Run Claude Code → Remove directory
+  - Long-lived modules: Install → Merge files → Keep for updates
+  - NEVER modify user files outside of explicit merge operations
+</module_operations>
 
-**pytest-cov** - Coverage reporting
-- Track test coverage
-- Identify untested code paths
+<cli_ux>
+  - ALL commands MUST show progress with Rich Progress
+  - ALL tables MUST use Rich Table
+  - ALL syntax highlighting MUST use Rich Syntax
+  - Interactive prompts MUST use Rich Prompt
+  - ALWAYS use emoji sparingly and contextually
+</cli_ux>
+</implementation_rules>
 
-## Packaging & Distribution
+<forbidden_practices>
+<never>
+  - NEVER use global state
+  - NEVER use mutable default arguments
+  - NEVER catch Exception without re-raising
+  - NEVER use shell=True in subprocess calls
+  - NEVER hardcode paths (use Path objects)
+  - NEVER commit secrets or API keys
+  - NEVER use deprecated Pydantic v1 syntax
+  - NEVER use print() instead of Rich Console
+</never>
+</forbidden_practices>
 
-**UV** - Modern Python package manager
-- Extremely fast (Rust-based)
-- Replaces pip, pip-tools, virtualenv, poetry
-- Perfect for `uvx acforge` usage
-- Lock files for reproducible builds
-- PEP 517/518 compliant
+<development_workflow>
+<steps>
+1. Create feature branch from main
+2. Implement with full type hints
+3. Run: ruff check src/ && ruff format src/
+4. Run: mypy --strict src/
+5. Run: pytest tests/ --cov=src
+6. Ensure 80%+ coverage
+7. Commit with conventional commit message
+8. Push and create PR
+</steps>
+</development_workflow>
 
-## Additional Tools
-
-**Ruff** - Linting and formatting
-- Extremely fast (Rust-based)
-- Replaces flake8, black, isort
-- Consistent code style
-- Configured via `pyproject.toml`
-
-**MyPy** - Static type checking
-- Type safety validation
-- Works with Pydantic models
-- Catches errors before runtime
-
-## Project Structure
-
-```
-acforge-cli/
-├── src/
-│   └── acforge/
-│       ├── __init__.py
-│       ├── cli/              # Typer CLI commands
-│       │   ├── __init__.py
-│       │   ├── main.py       # Entry point
-│       │   ├── module.py     # acforge module commands
-│       │   ├── workflow.py   # acforge workflow commands
-│       │   ├── issue.py      # acforge issue commands
-│       │   ├── pr.py         # acforge pr commands
-│       │   └── devcontainer.py
-│       ├── core/             # Core functionality
-│       │   ├── git.py        # Git operations
-│       │   ├── config.py     # Pydantic models
-│       │   ├── merge.py      # File merging strategies
-│       │   └── registry.py   # Module discovery
-│       └── strategies/       # Merge strategy implementations
-│           ├── union.py
-│           ├── template.py
-│           └── append.py
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── property/             # Hypothesis tests
-├── pyproject.toml            # UV/PEP 517 configuration
-├── uv.lock                   # UV lock file
-└── README.md
-```
-
-## Development Workflow
-
-1. **UV for environment management**: `uv venv`, `uv pip install`
-2. **Ruff for linting**: `ruff check src/`
-3. **MyPy for type checking**: `mypy src/`
-4. **Pytest for testing**: `pytest tests/`
-5. **Hypothesis for property testing**: Tests in `tests/property/`
-
-## Key Dependencies
-
-```toml
-[project]
-name = "acforge"
-requires-python = ">=3.14"
-dependencies = [
-    "typer[all]>=0.12.0",      # CLI framework with Rich integration
-    "rich>=13.0.0",             # Terminal formatting
-    "pydantic>=2.0.0",          # Data validation
-    "pyyaml>=6.0",              # YAML parsing
-    "gitpython>=3.1.0",         # Git operations
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-cov>=4.0.0",
-    "hypothesis>=6.0.0",
-    "mypy>=1.8.0",
-    "ruff>=0.2.0",
-]
-```
-
-## Design Principles
-
-1. **Type Safety First**: Use Pydantic and MyPy for runtime and static type checking
-2. **Modern Python**: Leverage Python 3.14+ features (pattern matching, type hints)
-3. **Fast Tooling**: Use Rust-based tools (UV, Ruff) for speed
-4. **Beautiful UX**: Rich terminal output for excellent developer experience
-5. **Extensible**: Strategy pattern allows easy addition of new merge strategies
-6. **Testable**: Property-based testing with Hypothesis ensures robustness
-
-## Why This Stack?
-
-- **Fast**: UV and Ruff provide blazing-fast development experience
-- **Modern**: Leverages latest Python 3.14+ features
-- **Type-Safe**: Pydantic + MyPy catch errors early
-- **User-Friendly**: Rich + Typer provide beautiful CLI UX
-- **Reliable**: Hypothesis testing finds edge cases
-- **Maintainable**: Clear patterns and strong typing
-- **Future-Proof**: Modern tools with active development
+</acforge_technical_requirements>
