@@ -1,103 +1,195 @@
 # AI Code Forge
 
-**v4.0** - A composable template system for AI-first development workflows
+**v4.0** - CLI tool for managing AI-assisted development workflows with Claude Code
 
 ## Overview
 
-AI Code Forge is a template-driven framework for building and distributing development environments optimized for AI-assisted coding with [Claude Code](https://claude.com/claude-code). It combines Claude configurations, DevContainer definitions, and automation workflows into composable, maintainable templates that can be mixed and matched to fit your project needs.
+AI Code Forge (`acforge`) is a command-line tool that provides complete infrastructure for AI-assisted software development using [Claude Code](https://claude.com/claude-code). It manages template repositories via git subtrees, automates GitHub workflows, and orchestrates DevContainer-based development environments.
 
-## Purpose
+**Key Concept**: This repository contains the **CLI tool**, not the templates themselves. Templates are separate git repositories that `acforge` manages and integrates into your projects using git subtrees.
 
-AI Code Forge serves multiple roles in the AI-assisted development ecosystem:
+## What It Does
 
-- **Claude Code Configuration Framework**: Distribute and manage Claude agents, commands, and settings
-- **DevContainer Template System**: Create parameterized development environments with AI tooling pre-configured
-- **Development Toolkit**: Provide automation workflows and best practices for AI-first development
-- **Template Distribution Platform**: Share and apply reusable configurations via git subtrees
+`acforge` is a git subtree management system with developer workflow automation:
 
-All of these capabilities work together through a **composition model** - you can mix and match components based on your project's specific requirements.
+1. **Git Subtree Management**: Add, update, and manage template repositories in your projects
+2. **GitHub Workflow Automation**: Create issues, PRs, and manage development workflows via GitHub CLI
+3. **DevContainer Operations**: Build, configure, and manage isolated development environments
+4. **Template Discovery**: Browse and install templates from the marketplace
 
 ## Architecture
 
-AI Code Forge v4.0 follows a **template-first design with configuration as code**:
+### CLI-Centric Design
+
+AI Code Forge is built on three foundational CLIs:
 
 ```
-Templates (git subtrees)
-├── Claude Configurations
-│   ├── Agents (foundation & specialists)
-│   ├── Commands (slash commands)
-│   └── Settings
-├── DevContainer Definitions
-│   ├── Dockerfile & configuration
-│   ├── Post-create scripts
-│   └── Environment setup
-└── Workflows & Automation
-    ├── GitHub Actions
-    ├── CI/CD pipelines
-    └── Helper scripts
+acforge (this tool)
+├── Claude Code CLI ──→ AI-assisted development
+├── Git CLI ──────────→ Version control & subtree management
+└── GitHub CLI ───────→ Issue tracking, PRs, Actions
 ```
 
-### Core Design Principles
+### Template Repository Model
 
-1. **Composability**: Components work together but remain independent - use what you need
-2. **Maintainability**: Templates are easy to update, version, and distribute changes to downstream projects
+Templates are **separate git repositories** containing:
 
-### Why v4.0?
+```
+template-repository/
+├── .claude/
+│   ├── agents/           # AI agent definitions
+│   ├── commands/         # Slash commands
+│   └── settings.json     # Claude Code configuration
+├── .devcontainer/
+│   ├── devcontainer.json
+│   ├── Dockerfile
+│   └── postCreate.sh
+└── .github/workflows/    # CI/CD automation
+```
 
-Version 3.x became difficult to maintain due to complexity and tight coupling. v4.0 is a complete architectural reset focused on:
-- Clean separation of concerns
-- Git-native composition via subtrees
-- Minimal, maintainable core
-- Easy evolution and updates
+Templates are integrated into your project via:
+```bash
+acforge template add <template-repo-url>
+```
 
-## What Makes It Unique
+This uses `git subtree` to merge template content while maintaining upstream connection for updates.
 
-- **AI-First Development**: Purpose-built for Claude Code workflows and AI agent orchestration
-- **Git-Based Composition**: Elegant template distribution and updates using git subtrees
-- **Opinionated Best Practices**: Proven patterns for AI-assisted development and agent collaboration
-- **Zero-Dependency Portability**: Templates are pure configuration files with no runtime dependencies
+### DevContainer Philosophy
+
+Complete isolation from the host machine:
+
+- **No write access** to the development machine
+- **No access** to host user home directory
+- Working copies in **Docker volumes** mounted into containers
+- All development happens inside the container
+- Host filesystem remains untouched
+
+### Development Governance
+
+- **GitHub Issues** govern all development work
+- Issue-driven workflow with automated tracking
+- CI/CD via GitHub Actions
+- Integration with Claude Code for AI-assisted issue resolution
+
+## Core Design Principles
+
+1. **Composability**: Mix and match templates based on project needs
+2. **Maintainability**: Easy to update templates across multiple projects via git subtree
+3. **Isolation**: Complete DevContainer isolation from host system
+4. **GitHub-Native**: Issues, PRs, and Actions as primary workflow tools
+
+## Why v4.0?
+
+Version 3.x became difficult to maintain due to monolithic complexity and tight coupling. v4.0 is a complete architectural reset:
+
+- **Separation**: CLI tool separate from template content
+- **Git-native**: Leverage git subtree for template management
+- **Minimal core**: Focus on orchestration, not implementation
+- **Maintainable**: Simple, focused codebase
+
+## Installation
+
+```bash
+# Install acforge CLI
+pip install acforge
+
+# Or install from source
+git clone https://github.com/ondrasek/ai-code-forge.git
+cd ai-code-forge
+pip install -e .
+```
 
 ## Usage
 
-AI Code Forge can be used in two ways:
+### Template Management
 
-### 1. CLI Tool
 ```bash
-# Apply a template to your project
-acforge apply <template-name>
+# Discover available templates
+acforge template list
 
-# Create a new template
-acforge template create
+# Add a template to your project
+acforge template add https://github.com/username/template-repo
 
-# Update templates in your project
-acforge update
+# Update templates to latest version
+acforge template update
+
+# Remove a template
+acforge template remove <template-name>
 ```
 
-### 2. Direct Git Integration
-```bash
-# Clone this repository as a starting point
-git clone https://github.com/ondrasek/ai-code-forge.git
+### GitHub Workflow
 
-# Or add templates as git subtrees
-git subtree add --prefix=.claude-templates \
-  https://github.com/ondrasek/ai-code-forge.git main --squash
+```bash
+# Create an issue
+acforge issue create
+
+# Start work on an issue
+acforge issue start <issue-number>
+
+# Create PR from current work
+acforge pr create
 ```
 
-### Template Marketplace
+### DevContainer Operations
 
-Browse and discover templates in the marketplace. Templates are applied to your project using git subtrees, giving you:
-- Full version history
-- Easy updates via `git subtree pull`
-- Ability to customize while maintaining upstream connection
+```bash
+# Build devcontainer
+acforge devcontainer build
+
+# Rebuild with clean state
+acforge devcontainer rebuild
+```
 
 ## Target Audience
 
-- **Individual Developers**: Set up AI-enhanced development workflows quickly
-- **Development Teams**: Standardize AI tooling and development environments across the team
+- **Individual Developers**: Complete AI-assisted development setup with one tool
+- **Development Teams**: Standardized workflows, templates, and environments
+
+## About This Repository
+
+### Self-Hosting Development
+
+The `.claude/` and `.devcontainer/` directories in **this repository** are for developing `acforge` itself. They provide:
+
+- Claude Code configuration for AI-assisted development of the CLI tool
+- DevContainer setup for isolated development of this project
+- Reference implementation of best practices
+
+**Note**: These are NOT the templates you install in your projects. They are the development environment for building and maintaining the `acforge` CLI tool.
+
+### Repository Structure
+
+```
+ai-code-forge/
+├── .claude/              # Claude Code config for developing acforge
+├── .devcontainer/        # DevContainer for developing acforge
+├── cli/                  # acforge CLI implementation (coming soon)
+├── CHANGELOG.md          # Version history
+├── CLAUDE.md             # AI operational rules
+└── README.md             # This file
+```
 
 ## Project Status
 
 **v4.0 is currently in active development.** The repository has been reset to establish a clean foundation for the new architecture. Legacy v3.x code is preserved under the `v3.2.0-final` tag.
+
+### Development Governance
+
+All development work is tracked and governed through [GitHub Issues](https://github.com/ondrasek/ai-code-forge/issues). The workflow is:
+
+1. Create issue for feature/bug/enhancement
+2. Implement solution in isolated branch or worktree
+3. Create PR linking to issue
+4. Review and merge via GitHub Actions CI/CD
+5. Automated release tagging based on semantic versioning
+
+## What Makes It Unique
+
+- **Git-Native Template Management**: First-class git subtree support for template composition and updates
+- **Complete Isolation**: DevContainer philosophy with zero host filesystem access
+- **AI-First Workflows**: Deep integration with Claude Code for issue resolution and development
+- **GitHub-Centric**: Issues govern development, Actions automate CI/CD
+- **CLI Orchestration**: Single tool coordinating Claude Code CLI, Git CLI, and GitHub CLI
 
 ## License
 
@@ -105,4 +197,12 @@ See [LICENSE](LICENSE) for details.
 
 ## Contributing
 
-Contributions welcome! Please see our contribution guidelines (coming soon).
+All contributions must go through the GitHub Issues workflow:
+
+1. Create an issue describing the feature, bug, or enhancement
+2. Discuss and refine the approach in issue comments
+3. Implement in a branch/worktree with issue reference
+4. Submit PR linking to the issue
+5. CI/CD validates and merges
+
+See [CLAUDE.md](CLAUDE.md) for AI operational rules governing development.
