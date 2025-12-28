@@ -1,1 +1,0 @@
-"""Tests for AI Code Forge CLI."""
