@@ -93,8 +93,8 @@ Version 3.x became difficult to maintain due to monolithic complexity and tight 
 pip install acforge
 
 # Or install from source
-git clone https://github.com/ondrasek/ai-code-forge.git
-cd ai-code-forge
+git clone https://github.com/ondrasek/acforge-cli.git
+cd acforge-cli
 pip install -e .
 ```
 
@@ -257,7 +257,7 @@ The `.claude/` and `.devcontainer/` directories in **this repository** are for d
 
 ### Repository Structure
 
-**This Repository** (ai-code-forge):
+**This Repository** (acforge-cli):
 - `.claude/` - Claude Code config for developing acforge
 - `.devcontainer/` - DevContainer for developing acforge
 - `.github/workflows/` - CI/CD workflows (disabled for v4.0 dev)
@@ -295,7 +295,7 @@ The `.claude/` and `.devcontainer/` directories in **this repository** are for d
 
 ### Development Governance
 
-All development work is tracked and governed through [GitHub Issues](https://github.com/ondrasek/ai-code-forge/issues). The workflow is:
+All development work is tracked and governed through [GitHub Issues](https://github.com/ondrasek/acforge-cli/issues). The workflow is:
 
 1. Create issue for feature/bug/enhancement
 2. Implement solution in isolated branch or worktree

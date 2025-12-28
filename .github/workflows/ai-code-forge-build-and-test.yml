@@ -1,6 +1,6 @@
 # DISABLED: Workflow from v3.x, preserved for reference
 # Will be re-enabled when CLI implementation is complete
-# See: https://github.com/ondrasek/ai-code-forge/issues (track in GitHub Issues)
+# See: https://github.com/ondrasek/acforge-cli/issues (track in GitHub Issues)
 
 name: Build and Test (DISABLED)
 

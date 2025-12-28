@@ -1,6 +1,6 @@
 # DISABLED: Workflow from v3.x, preserved for reference
 # Will be re-enabled when CLI implementation is complete
-# See: https://github.com/ondrasek/ai-code-forge/issues (track in GitHub Issues)
+# See: https://github.com/ondrasek/acforge-cli/issues (track in GitHub Issues)
 
 name: Issue Analysis (DISABLED)
 
@@ -110,7 +110,7 @@ jobs:
                   self.session.headers.update({
                       'Authorization': f'Bearer {github_token}',
                       'Accept': 'application/vnd.github.v3+json',
-                      'User-Agent': 'ai-code-forge-issue-analysis'
+                      'User-Agent': 'acforge-cli-issue-analysis'
                   })
                   self.api_calls_made = 0
                   self.rate_limit_remaining = 1000
