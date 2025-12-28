@@ -1,0 +1,422 @@
+# DISABLED: Workflow from v3.x, preserved for reference
+# Will be re-enabled when CLI implementation is complete
+# See: https://github.com/ondrasek/ai-code-forge/issues (track in GitHub Issues)
+
+name: Issue Analysis (DISABLED)
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of issues to analyze per batch'
+        required: false
+        default: '20'
+        type: string
+      max_issues:
+        description: 'Maximum number of issues to analyze (0 = all)'
+        required: false
+        default: '0'
+        type: string
+      dry_run:
+        description: 'Dry run mode (always true for safety)'
+        required: false
+        default: 'true'
+        type: boolean
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 4 AM CET (3 AM UTC)
+
+jobs:
+  issue-analysis:
+    if: false  # DISABLED - CLI not yet implemented in v4.0
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      actions: read
+      id-token: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Validate inputs
+        run: |
+          # Validate batch_size (1-50)
+          BATCH_SIZE="${{ inputs.batch_size || '20' }}"
+          if ! [[ "$BATCH_SIZE" =~ ^[0-9]+$ ]] || [ "$BATCH_SIZE" -lt 1 ] || [ "$BATCH_SIZE" -gt 50 ]; then
+            echo "Error: batch_size must be between 1 and 50"
+            exit 1
+          fi
+          
+          # Validate max_issues (0-500)
+          MAX_ISSUES="${{ inputs.max_issues || '0' }}"
+          if ! [[ "$MAX_ISSUES" =~ ^[0-9]+$ ]] || [ "$MAX_ISSUES" -gt 500 ]; then
+            echo "Error: max_issues must be between 0 and 500"
+            exit 1
+          fi
+          
+          echo "BATCH_SIZE=$BATCH_SIZE" >> $GITHUB_ENV
+          echo "MAX_ISSUES=$MAX_ISSUES" >> $GITHUB_ENV
+          echo "DRY_RUN=true" >> $GITHUB_ENV  # Always true for safety
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests python-dateutil
+
+      - name: Create analysis script
+        run: |
+          cat > analyze_issues.py << 'EOF'
+          #!/usr/bin/env python3
+          """
+          GitHub Issues Analysis Script
+          Analyzes open issues and generates recommendations for label management.
+          """
+          
+          import os
+          import json
+          import requests
+          import time
+          from datetime import datetime, timezone
+          from typing import Dict, List, Optional, Tuple
+          
+          # Protected labels that CANNOT be removed
+          PROTECTED_LABELS = [
+              'critical',
+              'security', 
+              'high priority',
+              'breaking change',
+              'risky'
+          ]
+          
+          # Safe labels that can be removed with high confidence
+          REMOVABLE_LABELS = [
+              'human feedback needed',
+              'needs refinement',
+              'stale'
+          ]
+          
+          class GitHubIssueAnalyzer:
+              def __init__(self, github_token: str, repo: str):
+                  self.github_token = github_token
+                  self.repo = repo
+                  self.session = requests.Session()
+                  self.session.headers.update({
+                      'Authorization': f'Bearer {github_token}',
+                      'Accept': 'application/vnd.github.v3+json',
+                      'User-Agent': 'ai-code-forge-issue-analysis'
+                  })
+                  self.api_calls_made = 0
+                  self.rate_limit_remaining = 1000
+          
+              def make_api_call(self, url: str, params: Optional[Dict] = None) -> Optional[Dict]:
+                  """Make GitHub API call with rate limiting"""
+                  if self.rate_limit_remaining < 10:
+                      print(f"Rate limit low ({self.rate_limit_remaining}), sleeping...")
+                      time.sleep(60)
+                  
+                  try:
+                      response = self.session.get(url, params=params)
+                      self.api_calls_made += 1
+                      
+                      # Update rate limit info
+                      self.rate_limit_remaining = int(response.headers.get('X-RateLimit-Remaining', 1000))
+                      
+                      if response.status_code == 403 and 'rate limit' in response.text.lower():
+                          reset_time = int(response.headers.get('X-RateLimit-Reset', time.time() + 3600))
+                          sleep_time = max(reset_time - time.time(), 0) + 60
+                          print(f"Rate limited, sleeping for {sleep_time} seconds")
+                          time.sleep(sleep_time)
+                          return self.make_api_call(url, params)
+                      
+                      response.raise_for_status()
+                      return response.json()
+                  
+                  except Exception as e:
+                      print(f"API call failed: {e}")
+                      return None
+          
+              def get_open_issues(self, max_issues: int = 0) -> List[Dict]:
+                  """Fetch open issues from GitHub"""
+                  issues = []
+                  page = 1
+                  per_page = min(100, max_issues) if max_issues > 0 else 100
+                  
+                  while True:
+                      url = f"https://api.github.com/repos/{self.repo}/issues"
+                      params = {
+                          'state': 'open',
+                          'per_page': per_page,
+                          'page': page,
+                          'sort': 'updated',
+                          'direction': 'desc'
+                      }
+                      
+                      batch = self.make_api_call(url, params)
+                      if not batch:
+                          break
+                      
+                      # Filter out pull requests
+                      issue_batch = [issue for issue in batch if 'pull_request' not in issue]
+                      issues.extend(issue_batch)
+                      
+                      print(f"Fetched {len(issue_batch)} issues from page {page}")
+                      
+                      # Stop if we've hit our limit or there are no more issues
+                      if len(batch) < per_page or (max_issues > 0 and len(issues) >= max_issues):
+                          break
+                      
+                      page += 1
+                      time.sleep(0.1)  # Be nice to the API
+                  
+                  if max_issues > 0:
+                      issues = issues[:max_issues]
+                  
+                  return issues
+          
+              def analyze_issue(self, issue: Dict) -> Dict:
+                  """Analyze a single issue for label recommendations"""
+                  current_labels = [label['name'] for label in issue.get('labels', [])]
+                  
+                  recommendations = {
+                      'remove': [],
+                      'add': [],
+                      'confidence': 'low',
+                      'reasoning': ''
+                  }
+                  
+                  # Check for removable labels
+                  for label in current_labels:
+                      if label in REMOVABLE_LABELS:
+                          if label == 'human feedback needed':
+                              # Simple heuristic: if issue has recent activity and comments, might be resolved
+                              comment_count = issue.get('comments', 0)
+                              if comment_count > 2:
+                                  recommendations['remove'].append(label)
+                                  recommendations['confidence'] = 'medium'
+                                  recommendations['reasoning'] = f'Issue has {comment_count} comments suggesting active resolution'
+                  
+                  # Verify no protected labels would be touched
+                  protected_found = [label for label in current_labels if label in PROTECTED_LABELS]
+                  if protected_found:
+                      # Clear any recommendations if protected labels are present
+                      recommendations['remove'] = []
+                      recommendations['add'] = []
+                      recommendations['confidence'] = 'protected'
+                      recommendations['reasoning'] = f'Protected labels found: {protected_found}'
+                  
+                  return {
+                      'number': issue['number'],
+                      'title': issue['title'][:100] + '...' if len(issue['title']) > 100 else issue['title'],
+                      'url': issue['html_url'],
+                      'state': issue['state'],
+                      'current_labels': current_labels,
+                      'recommendations': recommendations,
+                      'last_updated': issue['updated_at'],
+                      'comment_count': issue.get('comments', 0)
+                  }
+          
+              def generate_report(self, issues: List[Dict], batch_size: int) -> Dict:
+                  """Generate analysis report"""
+                  start_time = datetime.now(timezone.utc)
+                  analyzed_issues = []
+                  
+                  # Process issues in batches
+                  for i in range(0, len(issues), batch_size):
+                      batch = issues[i:i + batch_size]
+                      print(f"Analyzing batch {i//batch_size + 1}: issues {i+1}-{min(i+batch_size, len(issues))}")
+                      
+                      for issue in batch:
+                          analyzed_issues.append(self.analyze_issue(issue))
+                          time.sleep(0.05)  # Rate limiting
+                  
+                  # Generate detailed summary statistics
+                  total_recommendations = sum(1 for issue in analyzed_issues 
+                                            if issue['recommendations']['remove'] or issue['recommendations']['add'])
+                  protected_count = sum(1 for issue in analyzed_issues 
+                                      if issue['recommendations']['confidence'] == 'protected')
+                  
+                  # Label distribution analysis
+                  all_labels = {}
+                  for issue in analyzed_issues:
+                      for label in issue['current_labels']:
+                          all_labels[label] = all_labels.get(label, 0) + 1
+                  
+                  # Issue age analysis
+                  from dateutil.parser import parse
+                  now = datetime.now(timezone.utc)
+                  age_buckets = {'0-7 days': 0, '8-30 days': 0, '31-90 days': 0, '90+ days': 0}
+                  
+                  for issue in analyzed_issues:
+                      updated_date = parse(issue['last_updated'])
+                      days_old = (now - updated_date).days
+                      
+                      if days_old <= 7:
+                          age_buckets['0-7 days'] += 1
+                      elif days_old <= 30:
+                          age_buckets['8-30 days'] += 1
+                      elif days_old <= 90:
+                          age_buckets['31-90 days'] += 1
+                      else:
+                          age_buckets['90+ days'] += 1
+                  
+                  # Comment activity analysis
+                  high_activity = sum(1 for issue in analyzed_issues if issue['comment_count'] >= 5)
+                  no_comments = sum(1 for issue in analyzed_issues if issue['comment_count'] == 0)
+                  
+                  end_time = datetime.now(timezone.utc)
+                  
+                  return {
+                      'metadata': {
+                          'workflow_run_id': os.getenv('GITHUB_RUN_ID'),
+                          'commit_sha': os.getenv('GITHUB_SHA'),
+                          'timestamp': end_time.isoformat(),
+                          'analysis_duration_seconds': (end_time - start_time).total_seconds(),
+                          'repository': self.repo,
+                          'dry_run_mode': True
+                      },
+                      'summary': {
+                          'issues_analyzed': len(analyzed_issues),
+                          'recommendations_count': total_recommendations,
+                          'protected_labels_found': protected_count,
+                          'api_calls_made': self.api_calls_made,
+                          'rate_limit_remaining': self.rate_limit_remaining,
+                          'label_distribution': dict(sorted(all_labels.items(), key=lambda x: x[1], reverse=True)[:10]),
+                          'issue_age_distribution': age_buckets,
+                          'activity_metrics': {
+                              'high_activity_issues': high_activity,
+                              'no_comment_issues': no_comments,
+                              'avg_comments_per_issue': round(sum(issue['comment_count'] for issue in analyzed_issues) / len(analyzed_issues), 1) if analyzed_issues else 0
+                          }
+                      },
+                      'issues': analyzed_issues,
+                      'safety_checks': {
+                          'protected_labels_list': PROTECTED_LABELS,
+                          'protected_labels_respected': True,
+                          'rate_limits_within_bounds': self.rate_limit_remaining > 50,
+                          'dry_run_verified': True,
+                          'no_destructive_operations': True
+                      }
+                  }
+          
+          def main():
+              # Configuration from environment
+              github_token = os.getenv('GITHUB_TOKEN')
+              repo = os.getenv('GITHUB_REPOSITORY')
+              batch_size = int(os.getenv('BATCH_SIZE', '20'))
+              max_issues = int(os.getenv('MAX_ISSUES', '0'))
+              
+              if not github_token or not repo:
+                  print("Error: GITHUB_TOKEN and GITHUB_REPOSITORY required")
+                  exit(1)
+              
+              print(f"Starting analysis for {repo}")
+              print(f"Batch size: {batch_size}, Max issues: {max_issues or 'unlimited'}")
+              print(f"Protected labels: {PROTECTED_LABELS}")
+              
+              # Initialize analyzer
+              analyzer = GitHubIssueAnalyzer(github_token, repo)
+              
+              # Fetch issues
+              print("Fetching open issues...")
+              issues = analyzer.get_open_issues(max_issues)
+              print(f"Found {len(issues)} open issues")
+              
+              if not issues:
+                  print("No issues to analyze")
+                  exit(0)
+              
+              # Generate report
+              print("Generating analysis report...")
+              report = analyzer.generate_report(issues, batch_size)
+              
+              # Save report
+              os.makedirs('reports', exist_ok=True)
+              report_file = 'reports/issue-analysis.json'
+              
+              with open(report_file, 'w') as f:
+                  json.dump(report, f, indent=2, default=str)
+              
+              print(f"Analysis complete! Report saved to {report_file}")
+              print(f"Issues analyzed: {report['summary']['issues_analyzed']}")
+              print(f"Recommendations: {report['summary']['recommendations_count']}")
+              print(f"API calls made: {report['summary']['api_calls_made']}")
+              
+              # Generate enhanced summary for GitHub UI
+              top_labels = list(report['summary']['label_distribution'].items())[:5]
+              labels_text = '\\n'.join([f"  - {label}: {count} issues" for label, count in top_labels])
+              
+              age_dist = report['summary']['issue_age_distribution']
+              activity = report['summary']['activity_metrics']
+              
+              summary = f"""## Issue Analysis Summary
+              
+              ### 📊 Overview
+              - **Issues Analyzed**: {report['summary']['issues_analyzed']}
+              - **Recommendations Generated**: {report['summary']['recommendations_count']}
+              - **Protected Labels Found**: {report['summary']['protected_labels_found']}
+              - **API Calls Made**: {report['summary']['api_calls_made']}
+              - **Rate Limit Remaining**: {report['summary']['rate_limit_remaining']}
+              
+              ### 🏷️ Top Labels
+              {labels_text}
+              
+              ### 📅 Issue Age Distribution
+              - **0-7 days**: {age_dist['0-7 days']} issues
+              - **8-30 days**: {age_dist['8-30 days']} issues
+              - **31-90 days**: {age_dist['31-90 days']} issues
+              - **90+ days**: {age_dist['90+ days']} issues
+              
+              ### 💬 Activity Metrics
+              - **High activity (5+ comments)**: {activity['high_activity_issues']} issues
+              - **No comments**: {activity['no_comment_issues']} issues
+              - **Average comments per issue**: {activity['avg_comments_per_issue']}
+              
+              ### ✅ Safety Checks
+              - **Dry run mode**: Enabled
+              - **Protected labels respected**: {report['safety_checks']['protected_labels_respected']}
+              - **Rate limits within bounds**: {report['safety_checks']['rate_limits_within_bounds']}
+              - **No destructive operations**: {report['safety_checks']['no_destructive_operations']}
+              
+              📄 Download the artifact to view detailed recommendations.
+              """
+              
+              print(summary)
+              
+              # Write summary for GitHub Actions
+              with open('reports/summary.md', 'w') as f:
+                  f.write(summary)
+          
+          if __name__ == '__main__':
+              main()
+          EOF
+
+      - name: Run issue analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python analyze_issues.py
+
+      - name: Upload analysis report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue-analysis-${{ github.run_id }}
+          path: reports/
+          retention-days: 90
+
+      - name: Add job summary
+        if: always()
+        run: |
+          if [ -f "reports/summary.md" ]; then
+            cat reports/summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## Issue Analysis Failed" >> $GITHUB_STEP_SUMMARY
+            echo "Check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+          fi

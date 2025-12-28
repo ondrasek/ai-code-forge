@@ -16,6 +16,7 @@ AI Code Forge (`acforge`) is a command-line tool that provides complete infrastr
 2. **GitHub Workflow Automation**: Create issues, PRs, and manage development workflows via GitHub CLI
 3. **DevContainer Operations**: Build, configure, and manage isolated development environments
 4. **Template Discovery**: Browse and install templates from the marketplace
+5. **Basic Coding Workflows**: Maintain README.md, CHANGELOG.md, .gitignore, and other project documentation
 
 ## Architecture
 

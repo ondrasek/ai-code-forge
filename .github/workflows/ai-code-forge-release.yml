@@ -1,0 +1,611 @@
+# DISABLED: Workflow from v3.x, preserved for reference
+# Will be re-enabled when CLI implementation is complete
+# See: https://github.com/ondrasek/ai-code-forge/issues (track in GitHub Issues)
+
+name: Release (DISABLED)
+
+on:
+  push:
+    tags:
+      - 'v*'  # Semantic version tags (v1.0.0, v1.0.0-beta.1, etc.)
+  workflow_dispatch:  # Allow manual triggers for testing/emergency releases
+
+jobs:
+  build:
+    if: false  # DISABLED - CLI not yet implemented in v4.0
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for version sync commits
+      actions: read
+    env:
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper version detection
+
+      - name: Release validation and security checks
+        run: |
+          echo "🔒 Running release validation and security checks..."
+
+          # Branch protection validation
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref }}" != "refs/heads/main" ]]; then
+            echo "❌ ERROR: Manual releases must be created from main branch only"
+            echo "Current ref: ${{ github.ref }}"
+            exit 1
+          fi
+
+          # Tag format validation (all push events are now tag pushes)
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            TAG_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+            echo "Validating tag version: $TAG_VERSION"
+
+            # Semantic version validation
+            if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+              echo "❌ ERROR: Tag must follow semantic versioning (v1.2.3, v1.2.3-rc.1, etc.)"
+              echo "Invalid tag: $TAG_VERSION"
+              exit 1
+            fi
+
+            # Synchronize all version-bearing files to match tag version
+            echo "🔄 Synchronizing all version-bearing files to tag version: $TAG_VERSION"
+            chmod +x scripts/sync-versions.sh
+            ./scripts/sync-versions.sh "$TAG_VERSION"
+            
+            # Commit any version synchronization changes
+            if ! git diff --quiet; then
+              echo "📝 Committing version synchronization changes..."
+              git config --local user.name "github-actions[bot]"
+              git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              
+              # Switch to main branch to commit changes (we're currently in detached HEAD at tag)
+              git checkout main
+              git add -A
+              git commit -m "chore: sync versions to $TAG_VERSION for release
+              
+              🤖 Automated version synchronization via GitHub Actions"
+              git push origin main
+              
+              # Move the tag to the new commit with synchronized versions
+              echo "📝 Moving tag $TAG_VERSION to commit with synchronized versions..."
+              git tag -d v$TAG_VERSION  # Delete the existing tag locally
+              git tag -a v$TAG_VERSION -m "Release v$TAG_VERSION (with synchronized versions)
+              
+              Previous version sync commit: $(git rev-parse --short HEAD)
+              🤖 Automated version synchronization completed"
+              git push origin --force v$TAG_VERSION  # Force push the updated tag
+              
+              # Switch back to the tag for the rest of the build process
+              git checkout v$TAG_VERSION
+            else
+              echo "ℹ️ All versions already synchronized with tag"
+            fi
+
+            # Comprehensive version consistency validation across all pyproject.toml files
+            echo "🔍 Running comprehensive version consistency validation..."
+            chmod +x scripts/validate-versions.sh
+            if ./scripts/validate-versions.sh "$TAG_VERSION"; then
+              echo "✅ Comprehensive version validation passed: $TAG_VERSION"
+            else
+              echo "❌ ERROR: Version consistency validation failed after sync"
+              echo "This should not happen - sync may have failed"
+              exit 1
+            fi
+          fi
+
+          # Extract version from tag (v1.0.0 -> 1.0.0)
+          RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+
+          # Auto-detect prerelease from semantic version suffixes
+          IS_PRERELEASE="false"
+          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev|pre) ]]; then
+            IS_PRERELEASE="true"
+          fi
+
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_ENV
+
+          echo "📋 Release configuration:"
+          echo "  Version: $RELEASE_VERSION"
+          echo "  Prerelease: $IS_PRERELEASE"
+          echo "  Event: ${{ github.event_name }}"
+
+      - name: Setup Python and uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('cli/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Verify build script exists
+        run: |
+          echo "=== Verifying Build Script ==="
+          if [[ -f cli/build-with-templates.sh ]]; then
+            echo "✅ Build script found: cli/build-with-templates.sh"
+            chmod +x cli/build-with-templates.sh
+          else
+            echo "❌ Build script not found: cli/build-with-templates.sh"
+            echo "The build script is required to properly bundle templates"
+            exit 1
+          fi
+
+      - name: Build ACF package with templates
+        run: |
+          echo "=== Building ACF Package with Templates ==="
+          cd cli
+          # Use custom build script to properly bundle templates
+          ./build-with-templates.sh
+
+      - name: Validate package
+        run: |
+          echo "=== Validating Package ==="
+          cd cli
+
+          # Check if artifacts were created using proper file checks
+          if ls dist/*.whl >/dev/null 2>&1; then
+            echo "✅ Wheel file created successfully"
+            WHEEL_FILE=$(ls dist/*.whl | head -1)
+            echo "Wheel: $WHEEL_FILE"
+          else
+            echo "❌ No wheel file found"
+            exit 1
+          fi
+
+          if ls dist/*.tar.gz >/dev/null 2>&1; then
+            echo "✅ Source distribution created successfully"
+            TAR_FILE=$(ls dist/*.tar.gz | head -1)
+            echo "Source dist: $TAR_FILE"
+          else
+            echo "❌ No source distribution found"
+            exit 1
+          fi
+
+          # Test package import with proper module name validation
+          echo "Testing package import..."
+          echo "Expected package name: $PACKAGE_NAME"
+          if uv run python -c "import ai_code_forge_cli; print('✅ Package imports successfully')"; then
+            echo "✅ Package validation passed"
+          else
+            echo "❌ Package validation failed - module import error"
+            echo "Debug: Checking package structure..."
+            ls -la dist/
+            uv run python -c "import sys; print('Python path:', sys.path)" || true
+            exit 1
+          fi
+
+      - name: Run tests
+        run: |
+          echo "=== Running Tests ==="
+          cd cli
+          uv run pytest --verbose --tb=short
+          echo "✅ Tests completed"
+
+      - name: Generate checksums for GitHub release
+        run: |
+          echo "🔍 Generating checksums for GitHub release..."
+          cd cli/dist
+
+          # Generate SHA256 checksums for GitHub release
+          sha256sum *.whl > checksums.txt
+          sha256sum *.tar.gz >> checksums.txt
+
+          echo "Generated checksums for GitHub release:"
+          cat checksums.txt
+
+          # Verify checksums work correctly
+          sha256sum -c checksums.txt
+          echo "✅ Checksums generated and verified for GitHub release"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: cli/dist/
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cli-test-results-${{ github.sha }}
+          path: cli/.pytest_cache/
+          retention-days: 7
+
+  create-github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write  # Required for creating releases
+      actions: read
+
+    env:
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Set release variables
+        run: |
+          # Extract version from tag (v1.0.0 -> 1.0.0)
+          RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+
+          # Auto-detect prerelease from semantic version suffixes
+          IS_PRERELEASE="false"
+          if [[ "$RELEASE_VERSION" =~ (alpha|beta|rc|dev|pre) ]]; then
+            IS_PRERELEASE="true"
+          fi
+
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_ENV
+
+          echo "📋 Release configuration:"
+          echo "  Version: $RELEASE_VERSION"
+          echo "  Prerelease: $IS_PRERELEASE"
+
+      - name: Parse changelog and generate release notes
+        run: |
+          echo "📄 Parsing changelog and generating release notes..."
+
+          # Extract [Unreleased] section from CHANGELOG.md
+          CHANGELOG_FILE="CHANGELOG.md"
+          RELEASE_NOTES_FILE="release-notes.md"
+
+          if [[ -f "$CHANGELOG_FILE" ]]; then
+            # Extract content between ## [Unreleased] and next ## heading
+            sed -n '/^## \[Unreleased\]/,/^## /p' "$CHANGELOG_FILE" | \
+              sed '$d' | \
+              tail -n +2 | \
+              sed '/^\s*$/d' > "$RELEASE_NOTES_FILE"
+
+            # Check if we extracted meaningful content
+            if [[ -s "$RELEASE_NOTES_FILE" ]] && [[ $(wc -l < "$RELEASE_NOTES_FILE") -gt 0 ]]; then
+              echo "📝 Extracted release notes from CHANGELOG.md:"
+              echo "---"
+              cat "$RELEASE_NOTES_FILE"
+              echo "---"
+            else
+              echo "⚠️ No meaningful content in [Unreleased] section, generating fallback release notes"
+              # Generate fallback release notes from recent commits
+              echo "## Release v$RELEASE_VERSION" > "$RELEASE_NOTES_FILE"
+              echo "" >> "$RELEASE_NOTES_FILE"
+              echo "### Changes" >> "$RELEASE_NOTES_FILE"
+              git log --oneline --since="30 days ago" --pretty="- %s" >> "$RELEASE_NOTES_FILE"
+              echo "" >> "$RELEASE_NOTES_FILE"
+            fi
+          else
+            echo "⚠️ CHANGELOG.md not found, generating basic release notes"
+            echo "## Release v$RELEASE_VERSION" > "$RELEASE_NOTES_FILE"
+            echo "" >> "$RELEASE_NOTES_FILE"
+            echo "### Changes" >> "$RELEASE_NOTES_FILE"
+            git log --oneline --since="30 days ago" --pretty="- %s" >> "$RELEASE_NOTES_FILE"
+          fi
+
+          # Add installation instructions and metadata
+          cat >> "$RELEASE_NOTES_FILE" << EOF
+
+          ## Installation
+
+          ### Via pip
+          \`\`\`bash
+          pip install acforge==$RELEASE_VERSION
+          \`\`\`
+
+          ### Via uv
+          \`\`\`bash
+          uv add acforge==$RELEASE_VERSION
+          \`\`\`
+
+          ### Via uvx (recommended)
+          \`\`\`bash
+          uvx acforge@$RELEASE_VERSION install
+          \`\`\`
+
+          ## Release Assets
+
+          This release includes the following artifacts:
+          - **Python Wheel**: \`acforge-$RELEASE_VERSION-py3-none-any.whl\`
+          - **Source Distribution**: \`acforge-$RELEASE_VERSION.tar.gz\`
+          - **Checksums**: \`checksums.txt\` (SHA256 verification)
+
+          > ⚠️ **SECURITY NOTICE**: Files attached to this GitHub release are **UNSIGNED** and provided for convenience only.
+          >
+          > **For cryptographically signed packages with Sigstore attestations, install from PyPI:**
+          > - \`pip install acforge==$RELEASE_VERSION\`
+          > - \`uv add acforge==$RELEASE_VERSION\`
+          > - \`uvx acforge@$RELEASE_VERSION install\`
+          >
+          > PyPI packages include:
+          > - 🔐 Sigstore keyless signatures
+          > - 📋 SLSA build provenance
+          > - 🆔 Repository identity verification
+          > - 📝 Transparency log entries
+          >
+          > **Verify PyPI package authenticity:**
+          > \`\`\`bash
+          > pip install sigstore
+          > sigstore verify acforge-$RELEASE_VERSION.tar.gz
+          > \`\`\`
+          EOF
+
+          echo "🎨 Final release notes:"
+          echo "===================================="
+          cat "$RELEASE_NOTES_FILE"
+          echo "===================================="
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Creating GitHub release..."
+
+          # Set release flags based on semantic version
+          PRERELEASE_FLAG=""
+          if [[ "$IS_PRERELEASE" == "true" ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          RELEASE_TAG="v$RELEASE_VERSION"
+
+          # Delete existing release if it exists (allows re-creation/overwrite)
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "⚠️  Release $RELEASE_TAG already exists - deleting to recreate..."
+            gh release delete "$RELEASE_TAG" --yes || true
+          fi
+
+          # Always create release (no draft mode)
+          echo "🚀 Creating release $RELEASE_TAG..."
+          gh release create "$RELEASE_TAG" \
+            --title "ACForge v$RELEASE_VERSION" \
+            --notes-file "release-notes.md" \
+            $PRERELEASE_FLAG \
+            --verify-tag \
+            dist/*.whl \
+            dist/*.tar.gz \
+            dist/checksums.txt
+
+          # Get release URL for summary
+          RELEASE_URL=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
+          echo "RELEASE_URL=$RELEASE_URL" >> $GITHUB_ENV
+
+          echo "✅ GitHub release created successfully!"
+          echo "Release URL: $RELEASE_URL"
+
+  publish-to-pypi:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/acforge/
+
+    permissions:
+      id-token: write        # REQUIRED for OIDC authentication
+      contents: read         # Download artifacts
+      attestations: write    # Generate Sigstore attestations
+
+    env:
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Verify artifacts before publishing
+        run: |
+          echo "🔍 Pre-publish artifact verification..."
+          echo "Expected package name: $PACKAGE_NAME"
+          ls -la dist/
+
+          # Verify expected files exist using proper glob expansion with correct package name
+          if ! ls dist/$PACKAGE_NAME-*.whl >/dev/null 2>&1; then
+            echo "❌ Wheel missing for package: $PACKAGE_NAME"
+            echo "Available files:"
+            ls -la dist/ || echo "No dist directory"
+            exit 1
+          fi
+
+          if ! ls dist/$PACKAGE_NAME-*.tar.gz >/dev/null 2>&1; then
+            echo "❌ Source dist missing for package: $PACKAGE_NAME"
+            echo "Available files:"
+            ls -la dist/ || echo "No dist directory"
+            exit 1
+          fi
+
+          # Verify package names match expected pattern
+          WHEEL_COUNT=$(ls dist/$PACKAGE_NAME-*.whl 2>/dev/null | wc -l)
+          TAR_COUNT=$(ls dist/$PACKAGE_NAME-*.tar.gz 2>/dev/null | wc -l)
+
+          echo "✅ Found $WHEEL_COUNT wheel file(s) and $TAR_COUNT source distribution(s)"
+          echo "✅ All artifact verification passed for package: $PACKAGE_NAME"
+
+      - name: Prepare artifacts for PyPI upload (exclude checksums.txt)
+        run: |
+          echo "📦 Preparing artifacts for PyPI upload (excluding checksums.txt)..."
+          # Create a clean directory with only Python packages for PyPI
+          mkdir -p dist-pypi
+          cp dist/*.whl dist-pypi/
+          cp dist/*.tar.gz dist-pypi/
+          echo "Files for PyPI upload:"
+          ls -la dist-pypi/
+
+      - name: Publish to PyPI via OIDC with Sigstore attestations
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist-pypi/
+          skip-existing: false        # Strict version control for production
+          verbose: true               # Debug output for troubleshooting
+          verify-metadata: true        # Verify package metadata
+          print-hash: true           # Log file hashes for audit trail
+          attestations: true           # Enable Sigstore attestations (automatic signing)
+
+      - name: Verify attestations and package integrity
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔐 Verifying Sigstore attestations and package integrity..."
+
+          # Determine release version and set PyPI URL
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "//; s/"//')
+          else
+            RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+          fi
+
+          REPO_NAME="PyPI"
+          PYPI_URL="https://pypi.org/project/acforge/$RELEASE_VERSION/"
+
+          # Generate package hashes for verification
+          echo "📋 Generating package hashes for attestation verification..."
+          cd dist-pypi
+
+          # Calculate SHA256 hashes
+          WHEEL_FILE=$(ls *.whl | head -1)
+          TARBALL_FILE=$(ls *.tar.gz | head -1)
+
+          WHEEL_HASH=$(sha256sum "$WHEEL_FILE" | cut -d' ' -f1)
+          TARBALL_HASH=$(sha256sum "$TARBALL_FILE" | cut -d' ' -f1)
+
+          echo "Package hashes:"
+          echo "  $WHEEL_FILE: $WHEEL_HASH"
+          echo "  $TARBALL_FILE: $TARBALL_HASH"
+
+          cd ..
+
+          # Wait for PyPI propagation (attestations may take time to appear)
+          echo "⏳ Waiting 30s for PyPI attestation propagation..."
+          sleep 30
+
+          # Verify attestations using GitHub CLI (when available)
+          echo "🔍 Attempting attestation verification..."
+
+          # Note: Attestation verification requires the package to be available on PyPI
+          # and attestations to be propagated, which may take several minutes
+          if command -v gh >/dev/null 2>&1; then
+            echo "GitHub CLI available - attempting verification..."
+
+            # Try to verify attestations for the wheel file using correct package name
+            if gh attestation verify "oci://ghcr.io/ondrasek/acforge@sha256:$WHEEL_HASH" --repo "${{ github.repository }}" 2>/dev/null; then
+              echo "✅ Wheel attestation verified successfully"
+            else
+              echo "⚠️ Wheel attestation verification pending (may require PyPI propagation)"
+              # Fallback: try PyPI artifact verification
+              echo "🔍 Attempting direct PyPI package verification..."
+            fi
+
+            # Try to verify attestations for the tarball using correct package name
+            if gh attestation verify "oci://ghcr.io/ondrasek/acforge@sha256:$TARBALL_HASH" --repo "${{ github.repository }}" 2>/dev/null; then
+              echo "✅ Tarball attestation verified successfully"
+            else
+              echo "⚠️ Tarball attestation verification pending (may require PyPI propagation)"
+              # Fallback: try PyPI artifact verification
+              echo "🔍 Attempting direct PyPI package verification..."
+            fi
+          else
+            echo "⚠️ GitHub CLI not available - skipping immediate attestation verification"
+            echo "Note: Attestations can be verified post-publication using:"
+            echo "  gh attestation verify <package-url> --repo ${{ github.repository }}"
+          fi
+
+          echo "📋 Package published with attestation support:"
+          echo "  - Repository identity: ${{ github.repository }}"
+          echo "  - Build provenance: Available via GitHub attestations API"
+          echo "  - Package integrity: SHA256 hashes generated"
+          echo "  - Transparency logging: Automatic via Sigstore/PyPI integration"
+
+          # Store variables for summary
+          echo "PYPI_URL=$PYPI_URL" >> $GITHUB_ENV
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+          echo "WHEEL_HASH=$WHEEL_HASH" >> $GITHUB_ENV
+          echo "TARBALL_HASH=$TARBALL_HASH" >> $GITHUB_ENV
+
+  build-summary:
+    needs: [build, create-github-release, publish-to-pypi]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      contents: read
+
+    env:
+      PACKAGE_NAME: "acforge"  # Centralized package name configuration
+
+    steps:
+      - name: Download build artifacts for summary
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Generate build summary
+        run: |
+          echo "🎉 ACF CLI Build and Release Complete!"
+          echo ""
+          echo "📦 Generated artifacts:"
+          ls -la dist/
+          echo ""
+          echo "📊 Package sizes:"
+          du -h dist/*
+          echo ""
+
+          # Release status
+          if [[ "${{ needs.create-github-release.result }}" == "success" ]]; then
+            echo "🏪 GitHub Release: ✅ Created"
+            if [[ -n "${RELEASE_URL:-}" ]]; then
+              echo "Release URL: $RELEASE_URL"
+            fi
+          else
+            echo "🏪 GitHub Release: ⏭️ Skipped (no release trigger)"
+          fi
+
+          # PyPI status
+          if [[ "${{ needs.publish-to-pypi.result }}" == "success" ]]; then
+            echo "📦 PyPI Publishing: ✅ Published with Sigstore attestations"
+            if [[ -n "${PYPI_URL:-}" ]]; then
+              echo "Package URL: $PYPI_URL"
+            fi
+            echo ""
+            echo "🔐 Security Features:"
+            echo "  ✅ OIDC trusted publishing (no API keys)"
+            echo "  ✅ Sigstore keyless signing via PyPI"
+            echo "  ✅ GitHub attestations (build provenance)"
+            echo "  ✅ Package integrity hashes"
+            echo "  ✅ Repository identity binding"
+            if [[ -n "${WHEEL_HASH:-}" ]]; then
+              echo "  📋 Wheel SHA256: ${WHEEL_HASH}"
+            fi
+            if [[ -n "${TARBALL_HASH:-}" ]]; then
+              echo "  📋 Tarball SHA256: ${TARBALL_HASH}"
+            fi
+          elif [[ "${{ needs.publish-to-pypi.result }}" == "skipped" ]]; then
+            echo "📦 Package Publishing: ⏭️ Skipped"
+          else
+            echo "📦 Package Publishing: ❌ Failed"
+          fi
+
+          echo ""
+          echo "💾 Installation Commands:"
+          RELEASE_VERSION=$(grep '^version = ' cli/pyproject.toml 2>/dev/null | sed 's/version = "//; s/"//' || echo "latest")
+          echo "  pip install $PACKAGE_NAME==$RELEASE_VERSION"
+          echo "  uv add $PACKAGE_NAME==$RELEASE_VERSION"
+          echo "  uvx $PACKAGE_NAME@$RELEASE_VERSION install"
