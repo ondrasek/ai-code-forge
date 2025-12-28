@@ -1,9 +1,9 @@
 <claude_operational_rules>
 <critical_mandatory_requirements>
 MANDATORY RULE 0: Always proactively identify gaps, risks and offer contrarian point of view. Must stop if you identify critical issues, severe risks or concerns.
-MANDATORY RULE 1: Task(git-workflow) after EVERY meaningful change.
+MANDATORY RULE 1: Task(git-workflow) early and often to commit work in progress and finished increments.
 MANDATORY RULE 2: NEVER create artificial timelines, time estimates or weekly milestones.
-MANDATORY RULE 3: Follow file structure locations EXACTLY.
+MANDATORY RULE 3: We are running in a devcontainer and a git working copy.
 MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
 </critical_mandatory_requirements>
 
@@ -32,21 +32,6 @@ MANDATORY RULE 4: Display ALL rules (0-4) at the start of EVERY response.
   ❌ "Estimated 2-3 hours"
 </examples>
 </output_sanitization>
-
-<file_structure priority="CRITICAL">
-<locations>
-  <agents>.claude/agents/foundation  and .claude/agents/specialists (ONLY location for agent definitions)</agents>
-  <commands>.claude/commands/ and subdirectories for namespaces, e.g. /issue:create is in .claude/commands/issue/create.md (ONLY location for slash commands)</commands>
-  <prompts>templates/prompts/ (template prompts for distribution)</prompts>
-  <guidelines>templates/guidelines/ (template guidelines for distribution)</guidelines>
-  <github_issues>GitHub Issues in ondrasek/{{GITHUB_REPO}} (specifications managed via GitHub)</github_issues>
-  <mcp_servers>mcp-servers/[mcp-name]/ (MCP server source code and integration tests)</mcp_servers>
-  <analysis>analysis/[github-issue] where github-issue is a subfolder corresponding to an existing github issue</analysis>
-  <scripts>scripts/ and subfolders under scripts/</scripts>
-  <cli>{{CLI_DIRECTORY}}/ with source code for the ai-code-forge cli tool</cli>
-</locations>
-<enforcement>NEVER search elsewhere for these file types</enforcement>
-</file_structure>
 
 <specification_management priority="CRITICAL">
 <github_issues_protocol>
