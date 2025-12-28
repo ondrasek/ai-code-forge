@@ -24,32 +24,27 @@ AI Code Forge (`acforge`) is a command-line tool that provides complete infrastr
 
 AI Code Forge is built on three foundational CLIs:
 
-```
-acforge (this tool)
-├── Claude Code CLI ──→ AI-assisted development
-├── Git CLI ──────────→ Version control & subtree management
-└── GitHub CLI ───────→ Issue tracking, PRs, Actions
-```
+- **acforge** (this tool) - Orchestrates all operations
+- **Claude Code CLI** - AI-assisted development
+- **Git CLI** - Version control and subtree management
+- **GitHub CLI** - Issue tracking, PRs, Actions
 
 ### Module Repository Model
 
 Modules are **separate git repositories** merged into `.acforge/modules/` as git subtrees. A typical module contains:
 
-```
-module-repository/
-├── .claude/
-│   ├── agents/           # AI agent definitions
-│   ├── commands/         # Slash commands
-│   └── settings.json     # Claude Code configuration
-├── .devcontainer/
-│   ├── devcontainer.json
-│   ├── Dockerfile
-│   └── postCreate.sh
-├── templates/
-│   └── README.md         # Template files
-├── .gitignore            # Ignore patterns to merge
-└── module.yaml           # Module metadata and merge strategy
-```
+**Module Structure**:
+- `.claude/` - Claude Code configuration
+  - `agents/` - AI agent definitions
+  - `commands/` - Slash commands
+  - `settings.json` - Claude Code settings
+- `.devcontainer/` - DevContainer configuration
+  - `devcontainer.json` - Container specification
+  - `Dockerfile` - Container image definition
+  - `postCreate.sh` - Post-creation scripts
+- `templates/` - Template files (e.g., README.md templates)
+- `.gitignore` - Ignore patterns to be merged into project
+- `module.yaml` - Module metadata and merge strategy definition
 
 Modules are integrated into your project via:
 ```bash
@@ -263,43 +258,36 @@ The `.claude/` and `.devcontainer/` directories in **this repository** are for d
 ### Repository Structure
 
 **This Repository** (ai-code-forge):
-```
-ai-code-forge/
-├── .claude/              # Claude Code config for developing acforge
-├── .devcontainer/        # DevContainer for developing acforge
-├── .github/workflows/    # CI/CD workflows (disabled for v4.0 dev)
-├── cli/                  # acforge CLI implementation (coming soon)
-├── CHANGELOG.md          # Version history
-├── CLAUDE.md             # AI operational rules
-├── LICENSE               # Project license
-└── README.md             # This file
-```
+- `.claude/` - Claude Code config for developing acforge
+- `.devcontainer/` - DevContainer for developing acforge
+- `.github/workflows/` - CI/CD workflows (disabled for v4.0 dev)
+- `cli/` - acforge CLI implementation (coming soon)
+- `CHANGELOG.md` - Version history
+- `CLAUDE.md` - AI operational rules
+- `LICENSE` - Project license
+- `README.md` - This file
 
 **Project Using acforge**:
-```
-your-project/
-├── .acforge/
-│   ├── modules/
-│   │   ├── python-stack/      # Long-lived module (git subtree)
-│   │   └── devcontainer-base/ # Long-lived module (git subtree)
-│   └── acforge.yaml            # Module tracking metadata
-├── .claude/
-│   ├── agents/
-│   │   ├── python-linting.md  # From python-stack module
-│   │   ├── python-testing.md  # From python-stack module
-│   │   └── ...
-│   ├── commands/
-│   └── settings.json
-├── .devcontainer/
-│   ├── devcontainer.json      # From devcontainer-base module
-│   ├── Dockerfile             # From devcontainer-base module
-│   └── postCreate.sh          # From devcontainer-base module
-├── .github/workflows/         # From modules or user-created
-├── .gitignore                 # Union of all module .gitignore files
-├── pyproject.toml             # From python-stack module
-├── README.md                  # Created with start-from-scratch workflow
-└── src/                       # Your code
-```
+- `.acforge/` - acforge module management directory
+  - `modules/` - Git subtrees containing installed modules
+    - `python-stack/` - Long-lived module (git subtree)
+    - `devcontainer-base/` - Long-lived module (git subtree)
+  - `acforge.yaml` - Module tracking metadata
+- `.claude/` - Claude Code configuration (merged from modules)
+  - `agents/` - AI agent definitions
+    - `python-linting.md` - From python-stack module
+    - `python-testing.md` - From python-stack module
+  - `commands/` - Slash commands
+  - `settings.json` - Claude Code settings
+- `.devcontainer/` - DevContainer configuration (from devcontainer-base module)
+  - `devcontainer.json` - From devcontainer-base module
+  - `Dockerfile` - From devcontainer-base module
+  - `postCreate.sh` - From devcontainer-base module
+- `.github/workflows/` - CI/CD workflows (from modules or user-created)
+- `.gitignore` - Union of all module .gitignore files
+- `pyproject.toml` - From python-stack module
+- `README.md` - Created with start-from-scratch workflow
+- `src/` - Your code
 
 ## Project Status
 
