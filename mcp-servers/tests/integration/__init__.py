@@ -1,1 +1,0 @@
-"""Integration testing for MCP server coordination and workflows."""
