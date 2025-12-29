@@ -264,4 +264,133 @@ class MergeStrategy(ABC):
 </steps>
 </development_workflow>
 
+<architectural_rationale priority="CRITICAL">
+<purpose>
+This section explains WHY each technology was chosen. Use this to:
+- Make consistent decisions when alternatives arise
+- Understand trade-offs when constraints conflict
+- Explain technical decisions to users
+- Maintain architectural coherence
+</purpose>
+
+<python_314>
+<rationale>Latest features and performance improvements</rationale>
+<trade_offs>
+  - BENEFIT: Modern type hints, pattern matching, async improvements
+  - BENEFIT: Best performance (3.14 is faster than 3.13)
+  - COST: Requires recent Python installation
+  - DECISION: Speed and modern features outweigh compatibility concerns
+</trade_offs>
+<when_to_reconsider>If users cannot install Python 3.14+ (unlikely for CLI tools)</when_to_reconsider>
+</python_314>
+
+<typer_rich>
+<rationale>Type-safe CLI with beautiful output</rationale>
+<trade_offs>
+  - BENEFIT: Type hints generate automatic validation and help
+  - BENEFIT: Rich integration provides excellent UX
+  - BENEFIT: Namespace support perfect for acforge command structure
+  - COST: Slightly larger dependency than argparse
+  - DECISION: UX and type safety worth dependency size
+</trade_offs>
+<alternatives>
+  - Click: Typer is built on Click, so we get Click's stability
+  - argparse: No type safety, poor UX, manual help generation
+</alternatives>
+</typer_rich>
+
+<pydantic_yaml>
+<rationale>Type-safe configuration with validation</rationale>
+<trade_offs>
+  - BENEFIT: Pydantic catches config errors at load time
+  - BENEFIT: YAML is human-readable (vs JSON)
+  - BENEFIT: Type safety prevents runtime errors
+  - COST: Pydantic v2 is a dependency
+  - DECISION: Early error detection worth the dependency
+</trade_offs>
+<why_not_json>JSON less human-friendly, no comments</why_not_json>
+<why_not_toml>YAML more widely used for config, better nested structures</why_not_toml>
+</pydantic_yaml>
+
+<git_hybrid>
+<rationale>Use best tool for each job</rationale>
+<trade_offs>
+  - subprocess for subtrees: Git subtree not well-supported by GitPython
+  - GitPython for other ops: Cleaner API than parsing CLI output
+  - BENEFIT: Reliability for complex subtree operations
+  - BENEFIT: Clean code for simple operations
+  - COST: Two approaches to learn/maintain
+  - DECISION: Reliability of subtrees critical, worth complexity
+</trade_offs>
+</git_hybrid>
+
+<strategy_pattern_merging>
+<rationale>Extensible, testable file merging</rationale>
+<trade_offs>
+  - BENEFIT: Easy to add new file types
+  - BENEFIT: Each strategy independently testable
+  - BENEFIT: Clear separation of concerns
+  - COST: More files/classes than inline logic
+  - DECISION: Testability and extensibility worth extra structure
+</trade_offs>
+<why_critical>File merging is core functionality, must be bulletproof</why_critical>
+</strategy_pattern_merging>
+
+<hypothesis_testing>
+<rationale>Find edge cases automatically</rationale>
+<trade_offs>
+  - BENEFIT: Discovers bugs traditional tests miss
+  - BENEFIT: Perfect for testing merge strategies (complex inputs)
+  - BENEFIT: Generates test cases you wouldn't think of
+  - COST: Slower than unit tests
+  - COST: Requires different testing mindset
+  - DECISION: Critical for file merging reliability
+</trade_offs>
+<when_to_use>ALL merge strategies, config parsing, git operations</when_to_use>
+</hypothesis_testing>
+
+<uv_packaging>
+<rationale>Modern, fast, aligns with uvx usage</rationale>
+<trade_offs>
+  - BENEFIT: Extremely fast (Rust-based)
+  - BENEFIT: Lock files for reproducibility
+  - BENEFIT: uvx acforge works seamlessly
+  - COST: UV is newer, less established than pip/poetry
+  - DECISION: Speed and uvx alignment critical for CLI tool
+</trade_offs>
+<why_not_poetry>UV faster, better uvx integration</why_not_poetry>
+<why_not_pip>UV provides lock files, faster resolution</why_not_pip>
+</uv_packaging>
+
+<ruff_mypy>
+<rationale>Fast, comprehensive code quality</rationale>
+<trade_offs>
+  - BENEFIT: Ruff is 100x faster than flake8/black/isort
+  - BENEFIT: MyPy catches type errors before runtime
+  - BENEFIT: Both configured via pyproject.toml
+  - COST: Another dependency
+  - DECISION: Development speed and type safety non-negotiable
+</trade_offs>
+</ruff_mypy>
+
+<decision_framework>
+<when_adding_dependencies>
+1. Is it in standard library? USE STANDARD LIBRARY
+2. Does it solve critical problem? EVALUATE TRADE-OFFS
+3. Is it well-maintained? CHECK GITHUB ACTIVITY
+4. Is it fast? PREFER RUST-BASED TOOLS
+5. Does it reduce code complexity? WORTH THE DEPENDENCY
+</when_adding_dependencies>
+
+<when_choosing_approaches>
+1. Does it improve type safety? STRONG PREFERENCE
+2. Does it improve UX? HIGH PRIORITY
+3. Does it improve testability? REQUIRED FOR CORE LOGIC
+4. Does it improve performance? NICE TO HAVE
+5. Does it reduce complexity? TIE-BREAKER
+</when_choosing_approaches>
+</decision_framework>
+
+</architectural_rationale>
+
 </acforge_technical_requirements>
